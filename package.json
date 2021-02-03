@@ -1,0 +1,48 @@
+{
+  "name": "hackathon-overlay-minigame",
+  "version": "0.1.0",
+  "description": "Twitch Overlay Mini-game for Channel Points Hackathon",
+  "main": "index.js",
+  "scripts": {
+    "start": "webpack serve --mode development --open --hot",
+    "build": "webpack --mode production",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jayther/hackathon-overlay-minigame.git"
+  },
+  "keywords": [
+    "twitch",
+    "overlay",
+    "game",
+    "channel",
+    "points"
+  ],
+  "author": "jayther",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jayther/hackathon-overlay-minigame/issues"
+  },
+  "homepage": "https://github.com/jayther/hackathon-overlay-minigame#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "twitch": "^4.4.7",
+    "twitch-auth": "^4.4.7",
+    "twitch-chat-client": "^4.4.7",
+    "twitch-eventsub": "^4.4.7"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.12.13",
+    "@babel/preset-env": "^7.12.13",
+    "@babel/preset-react": "^7.12.13",
+    "babel-loader": "^8.2.2",
+    "gulp": "^4.0.2",
+    "html-webpack-plugin": "^5.0.0",
+    "webpack": "^5.20.1",
+    "webpack-cli": "^4.5.0",
+    "webpack-dev-server": "^3.11.2"
+  }
+}
