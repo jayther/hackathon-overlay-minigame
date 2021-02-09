@@ -6,6 +6,7 @@
   "scripts": {
     "start": "webpack serve --mode development --open --hot",
     "build": "webpack --mode production",
+    "server": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -26,10 +27,12 @@
   },
   "homepage": "https://github.com/jayther/hackathon-overlay-minigame#readme",
   "dependencies": {
+    "core-js": "^3.8.3",
     "express": "^4.17.1",
     "fs-extra": "^9.1.0",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
+    "regenerator-runtime": "^0.13.7",
     "socket.io": "^3.1.1",
     "socket.io-client": "^3.1.1",
     "twitch": "^4.4.7",
