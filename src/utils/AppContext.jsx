@@ -28,16 +28,19 @@ function reducer(state, action) {
         throw new Error('App action "updatePage" requires a page state');
       }
       return {
+        ...state,
         pageState: action.pageState
       };
     case appActions.updateApp:
       return {
+        ...state,
         appReady: action.appReady || false
       };
     case appActions.updateUser:
       return {
+        ...state,
         user: action.user || null
-      }
+      };
     default:
       throw new Error(`Unknown app action type: ${action.type}`);
   }
