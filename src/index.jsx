@@ -8,6 +8,7 @@ import SetupApp from './SetupApp';
 import SetupUser from './SetupUser';
 import Control from './Control';
 import SocketBridge from './utils/SocketBridge';
+import Deferred from './utils/Deferred';
 
 const IdlePage = () => {
   return (
@@ -28,8 +29,25 @@ class Website extends React.Component {
 
   async init() {
     this.props.appDispatch({ type: appActions.updatePage, pageState: pageStates.loading });
-    await SocketBridge.init(SocketBridge.types.control);
+    SocketBridge.init(SocketBridge.types.control);
+    SocketBridge.socket.on('userupdate', user => {
+      this.props.appDispatch({ type: appActions.updateUser, user });
+    });
+    await this.waitForAppReadyData();
     this.props.appDispatch({ type: appActions.updatePage, pageState: pageStates.ready });
+  }
+
+  waitForAppReadyData() {
+    console.log('Waiting for app ready...');
+    const deferred = new Deferred();
+
+    SocketBridge.socket.once('appready', appReady => {
+      this.props.appDispatch({ type: appActions.updateApp, appReady });
+      console.log(`App ready received (${appReady})`);
+      deferred.resolve();
+    });
+
+    return deferred.promise;
   }
 
   render() {

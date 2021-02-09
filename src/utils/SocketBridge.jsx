@@ -33,6 +33,13 @@ class SocketBridge {
 
     return deferred.promise;
   }
+
+  emit(eventName, ...data) {
+    if (!this.socket) {
+      throw new Error('Socket not initialized');
+    }
+    this.socket.emit(eventName, ...data);
+  }
 }
 
 export default new SocketBridge();
