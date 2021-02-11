@@ -5,11 +5,20 @@ const express = require('express');
 const { createServer } = require('http');
 const https = require('https');
 const { ApiClient } = require('twitch');
-const { AccessToken, RefreshableAuthProvider, StaticAuthProvider } = require('twitch-auth');
+const { EventSubListener } = require('twitch-eventsub');
+const { NgrokAdapter } = require('twitch-eventsub-ngrok');
+const { ClientCredentialsAuthProvider, RefreshableAuthProvider, StaticAuthProvider } = require('twitch-auth');
 const logger = require('./server-src/logger');
 
 const appSecretsPath = './.appsecrets.json';
 const userTokensPath = './.usertokens.json';
+
+const twitchApiScopes = [
+  'channel:read:redemptions',
+  'channel:manage:redemptions',
+  'chat:edit',
+  'chat:read'
+];
 
 function objToParams(obj) {
   const paramParts = [];
@@ -23,15 +32,43 @@ function objToParams(obj) {
   return paramParts.join('&');
 }
 
+function httpsRequest(params, body = null) {
+  return new Promise((resolve, reject) => {
+    const req = https.request(params, resp => {
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        return reject(new Error(`status code: ${resp.statusCode}`));
+      }
+      let responseBody = '';
+      resp.on('data', chunk => responseBody += chunk);
+      resp.on('end', () => {
+        try {
+          const obj = JSON.parse(responseBody);
+          resolve(obj);
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+    req.on('error', err => reject(err));
+    if (body) {
+      req.write(body);
+    }
+    req.end();
+  });
+}
+
 class ServerApp {
   constructor(settings) {
     this.settings = settings;
     this.appSecrets = null;
     this.userTokens = null;
-    this.twitchClient = null;
+    this.twitchUserClient = null;
+    this.twitchAppClient = null;
+    this.eventSub = null;
     this.user = null;
   }
   async init() {
+    logger('Starting ServerApp');
     this.overlaySockets = [];
     this.controlSockets = [];
 
@@ -74,9 +111,12 @@ class ServerApp {
 
     this.io.on('connection', this.onIOConnection.bind(this));
     this.server.listen(this.settings.webPort);
+    logger(`Webserver listening to (${this.settings.webPort})`);
     this.httpSocketServer.listen(this.settings.socketPort);
-    logger(`Server ready (sockets listening to ${this.settings.socketPort}, webserver listening to ${this.settings.webPort})`);
-    this.startTwitch();
+    logger(`Server ready (sockets listening to ${this.settings.socketPort})`);
+    await this.startTwitchUser();
+    await this.startTwitchApp();
+    await this.startEventSub();
   }
 
   onIOConnection(socket) {
@@ -113,6 +153,7 @@ class ServerApp {
     socket.on('disconnect', reason => this.removeOverlaySocket(socket, reason));
     this.overlaySockets.push(socket);
     socket.emit('appready', this.isAppReady());
+    socket.emit('eventsubupdate', !!this.eventSub);
     socket.emit('userupdate', this.user);
   }
 
@@ -132,6 +173,7 @@ class ServerApp {
     socket.on('appsetup', this.onAppSetup.bind(this));
     this.controlSockets.push(socket);
     socket.emit('appready', this.isAppReady());
+    socket.emit('eventsubupdate', !!this.eventSub);
     socket.emit('userupdate', this.user);
   }
 
@@ -176,18 +218,13 @@ class ServerApp {
       client_id: this.appSecrets.clientId,
       redirect_uri: encodeURIComponent(redirectUri),
       response_type: 'code',
-      scope: [
-        'channel:read:redemptions',
-        'channel:manage:redemptions',
-        'chat:edit',
-        'chat:read'
-      ].join('+')
+      scope: twitchApiScopes.join('+')
     });
     resp.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     resp.redirect(`https://id.twitch.tv/oauth2/authorize?${query}`);
   }
 
-  onGetCallback(req, resp) {
+  async onGetCallback(req, resp) {
     resp.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     if (!req.query.code) {
       logger('Token callback: Missing code parameter');
@@ -204,53 +241,50 @@ class ServerApp {
     });
 
     logger('Token callback: sending token request...');
-    const httpRequest = https.request({
+    const tokensResponse = await httpsRequest({
       hostname: 'id.twitch.tv',
       path: `/oauth2/token?${query}`,
       method: 'POST'
-    }, httpResponse => {
-      logger('Receiving token response...');
-      let responseStr = '';
-      httpResponse.on('data', chunk => responseStr += chunk);
-      httpResponse.on('end', () => {
-        logger('Parsing token response...');
-        try {
-          const tokensResponse = JSON.parse(responseStr);
-          if (tokensResponse.status && tokensResponse.status !== 200) {
-            throw new Error(`${tokensResponse.status} error: ${tokensResponse.message}`);
-          }
-          if (!tokensResponse.access_token) {
-            throw new Error('Missing access_token');
-          }
-          if (!tokensResponse.refresh_token) {
-            throw new Error('Missing refresh_token');
-          }
-          const tokensData = {
-            accessToken: tokensResponse.access_token,
-            refreshToken: tokensResponse.refresh_token,
-            expiryTimestamp: tokensResponse.expires_in ? (new Date()).getTime() + (tokensResponse.expires_in * 1000) : null
-          };
-          this.userTokens = tokensData;
-          logger(`Writing tokens to ${userTokensPath}`);
-          fs.writeJSON(userTokensPath, tokensData, 'UTF-8');
-          logger(`Tokens written to ${userTokensPath}`);
-          resp.send('Authorized!').end();
-          this.startTwitch();
-        } catch (e) {
-          logger(`Malformed json response: ${e.message}`);
-          resp.send('Malformed json response from twitch received').status(400).end();
-        }
-      });
     });
-    httpRequest.end();
+    
+    if (tokensResponse.status && tokensResponse.status !== 200) {
+      throw new Error(`${tokensResponse.status} error: ${tokensResponse.message}`);
+    }
+    if (!tokensResponse.access_token) {
+      throw new Error('Missing access_token');
+    }
+    if (!tokensResponse.refresh_token) {
+      throw new Error('Missing refresh_token');
+    }
+    const tokensData = {
+      accessToken: tokensResponse.access_token,
+      refreshToken: tokensResponse.refresh_token,
+      expiryTimestamp: tokensResponse.expires_in ? (new Date()).getTime() + (tokensResponse.expires_in * 1000) : null
+    };
+    this.userTokens = tokensData;
+    logger(`Writing tokens to ${userTokensPath}`);
+    fs.writeJSON(userTokensPath, tokensData, 'UTF-8');
+    logger(`Tokens written to ${userTokensPath}`);
+    resp.send('Authorized!').end();
+    await this.startTwitchUser();
+    await this.startTwitchApp();
+    await this.startEventSub();
   }
 
-  async startTwitch() {
+  async startTwitchUser() {
+    if (!this.appSecrets) {
+      logger('Cannot start twitch: no app secrets');
+      return;
+    }
     if (!this.userTokens) {
       logger('Cannot start twitch: no user tokens');
       return;
     }
-    logger('Starting twitch...');
+    if (this.twitchUserClient) {
+      logger('twitchUserClient already started');
+      return;
+    }
+    logger('Starting twitch user...');
     const authProvider = new RefreshableAuthProvider(
       new StaticAuthProvider(this.appSecrets.clientId, this.userTokens.accessToken),
       {
@@ -268,8 +302,8 @@ class ServerApp {
         }
       }
     );
-    this.twitchClient = new ApiClient({ authProvider });
-    const twitchUser = await this.twitchClient.helix.users.getMe();
+    this.twitchUserClient = new ApiClient({ authProvider });
+    const twitchUser = await this.twitchUserClient.helix.users.getMe();
     this.user = {
       id: twitchUser.id,
       name: twitchUser.name,
@@ -277,7 +311,83 @@ class ServerApp {
       profilePictureUrl: twitchUser.profilePictureUrl
     };
     this.allEmit('userupdate', this.user);
-    logger('Twitch started');
+    logger('Twitch User started');
+  }
+
+  async startTwitchApp() {
+    if (!this.appSecrets) {
+      logger('Cannot start twitch: no app secrets');
+      return;
+    }
+    if (this.twitchAppClient) {
+      logger('twitchAppClient already started');
+      return;
+    }
+    logger('Starting twitch app...');
+    const authProvider = new ClientCredentialsAuthProvider(this.appSecrets.clientId, this.appSecrets.clientSecret);
+    this.twitchAppClient = new ApiClient({ authProvider });
+    this.allEmit('twitchappupdate', true);
+    logger('Twitch App started');
+  }
+
+  async startEventSub() {
+    if (!this.twitchAppClient) {
+      logger(`Cannot start eventSub: twitchAppClient not ready`);
+      return;
+    }
+    if (!this.user) {
+      logger(`Cannot start eventSub: missing user (twitchUserClient started but did not get user details)`);
+      return;
+    }
+    if (this.eventSub) {
+      logger('eventSub already started');
+      return;
+    }
+    logger('Starting eventSub...');
+    this.eventSub = new EventSubListener(this.twitchAppClient, new NgrokAdapter());
+    await this.eventSub.listen();
+    logger('Removing old subscriptions...');
+    await this.twitchAppClient.helix.eventSub.deleteAllSubscriptions();
+    this.redeemSub = this.eventSub.subscribeToChannelRedemptionAddEvents(this.user.id, this.OnRedeem.bind(this));
+    this.redeemUpdateSub = this.eventSub.subscribeToChannelRedemptionUpdateEvents(this.user.id, this.OnRedeemUpdate.bind(this));
+    this.allEmit('eventsubupdate', !!this.eventSub);
+    logger('eventSub started');
+  }
+
+  async OnRedeem(event) {
+    const payload = {
+      id: event.id,
+      input: event.input,
+      redeemedAt: event.redeemedAt.getTime(),
+      rewardCost: event.rewardCost,
+      rewardId: event.rewardId,
+      rewardPrompt: event.rewardPrompt,
+      rewardTitle: event.rewardTitle,
+      status: event.status,
+      userDisplayName: event.userDisplayName,
+      userId: event.userId,
+      userName: event.userName
+    };
+    logger(payload);
+    this.allEmit('redeem', payload);
+  }
+
+  async OnRedeemUpdate(event) {
+    const payload = {
+      id: event.id,
+      input: event.input,
+      redemptionDate: event.redemptionDate.getTime(),
+      rewardCost: event.rewardCost,
+      rewardId: event.rewardId,
+      rewardPrompt: event.rewardPrompt,
+      rewardTitle: event.rewardTitle,
+      status: event.status,
+      userDisplayName: event.userDisplayName,
+      userId: event.userId,
+      userName: event.userName
+    };
+    logger(payload);
+    this.allEmit('redeemupdate', payload);
   }
 }
 

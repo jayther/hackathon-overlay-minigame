@@ -6,7 +6,10 @@ const DispatchContext = React.createContext();
 const appActions = {
   updatePage: 'updatepage',
   updateApp: 'updateapp',
-  updateUser: 'updateuser'
+  updateUser: 'updateuser',
+  updateEventSubReady: 'updateeventsubready',
+  addRedeem: 'addredeem',
+  updateRedeem: 'updateredeem'
 };
 
 const pageStates = {
@@ -18,10 +21,13 @@ const pageStates = {
 const initialState = {
   pageState: pageStates.idle,
   user: null,
-  appReady: false
+  appReady: false,
+  eventSubReady: false,
+  redeems: []
 };
 
 function reducer(state, action) {
+  let list;
   switch (action.type) {
     case appActions.updatePage:
       if (!action.pageState) {
@@ -40,6 +46,33 @@ function reducer(state, action) {
       return {
         ...state,
         user: action.user || null
+      };
+    case appActions.updateEventSubReady:
+      return {
+        ...state,
+        eventSubReady: action.eventSubReady || false
+      };
+    case appActions.addRedeem:
+      if (!action.redeem) {
+        throw new Error('App action "addRedeem" requires a redeem');
+      }
+      return {
+        ...state,
+        redeems: [...state.redeems, action.redeem]
+      };
+    case appActions.updateRedeem:
+      if (!action.redeem) {
+        throw new Error('App action "updateRedeem" requires a redeem');
+      }
+      list = state.redeems.map(redeem => {
+        if (redeem.id === action.redeem.id) {
+          redeem.status = action.redeem.status;
+        }
+        return redeem;
+      });
+      return {
+        ...state,
+        redeems: list
       };
     default:
       throw new Error(`Unknown app action type: ${action.type}`);

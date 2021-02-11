@@ -16,9 +16,9 @@ const IdlePage = () => {
   );
 };
 
-const LoadingPage = () => {
+const LoadingPage = (props) => {
   return (
-    <p>Loading...</p>
+    <p>Loading... ({props.text})</p>
   );
 };
 
@@ -32,6 +32,15 @@ class Website extends React.Component {
     SocketBridge.init(SocketBridge.types.control);
     SocketBridge.socket.on('userupdate', user => {
       this.props.appDispatch({ type: appActions.updateUser, user });
+    });
+    SocketBridge.socket.on('eventsubupdate', eventSubReady => {
+      this.props.appDispatch({ type: appActions.updateEventSubReady, eventSubReady });
+    });
+    SocketBridge.socket.on('redeem', redeem => {
+      this.props.appDispatch({ type: appActions.addRedeem, redeem });
+    });
+    SocketBridge.socket.on('redeemupdate', redeem => {
+      this.props.appDispatch({ type: appActions.updateRedeem, redeem });
     });
     await this.waitForAppReadyData();
     this.props.appDispatch({ type: appActions.updatePage, pageState: pageStates.ready });
@@ -53,9 +62,10 @@ class Website extends React.Component {
   render() {
     return (
       this.props.appState.pageState === pageStates.idle ? <IdlePage /> :
-      this.props.appState.pageState === pageStates.loading ? <LoadingPage /> :
+      this.props.appState.pageState === pageStates.loading ? <LoadingPage text="server" /> :
       !this.props.appState.appReady ? <SetupApp /> :
       !this.props.appState.user ? <SetupUser /> :
+      !this.props.appState.eventSubReady ? <LoadingPage text="eventSub" /> :
       <Control />
     );
   }
