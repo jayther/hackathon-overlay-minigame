@@ -8,7 +8,8 @@ const { ApiClient } = require('twitch');
 const { EventSubListener } = require('twitch-eventsub');
 const { NgrokAdapter } = require('twitch-eventsub-ngrok');
 const { ClientCredentialsAuthProvider, RefreshableAuthProvider, StaticAuthProvider } = require('twitch-auth');
-const logger = require('./server-src/logger');
+const logger = require('./src-server/logger');
+const appActions = require('./src-shared/AppActions');
 
 const appSecretsPath = './.appsecrets.json';
 const userTokensPath = './.usertokens.json';
@@ -152,9 +153,9 @@ class ServerApp {
   addOverlaySocket(socket) {
     socket.on('disconnect', reason => this.removeOverlaySocket(socket, reason));
     this.overlaySockets.push(socket);
-    socket.emit('appready', this.isAppReady());
-    socket.emit('eventsubupdate', !!this.eventSub);
-    socket.emit('userupdate', this.user);
+    socket.emit(appActions.updateApp, this.isAppReady());
+    socket.emit(appActions.updateEventSubReady, !!this.eventSub);
+    socket.emit(appActions.updateUser, this.user);
   }
 
   removeOverlaySocket(socket, reason) {
@@ -172,9 +173,9 @@ class ServerApp {
     socket.on('disconnect', reason => this.removeControlSocket(socket, reason));
     socket.on('appsetup', this.onAppSetup.bind(this));
     this.controlSockets.push(socket);
-    socket.emit('appready', this.isAppReady());
-    socket.emit('eventsubupdate', !!this.eventSub);
-    socket.emit('userupdate', this.user);
+    socket.emit(appActions.updateApp, this.isAppReady());
+    socket.emit(appActions.updateEventSubReady, !!this.eventSub);
+    socket.emit(appActions.updateUser, this.user);
   }
 
   removeControlSocket(socket, reason) {
@@ -209,7 +210,7 @@ class ServerApp {
     logger('Received app secrets');
     await fs.writeJSON(appSecretsPath, this.appSecrets);
     logger(`Written app secrets to ${appSecretsPath}`);
-    this.controlEmit('appready', this.isAppReady());
+    this.controlEmit(appActions.updateApp, this.isAppReady());
   }
 
   onGetAuthorize(req, resp) {
@@ -310,7 +311,7 @@ class ServerApp {
       displayName: twitchUser.displayName,
       profilePictureUrl: twitchUser.profilePictureUrl
     };
-    this.allEmit('userupdate', this.user);
+    this.allEmit(appActions.updateUser, this.user);
     logger('Twitch User started');
   }
 
@@ -326,7 +327,7 @@ class ServerApp {
     logger('Starting twitch app...');
     const authProvider = new ClientCredentialsAuthProvider(this.appSecrets.clientId, this.appSecrets.clientSecret);
     this.twitchAppClient = new ApiClient({ authProvider });
-    this.allEmit('twitchappupdate', true);
+    this.allEmit('updatetwitchapp', true);
     logger('Twitch App started');
   }
 
@@ -350,7 +351,7 @@ class ServerApp {
     await this.twitchAppClient.helix.eventSub.deleteAllSubscriptions();
     this.redeemSub = this.eventSub.subscribeToChannelRedemptionAddEvents(this.user.id, this.OnRedeem.bind(this));
     this.redeemUpdateSub = this.eventSub.subscribeToChannelRedemptionUpdateEvents(this.user.id, this.OnRedeemUpdate.bind(this));
-    this.allEmit('eventsubupdate', !!this.eventSub);
+    this.allEmit(appActions.updateEventSubReady, !!this.eventSub);
     logger('eventSub started');
   }
 
@@ -369,7 +370,7 @@ class ServerApp {
       userName: event.userName
     };
     logger(payload);
-    this.allEmit('redeem', payload);
+    this.allEmit(appActions.addRedeem, payload);
   }
 
   async OnRedeemUpdate(event) {
@@ -387,7 +388,7 @@ class ServerApp {
       userName: event.userName
     };
     logger(payload);
-    this.allEmit('redeemupdate', payload);
+    this.allEmit(appActions.updateRedeem, payload);
   }
 }
 

@@ -3,12 +3,13 @@ import 'regenerator-runtime/runtime';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { AppProvider, useAppState, useAppDispatch, pageStates, appActions, withApp } from './utils/AppContext.jsx';
+import { AppProvider, useAppState, useAppDispatch, pageStates, withApp } from './utils/AppContext.jsx';
 import SetupApp from './SetupApp';
 import SetupUser from './SetupUser';
 import Control from './Control';
 import SocketBridge from './utils/SocketBridge';
 import Deferred from './utils/Deferred';
+import appActions from '../src-shared/AppActions';
 
 const IdlePage = () => {
   return (
@@ -30,20 +31,18 @@ class Website extends React.Component {
   async init() {
     this.props.appDispatch({ type: appActions.updatePage, pageState: pageStates.loading });
     SocketBridge.init(SocketBridge.types.control);
-    SocketBridge.socket.on('userupdate', user => {
-      this.props.appDispatch({ type: appActions.updateUser, user });
-    });
-    SocketBridge.socket.on('eventsubupdate', eventSubReady => {
-      this.props.appDispatch({ type: appActions.updateEventSubReady, eventSubReady });
-    });
-    SocketBridge.socket.on('redeem', redeem => {
-      this.props.appDispatch({ type: appActions.addRedeem, redeem });
-    });
-    SocketBridge.socket.on('redeemupdate', redeem => {
-      this.props.appDispatch({ type: appActions.updateRedeem, redeem });
-    });
+    SocketBridge.socket.onAny(this.onSocketAny.bind(this));
     await this.waitForAppReadyData();
     this.props.appDispatch({ type: appActions.updatePage, pageState: pageStates.ready });
+  }
+
+  onSocketAny(event, value) {
+    const appActionValues = Object.values(appActions);
+    if (!appActionValues.includes(event)) {
+      return;
+    }
+
+    this.props.appDispatch({ type: event, value });
   }
 
   waitForAppReadyData() {

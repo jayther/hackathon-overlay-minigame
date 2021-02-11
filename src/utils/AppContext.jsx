@@ -1,16 +1,8 @@
 import React from 'react';
+import appActions from '../../src-shared/AppActions';
 
 const StateContext = React.createContext();
 const DispatchContext = React.createContext();
-
-const appActions = {
-  updatePage: 'updatepage',
-  updateApp: 'updateapp',
-  updateUser: 'updateuser',
-  updateEventSubReady: 'updateeventsubready',
-  addRedeem: 'addredeem',
-  updateRedeem: 'updateredeem'
-};
 
 const pageStates = {
   idle: 'idle',
@@ -35,38 +27,38 @@ function reducer(state, action) {
       }
       return {
         ...state,
-        pageState: action.pageState
+        pageState: action.value
       };
     case appActions.updateApp:
       return {
         ...state,
-        appReady: action.appReady || false
+        appReady: action.value || false
       };
     case appActions.updateUser:
       return {
         ...state,
-        user: action.user || null
+        user: action.value || null
       };
     case appActions.updateEventSubReady:
       return {
         ...state,
-        eventSubReady: action.eventSubReady || false
+        eventSubReady: action.value || false
       };
     case appActions.addRedeem:
-      if (!action.redeem) {
-        throw new Error('App action "addRedeem" requires a redeem');
+      if (!action.value) {
+        throw new Error('App action "addRedeem" requires a redeem value');
       }
       return {
         ...state,
-        redeems: [...state.redeems, action.redeem]
+        redeems: [...state.redeems, action.value]
       };
     case appActions.updateRedeem:
-      if (!action.redeem) {
-        throw new Error('App action "updateRedeem" requires a redeem');
+      if (!action.value) {
+        throw new Error('App action "updateRedeem" requires a redeem value');
       }
       list = state.redeems.map(redeem => {
-        if (redeem.id === action.redeem.id) {
-          redeem.status = action.redeem.status;
+        if (redeem.id === action.value.id) {
+          redeem.status = action.value.status;
         }
         return redeem;
       });
