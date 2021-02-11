@@ -58,6 +58,41 @@ function httpsRequest(params, body = null) {
   });
 }
 
+function rewardToObj(reward) {
+  return {
+    autoApproved: reward.autoApproved,
+    cost: reward.cost,
+    id: reward.id,
+    isEnabled: reward.isEnabled,
+    isInStock: reward.isInStock,
+    isPaused: reward.isPaused,
+    maxRedemptionsPerStream: reward.maxRedemptionsPerStream,
+    maxRedemptionsPerUserPerStream: reward.maxRedemptionsPerUserPerStream,
+    prompt: reward.propmt,
+    redemptionsThisStream: reward.redemptionsThisStream,
+    title: reward.title,
+    userInputRequired: reward.userInputRequired
+  };
+}
+
+function redeemToObj(redeem) {
+  return {
+    id: redeem.id,
+    input: redeem.input,
+    redeemedAt: redeem.redeemedAt ? redeem.redeemedAt.getTime() :
+      redeem.redemptionDate ? redeem.redemptionDate.getTime() :
+      0,
+    rewardCost: redeem.rewardCost,
+    rewardId: redeem.rewardId,
+    rewardPrompt: redeem.rewardPrompt,
+    rewardTitle: redeem.rewardTitle,
+    status: redeem.status,
+    userDisplayName: redeem.userDisplayName,
+    userId: redeem.userId,
+    userName: redeem.userName
+  };
+}
+
 class ServerApp {
   constructor(settings) {
     this.settings = settings;
@@ -67,6 +102,8 @@ class ServerApp {
     this.twitchAppClient = null;
     this.eventSub = null;
     this.user = null;
+    this.rewards = [];
+    this.redeems = [];
   }
   async init() {
     logger('Starting ServerApp');
@@ -172,10 +209,13 @@ class ServerApp {
   addControlSocket(socket) {
     socket.on('disconnect', reason => this.removeControlSocket(socket, reason));
     socket.on('appsetup', this.onAppSetup.bind(this));
+    socket.on(appActions.createReward, this.onSocketCreateReward.bind(this));
     this.controlSockets.push(socket);
     socket.emit(appActions.updateApp, this.isAppReady());
     socket.emit(appActions.updateEventSubReady, !!this.eventSub);
     socket.emit(appActions.updateUser, this.user);
+    socket.emit(appActions.updateRewards, this.getRewardObjs());
+    socket.emit(appActions.allRedeems, this.getRedeemObjs());
   }
 
   removeControlSocket(socket, reason) {
@@ -312,6 +352,7 @@ class ServerApp {
       profilePictureUrl: twitchUser.profilePictureUrl
     };
     this.allEmit(appActions.updateUser, this.user);
+    this.rewards = await this.twitchUserClient.helix.channelPoints.getCustomRewards(this.user.id);
     logger('Twitch User started');
   }
 
@@ -349,46 +390,71 @@ class ServerApp {
     await this.eventSub.listen();
     logger('Removing old subscriptions...');
     await this.twitchAppClient.helix.eventSub.deleteAllSubscriptions();
-    this.redeemSub = this.eventSub.subscribeToChannelRedemptionAddEvents(this.user.id, this.OnRedeem.bind(this));
-    this.redeemUpdateSub = this.eventSub.subscribeToChannelRedemptionUpdateEvents(this.user.id, this.OnRedeemUpdate.bind(this));
+    logger('Subscribing to reward add events...');
+    this.rewardAddSub = await this.eventSub.subscribeToChannelRewardAddEvents(this.user.id, this.onRewardAdd.bind(this));
+    // logger('Subscribing to reward remove events...');
+    // this.rewardRemoveSub = await this.eventSub.subscribeToChannelRewardRemoveEvents(this.user.id, this.onRewardRemove.bind(this));
+    logger('Subscribing to reward update events...');
+    this.rewardUpdteSub = await this.eventSub.subscribeToChannelRewardUpdateEvents(this.user.id, this.onRewardUpdate.bind(this));
+    logger('Subscribing to redeem add events...');
+    this.redeemSub = await this.eventSub.subscribeToChannelRedemptionAddEvents(this.user.id, this.onRedeem.bind(this));
+    logger('Subscribing to redeem update events...');
+    this.redeemUpdateSub = await this.eventSub.subscribeToChannelRedemptionUpdateEvents(this.user.id, this.onRedeemUpdate.bind(this));
     this.allEmit(appActions.updateEventSubReady, !!this.eventSub);
     logger('eventSub started');
   }
 
-  async OnRedeem(event) {
-    const payload = {
-      id: event.id,
-      input: event.input,
-      redeemedAt: event.redeemedAt.getTime(),
-      rewardCost: event.rewardCost,
-      rewardId: event.rewardId,
-      rewardPrompt: event.rewardPrompt,
-      rewardTitle: event.rewardTitle,
-      status: event.status,
-      userDisplayName: event.userDisplayName,
-      userId: event.userId,
-      userName: event.userName
-    };
-    logger(payload);
+  async onSocketCreateReward(data) {
+    await this.twitchUserClient.helix.channelPoints.createCustomReward(this.user.id, data);
+  }
+
+  async onRewardAdd(event) {
+    this.rewards.push(event);
+    this.controlEmit(appActions.updateRewards, this.rewards.map(rewardToObj));
+  }
+
+  async onRewardRemove(event) {
+    for (let i = this.rewards.length - 1; i >= 0; i -= 1) {
+      if (this.rewards[i].id === event.id) {
+        this.rewards.splice(i, 1);
+        break;
+      }
+    }
+    this.controlEmit(appActions.updateRewards, this.rewards.map(rewardToObj));
+  }
+
+  async onRewardUpdate(event) {
+    for (let i = 0; i < this.rewards.length; i += 1) {
+      if (this.rewards[i].id === event.id) {
+        this.rewards[i] = event;
+        break;
+      }
+    }
+  }
+
+  async onRedeem(event) {
+    const payload = redeemToObj(event);
+    this.redeems.push(event);
     this.allEmit(appActions.addRedeem, payload);
   }
 
-  async OnRedeemUpdate(event) {
-    const payload = {
-      id: event.id,
-      input: event.input,
-      redemptionDate: event.redemptionDate.getTime(),
-      rewardCost: event.rewardCost,
-      rewardId: event.rewardId,
-      rewardPrompt: event.rewardPrompt,
-      rewardTitle: event.rewardTitle,
-      status: event.status,
-      userDisplayName: event.userDisplayName,
-      userId: event.userId,
-      userName: event.userName
-    };
-    logger(payload);
+  async onRedeemUpdate(event) {
+    const payload = redeemToObj(event);
+    for (let i = 0; i < this.redeems.length; i += 1) {
+      if (this.redeems[i].id === event.id) {
+        this.redeems[i] = event;
+        break;
+      }
+    }
     this.allEmit(appActions.updateRedeem, payload);
+  }
+
+  getRewardObjs() {
+    return this.rewards.map(rewardToObj);
+  }
+
+  getRedeemObjs() {
+    return this.redeems.map(redeemToObj);
   }
 }
 

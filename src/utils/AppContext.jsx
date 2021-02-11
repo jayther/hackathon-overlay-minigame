@@ -15,7 +15,8 @@ const initialState = {
   user: null,
   appReady: false,
   eventSubReady: false,
-  redeems: []
+  redeems: [],
+  rewards: []
 };
 
 function reducer(state, action) {
@@ -56,15 +57,30 @@ function reducer(state, action) {
       if (!action.value) {
         throw new Error('App action "updateRedeem" requires a redeem value');
       }
+      let found = false;
       list = state.redeems.map(redeem => {
         if (redeem.id === action.value.id) {
           redeem.status = action.value.status;
+          found = true;
         }
         return redeem;
       });
+      if (!found) {
+        list.push(action.value);
+      }
       return {
         ...state,
         redeems: list
+      };
+    case appActions.allRedeems:
+      return {
+        ...state,
+        redeems: action.value
+      };
+    case appActions.updateRewards:
+      return {
+        ...state,
+        rewards: action.value
       };
     default:
       throw new Error(`Unknown app action type: ${action.type}`);

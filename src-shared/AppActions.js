@@ -5,5 +5,10 @@ module.exports = {
   updateUser: 'updateuser',
   updateEventSubReady: 'updateeventsubready',
   addRedeem: 'addredeem',
-  updateRedeem: 'updateredeem'
+  updateRedeem: 'updateredeem',
+  allRedeems: 'allredeems',
+  updateRewards: 'updaterewards',
+  createReward: 'createreward',
+  removeReward: 'removereward',
+  editReward: 'editreward'
 };

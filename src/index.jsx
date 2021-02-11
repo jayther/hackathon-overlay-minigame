@@ -37,11 +37,13 @@ class Website extends React.Component {
   }
 
   onSocketAny(event, value) {
+    // only care about events with the same appActions
     const appActionValues = Object.values(appActions);
     if (!appActionValues.includes(event)) {
       return;
     }
 
+    // relay socket event to appAction
     this.props.appDispatch({ type: event, value });
   }
 
