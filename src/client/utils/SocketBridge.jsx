@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 import Deferred from './Deferred';
-import settings from '../../settings.json';
+import settings from '../../../settings.json';
 
 const types = {
   control: 'control',

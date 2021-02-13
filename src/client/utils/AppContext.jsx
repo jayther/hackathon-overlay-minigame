@@ -1,6 +1,6 @@
 /* eslint-disable react/display-name */
 import React from 'react';
-import appActions from '../../src-shared/AppActions';
+import appActions from '../../shared/AppActions';
 
 const StateContext = React.createContext();
 const DispatchContext = React.createContext();

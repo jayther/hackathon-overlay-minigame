@@ -9,7 +9,7 @@ import SetupUser from './SetupUser';
 import ControlPage from './ControlPage';
 import SocketBridge from './utils/SocketBridge';
 import Deferred from './utils/Deferred';
-import appActions from '../src-shared/AppActions';
+import appActions from '../shared/AppActions';
 
 const IdlePage = () => {
   return (

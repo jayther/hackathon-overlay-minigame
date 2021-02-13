@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { withApp } from './utils/AppContext';
 import SocketBridge from './utils/SocketBridge';
-import appActions from '../src-shared/AppActions';
+import appActions from '../shared/AppActions';
 
 function ControlPage(props) {
   const [rewardData, setRewardData] = useState({

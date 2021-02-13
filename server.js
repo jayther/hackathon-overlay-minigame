@@ -7,8 +7,8 @@ const { ApiClient } = require('twitch');
 const { EventSubListener } = require('twitch-eventsub');
 const { NgrokAdapter } = require('twitch-eventsub-ngrok');
 const { ClientCredentialsAuthProvider, RefreshableAuthProvider, StaticAuthProvider } = require('twitch-auth');
-const logger = require('./src-server/logger');
-const appActions = require('./src-shared/AppActions');
+const logger = require('./src/server/logger');
+const appActions = require('./src/shared/AppActions');
 
 const appSecretsPath = './.appsecrets.json';
 const userTokensPath = './.usertokens.json';
