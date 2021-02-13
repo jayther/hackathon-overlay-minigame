@@ -1,5 +1,4 @@
 const fs = require('fs-extra');
-const socketIO = require('socket.io');
 const { Server } = require('socket.io');
 const express = require('express');
 const { createServer } = require('http');

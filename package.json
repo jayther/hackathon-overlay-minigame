@@ -48,6 +48,8 @@
     "@babel/preset-env": "^7.12.13",
     "@babel/preset-react": "^7.12.13",
     "babel-loader": "^8.2.2",
+    "eslint": "^7.20.0",
+    "eslint-plugin-react": "^7.22.0",
     "gulp": "^4.0.2",
     "html-webpack-plugin": "^5.0.0",
     "webpack": "^5.20.1",

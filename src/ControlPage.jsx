@@ -3,7 +3,7 @@ import { withApp } from './utils/AppContext';
 import SocketBridge from './utils/SocketBridge';
 import appActions from '../src-shared/AppActions';
 
-function Control(props) {
+function ControlPage(props) {
   const [rewardData, setRewardData] = useState({
     title: '',
     cost: 1,
@@ -52,4 +52,4 @@ function Control(props) {
   );
 }
 
-export default withApp(Control);
+export default withApp(ControlPage);

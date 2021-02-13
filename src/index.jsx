@@ -3,10 +3,10 @@ import 'regenerator-runtime/runtime';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { AppProvider, useAppState, useAppDispatch, pageStates, withApp } from './utils/AppContext.jsx';
+import { AppProvider, pageStates, withApp } from './utils/AppContext.jsx';
 import SetupApp from './SetupApp';
 import SetupUser from './SetupUser';
-import Control from './Control';
+import ControlPage from './ControlPage';
 import SocketBridge from './utils/SocketBridge';
 import Deferred from './utils/Deferred';
 import appActions from '../src-shared/AppActions';
@@ -67,7 +67,7 @@ class Website extends React.Component {
       !this.props.appState.appReady ? <SetupApp /> :
       !this.props.appState.user ? <SetupUser /> :
       !this.props.appState.eventSubReady ? <LoadingPage text="eventSub" /> :
-      <Control />
+      <ControlPage />
     );
   }
 }

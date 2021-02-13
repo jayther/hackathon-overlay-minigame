@@ -1,3 +1,4 @@
+/* eslint-disable react/display-name */
 import React from 'react';
 import appActions from '../../src-shared/AppActions';
 
@@ -20,7 +21,7 @@ const initialState = {
 };
 
 function reducer(state, action) {
-  let list;
+  let list, found;
   switch (action.type) {
     case appActions.updatePage:
       if (!action.pageState) {
@@ -57,7 +58,7 @@ function reducer(state, action) {
       if (!action.value) {
         throw new Error('App action "updateRedeem" requires a redeem value');
       }
-      let found = false;
+      found = false;
       list = state.redeems.map(redeem => {
         if (redeem.id === action.value.id) {
           redeem.status = action.value.status;
