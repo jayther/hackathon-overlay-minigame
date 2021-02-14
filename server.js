@@ -391,8 +391,8 @@ class ServerApp {
     await this.twitchAppClient.helix.eventSub.deleteAllSubscriptions();
     logger('Subscribing to reward add events...');
     this.rewardAddSub = await this.eventSub.subscribeToChannelRewardAddEvents(this.user.id, this.onRewardAdd.bind(this));
-    // logger('Subscribing to reward remove events...');
-    // this.rewardRemoveSub = await this.eventSub.subscribeToChannelRewardRemoveEvents(this.user.id, this.onRewardRemove.bind(this));
+    logger('Subscribing to reward remove events...');
+    this.rewardRemoveSub = await this.eventSub.subscribeToChannelRewardRemoveEvents(this.user.id, this.onRewardRemove.bind(this));
     logger('Subscribing to reward update events...');
     this.rewardUpdteSub = await this.eventSub.subscribeToChannelRewardUpdateEvents(this.user.id, this.onRewardUpdate.bind(this));
     logger('Subscribing to redeem add events...');
