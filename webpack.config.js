@@ -39,6 +39,10 @@ module.exports = [
           test: /\.jsx$/,
           exclude: /node_modules/,
           loader: 'babel-loader'
+        },
+        {
+          test: /\.(png|svg|jpg|jpeg|gif)$/i,
+          type: 'asset/resource'
         }
       ]
     },

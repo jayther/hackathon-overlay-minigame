@@ -17,7 +17,8 @@ const initialState = {
   appReady: false,
   eventSubReady: false,
   redeems: [],
-  rewards: []
+  rewards: [],
+  rewardMap: {}
 };
 
 function reducer(state, action) {
@@ -29,7 +30,7 @@ function reducer(state, action) {
       }
       return {
         ...state,
-        pageState: action.value
+        pageState: action.pageState
       };
     case appActions.updateApp:
       return {
@@ -82,6 +83,11 @@ function reducer(state, action) {
       return {
         ...state,
         rewards: action.value
+      };
+    case appActions.updateRewardMap:
+      return {
+        ...state,
+        rewardMap: action.value
       };
     default:
       throw new Error(`Unknown app action type: ${action.type}`);

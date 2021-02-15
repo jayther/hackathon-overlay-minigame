@@ -17,6 +17,12 @@ const IdlePage = () => {
   );
 };
 
+const ErrorPage = (props) => {
+  return (
+    <p>Error: {props.text}</p>
+  );
+};
+
 const LoadingPage = (props) => {
   return (
     <p>Loading... ({props.text})</p>
@@ -51,8 +57,8 @@ class Website extends React.Component {
     console.log('Waiting for app ready...');
     const deferred = new Deferred();
 
-    SocketBridge.socket.once('appready', appReady => {
-      this.props.appDispatch({ type: appActions.updateApp, appReady });
+    SocketBridge.socket.once(appActions.updateApp, appReady => {
+      this.props.appDispatch({ type: appActions.updateApp, value: appReady });
       console.log(`App ready received (${appReady})`);
       deferred.resolve();
     });
@@ -62,6 +68,7 @@ class Website extends React.Component {
 
   render() {
     return (
+      !this.props.appState.pageState ? <ErrorPage text="Invalid pageState" /> :
       this.props.appState.pageState === pageStates.idle ? <IdlePage /> :
       this.props.appState.pageState === pageStates.loading ? <LoadingPage text="server" /> :
       !this.props.appState.appReady ? <SetupApp /> :

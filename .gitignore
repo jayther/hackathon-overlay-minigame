@@ -117,3 +117,5 @@ dist
 
 .appsecrets.json
 .usertokens.json
+.rewardmap.json
+.playerdata.json

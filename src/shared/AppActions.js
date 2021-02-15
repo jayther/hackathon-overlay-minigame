@@ -10,5 +10,8 @@ module.exports = {
   updateRewards: 'updaterewards',
   createReward: 'createreward',
   removeReward: 'removereward',
-  editReward: 'editreward'
+  editReward: 'editreward',
+  updateRewardMap: 'updaterewardmap',
+  setRewardToAction: 'setrewardtoaction',
+  createRewardForAction: 'createrewardforaction'
 };

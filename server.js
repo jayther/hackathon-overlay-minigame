@@ -8,10 +8,15 @@ const { EventSubListener } = require('twitch-eventsub');
 const { NgrokAdapter } = require('twitch-eventsub-ngrok');
 const { ClientCredentialsAuthProvider, RefreshableAuthProvider, StaticAuthProvider } = require('twitch-auth');
 const logger = require('./src/server/logger');
+const JsonDataFile = require('./src/server/JsonDataFile');
 const appActions = require('./src/shared/AppActions');
+const gameActions = require('./src/shared/GameActions');
+const requiredRewards = require('./src/shared/RequiredRewards');
 
 const appSecretsPath = './.appsecrets.json';
 const userTokensPath = './.usertokens.json';
+const rewardMapPath = './.rewardmap.json';
+const playerDataPath = './.playerdata.json';
 
 const twitchApiScopes = [
   'channel:read:redemptions',
@@ -95,41 +100,29 @@ function redeemToObj(redeem) {
 class ServerApp {
   constructor(settings) {
     this.settings = settings;
-    this.appSecrets = null;
-    this.userTokens = null;
+    this.appSecretsFile = new JsonDataFile(appSecretsPath);
+    this.userTokensFile = new JsonDataFile(userTokensPath);
+    this.rewardMapFile = new JsonDataFile(rewardMapPath);
+    this.playerDataFile = new JsonDataFile(playerDataPath);
     this.twitchUserClient = null;
     this.twitchAppClient = null;
     this.eventSub = null;
     this.user = null;
     this.rewards = [];
     this.redeems = [];
+    
+    this.rewardFuncMap = {};
+    this.rewardFuncMap[requiredRewards.add.key] = this.addPlayer.bind(this);
   }
   async init() {
     logger('Starting ServerApp');
     this.overlaySockets = [];
     this.controlSockets = [];
 
-    if (await fs.pathExists(appSecretsPath)) {
-      try {
-        this.appSecrets = await fs.readJSON(appSecretsPath);
-        logger('App secrets loaded');
-      } catch (e) {
-        logger(`Error occurred while loading app secrets: ${e.message}`);
-      }
-    } else {
-      logger('No app secrets found');
-    }
-
-    if (await fs.pathExists(userTokensPath)) {
-      try {
-        this.userTokens = await fs.readJSON(userTokensPath);
-        logger('User tokens loaded');
-      } catch (e) {
-        logger(`Error occurred while loading user tokens: ${e.message}`);
-      }
-    } else {
-      logger('No user tokens found');
-    }
+    await this.appSecretsFile.load();
+    await this.userTokensFile.load();
+    await this.rewardMapFile.load();
+    await this.playerDataFile.load();
 
     this.app = express();
     this.app.use(express.static(this.settings.staticDir));
@@ -183,7 +176,20 @@ class ServerApp {
 
   isAppReady() {
     // force into boolean to prevent secret leak
-    return !!(this.appSecrets && this.appSecrets.clientId && this.appSecrets.clientSecret);
+    return !!(
+      this.appSecretsFile &&
+      this.appSecretsFile.data &&
+      this.appSecretsFile.data.clientId &&
+      this.appSecretsFile.data.clientSecret
+    );
+  }
+
+  areUserTokensReady() {
+    return !!(
+      this.userTokensFile &&
+      this.userTokensFile.data &&
+      this.userTokensFile.data.accessToken
+    );
   }
 
   addOverlaySocket(socket) {
@@ -209,12 +215,15 @@ class ServerApp {
     socket.on('disconnect', reason => this.removeControlSocket(socket, reason));
     socket.on('appsetup', this.onAppSetup.bind(this));
     socket.on(appActions.createReward, this.onSocketCreateReward.bind(this));
+    socket.on(appActions.setRewardToAction, this.onSocketSetRewardToAction.bind(this));
+    socket.on(appActions.createRewardForAction, this.onSocketCreateRewardForAction.bind(this));
     this.controlSockets.push(socket);
     socket.emit(appActions.updateApp, this.isAppReady());
     socket.emit(appActions.updateEventSubReady, !!this.eventSub);
     socket.emit(appActions.updateUser, this.user);
     socket.emit(appActions.updateRewards, this.getRewardObjs());
     socket.emit(appActions.allRedeems, this.getRedeemObjs());
+    socket.emit(appActions.updateRewardMap, this.rewardMapFile.data);
   }
 
   removeControlSocket(socket, reason) {
@@ -242,20 +251,19 @@ class ServerApp {
   }
 
   async onAppSetup(clientId, clientSecret) {
-    this.appSecrets = {
+    this.appSecretsFile.data = {
       clientId,
       clientSecret
     };
     logger('Received app secrets');
-    await fs.writeJSON(appSecretsPath, this.appSecrets);
-    logger(`Written app secrets to ${appSecretsPath}`);
-    this.controlEmit(appActions.updateApp, this.isAppReady());
+    await this.appSecretsFile.save();
+    this.allEmit(appActions.updateApp, this.isAppReady());
   }
 
   onGetAuthorize(req, resp) {
     const redirectUri = `http://localhost:${this.settings.webPort}/callback`;
     const query = objToParams({
-      client_id: this.appSecrets.clientId,
+      client_id: this.appSecretsFile.data.clientId,
       redirect_uri: encodeURIComponent(redirectUri),
       response_type: 'code',
       scope: twitchApiScopes.join('+')
@@ -273,8 +281,8 @@ class ServerApp {
     }
     const code = req.query.code;
     const query = objToParams({
-      client_id: this.appSecrets.clientId,
-      client_secret: this.appSecrets.clientSecret,
+      client_id: this.appSecretsFile.data.clientId,
+      client_secret: this.appSecretsFile.data.clientSecret,
       code: code,
       grant_type: 'authorization_code',
       redirect_uri: encodeURIComponent(`http://localhost:${this.settings.webPort}/callback`)
@@ -301,10 +309,9 @@ class ServerApp {
       refreshToken: tokensResponse.refresh_token,
       expiryTimestamp: tokensResponse.expires_in ? (new Date()).getTime() + (tokensResponse.expires_in * 1000) : null
     };
-    this.userTokens = tokensData;
+    this.userTokensFile.data = tokensData;
     logger(`Writing tokens to ${userTokensPath}`);
-    fs.writeJSON(userTokensPath, tokensData, 'UTF-8');
-    logger(`Tokens written to ${userTokensPath}`);
+    await this.userTokensFile.save();
     resp.send('Authorized!').end();
     await this.startTwitchUser();
     await this.startTwitchApp();
@@ -312,11 +319,11 @@ class ServerApp {
   }
 
   async startTwitchUser() {
-    if (!this.appSecrets) {
+    if (!this.isAppReady()) {
       logger('Cannot start twitch: no app secrets');
       return;
     }
-    if (!this.userTokens) {
+    if (!this.areUserTokensReady()) {
       logger('Cannot start twitch: no user tokens');
       return;
     }
@@ -326,18 +333,18 @@ class ServerApp {
     }
     logger('Starting twitch user...');
     const authProvider = new RefreshableAuthProvider(
-      new StaticAuthProvider(this.appSecrets.clientId, this.userTokens.accessToken),
+      new StaticAuthProvider(this.appSecretsFile.data.clientId, this.userTokensFile.data.accessToken),
       {
-        clientSecret: this.appSecrets.clientSecret,
-        refreshToken: this.userTokens.refreshToken,
+        clientSecret: this.appSecretsFile.data.clientSecret,
+        refreshToken: this.userTokensFile.data.refreshToken,
         onRefresh: async ({ accessToken, refreshToken, expiryDate }) => {
           const tokensData = {
             accessToken,
             refreshToken,
             expiryTimestamp: expiryDate === null ? null : expiryDate.getTime()
           };
-          this.userTokens = tokensData;
-          await fs.writeJSON(userTokensPath, tokensData, 'UTF-8');
+          this.userTokensFile.data = tokensData;
+          await this.userTokensFile.save();
           logger('User tokens refreshed');
         }
       }
@@ -352,11 +359,12 @@ class ServerApp {
     };
     this.allEmit(appActions.updateUser, this.user);
     this.rewards = await this.twitchUserClient.helix.channelPoints.getCustomRewards(this.user.id);
+    this.controlEmit(appActions.updateRewards, this.rewards);
     logger('Twitch User started');
   }
 
   async startTwitchApp() {
-    if (!this.appSecrets) {
+    if (!this.isAppReady()) {
       logger('Cannot start twitch: no app secrets');
       return;
     }
@@ -365,7 +373,7 @@ class ServerApp {
       return;
     }
     logger('Starting twitch app...');
-    const authProvider = new ClientCredentialsAuthProvider(this.appSecrets.clientId, this.appSecrets.clientSecret);
+    const authProvider = new ClientCredentialsAuthProvider(this.appSecretsFile.data.clientId, this.appSecretsFile.data.clientSecret);
     this.twitchAppClient = new ApiClient({ authProvider });
     this.allEmit('updatetwitchapp', true);
     logger('Twitch App started');
@@ -434,6 +442,10 @@ class ServerApp {
   async onRedeem(event) {
     const payload = redeemToObj(event);
     this.redeems.push(event);
+    const action = this.rewardMapFile.data[event.rewardId];
+    if (action && this.rewardFuncMap[action]) {
+      this.rewardFuncMap[action](event);
+    }
     this.allEmit(appActions.addRedeem, payload);
   }
 
@@ -448,12 +460,39 @@ class ServerApp {
     this.allEmit(appActions.updateRedeem, payload);
   }
 
+  async onSocketCreateRewardForAction(data, actionKey) {
+    logger(`Creating reward for action "${actionKey}"...`);
+    const reward = await this.twitchUserClient.helix.channelPoints.createCustomReward(this.user.id, data);
+    this.rewardMapFile.data[reward.id] = actionKey;
+    logger(`Created reward for action "${actionKey}"`);
+    await this.rewardMapFile.save();
+    this.controlEmit(appActions.updateRewardMap, this.rewardMapFile.data);
+  }
+
+  async onSocketSetRewardToAction(rewardId, actionKey) {
+    if (actionKey) {
+      this.rewardMapFile.data[rewardId] = actionKey;
+      logger(`Set reward "${rewardId}" to action "${actionKey}"`);
+    } else {
+      const prevActionKey = this.rewardMapFile.data[rewardId];
+      delete this.rewardMapFile.data[rewardId];
+      logger(`Unset reward "${rewardId}" from action "${prevActionKey}`);
+    }
+    await this.rewardMapFile.save();
+    this.controlEmit(appActions.updateRewardMap, this.rewardMapFile.data);
+  }
+
   getRewardObjs() {
     return this.rewards.map(rewardToObj);
   }
 
   getRedeemObjs() {
     return this.redeems.map(redeemToObj);
+  }
+
+  addPlayer(event) {
+    console.log('adding player', event);
+    //this.allEmit(gameActions.addPlayer, )
   }
 }
 
