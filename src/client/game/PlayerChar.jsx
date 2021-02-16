@@ -1,8 +1,11 @@
 import React from 'react';
+import RandUtils from '../utils/RandUtils';
 
 class PlayerChar extends React.Component {
   constructor(props) {
     super(props);
+
+    this.character = props.character;
 
     this.state = {};
     this.containerRef = React.createRef();
@@ -13,8 +16,11 @@ class PlayerChar extends React.Component {
     this.spriteStyle = null;
     this.spriteIndex = 0;
     this.flipped = false;
+    this.animState = 'idle';
+    this.intervalId = -1;
+    this.anim = null;
 
-    this.onPressed = this.onPressed.bind(this);
+    this.animStep = this.animStep.bind(this);
   }
 
   componentDidMount() {
@@ -26,14 +32,41 @@ class PlayerChar extends React.Component {
     this.containerStyle.top = '100px';
     this.containerStyle.width = `0px`;
     this.containerStyle.height = `0px`;
-    setInterval(() => {
-      this.spriteIndex += 1;
-      if (this.spriteIndex >= this.props.anim.sprites.length) {
+    this.setAnimState('idle');
+  }
+
+  componentDidUpdate() {
+    if (this.character !== this.props.character) {
+      this.character = this.props.character;
+      this.setAnimState(this.animState);
+    }
+  }
+
+  startAnim(anim) {
+    if (this.intervalId > -1) {
+      clearInterval(this.intervalId);
+    }
+    this.anim = anim;
+    this.spriteIndex = 0;
+    this.intervalId = setInterval(this.animStep, anim.frameDelay);
+    this.applySprite(this.anim.sprites[this.spriteIndex]);
+  }
+
+  animStep() {
+    this.spriteIndex += 1;
+    let backToIdle = false;
+    if (this.spriteIndex >= this.anim.sprites.length) {
+      if (this.animState === 'idle' || this.animState === 'run') {
         this.spriteIndex = 0;
+      } else {
+        backToIdle = true;
       }
-      this.applySprite(this.props.anim.sprites[this.spriteIndex]);
-    }, this.props.anim.frameDelay);
-    this.applySprite(this.props.anim.sprites[this.spriteIndex]);
+    }
+    if (backToIdle) {
+      this.setAnimState('idle');
+    } else {
+      this.applySprite(this.anim.sprites[this.spriteIndex]);
+    }
   }
 
   applySprite(sprite) {
@@ -43,16 +76,15 @@ class PlayerChar extends React.Component {
     } else {
       halfWOffset = Math.floor(sprite.frame.w / 2);
     }
-    const halfHOffset = Math.floor(sprite.frame.h / 2);
 
     if (sprite.rotated) {
       this.spriteStyle.width = `${sprite.frame.h}px`;
       this.spriteStyle.height = `${sprite.frame.w}px`;
-      this.spriteStyle.transform = `translate(-${halfWOffset}px, ${sprite.frame.h - halfHOffset}px) rotate(-90deg)`
+      this.spriteStyle.transform = `translate(-${halfWOffset}px, 0px) rotate(-90deg)`
     } else {
       this.spriteStyle.width = `${sprite.frame.w}px`;
       this.spriteStyle.height = `${sprite.frame.h}px`;
-      this.spriteStyle.transform = `translate(-${halfWOffset}px, -${halfHOffset}px)`;
+      this.spriteStyle.transform = `translate(-${halfWOffset}px, -${sprite.frame.h}px)`;
     }
     if (this.flipped) {
       if (sprite.rotated) {
@@ -65,14 +97,24 @@ class PlayerChar extends React.Component {
     this.spriteStyle.backgroundPosition = `left -${sprite.frame.x}px top -${sprite.frame.y}px`;
   }
 
-  onPressed() {
+  toggleFlipped() {
     this.flipped = !this.flipped;
+  }
+
+  setAnimState(animState) {
+    this.animState = animState;
+    if (!this.character[animState]) {
+      throw new Error(`PlayerChar.setAnimState: character does not have "${animState}" anim state`);
+    }
+    const animOrAnims = this.character[animState];
+    const anim = Array.isArray(animOrAnims) ? RandUtils.pick(animOrAnims) : animOrAnims;
+    this.startAnim(anim);
   }
 
   render() {
     return (
       <div ref={this.containerRef} className="playerchar-con">
-        <div ref={this.spriteRef} className="playerchar" onClick={this.onPressed}></div>
+        <div ref={this.spriteRef} className="playerchar"></div>
       </div>
     )
   }
