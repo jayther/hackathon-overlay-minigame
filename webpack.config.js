@@ -1,5 +1,6 @@
 const path = require('path');
 const HWP = require('html-webpack-plugin');
+const MCEP = require('mini-css-extract-plugin');
 
 module.exports = [
   {
@@ -14,6 +15,18 @@ module.exports = [
           test: /\.jsx$/,
           exclude: /node_modules/,
           loader: 'babel-loader'
+        },
+        {
+          test: /\.(png|svg|jpg|jpeg|gif)$/i,
+          type: 'asset/resource'
+        },
+        {
+          test: /\/s[ac]ss$/i,
+          use: [
+            MCEP.loader,
+            'css-loader',
+            'sass-loader'
+          ]
         }
       ]
     },
@@ -24,6 +37,9 @@ module.exports = [
       new HWP({
         template: path.join(__dirname, '/src/client/index.html'),
         filename: 'index.html'
+      }),
+      new MCEP({
+        filename: 'control.css'
       })
     ]
   },
@@ -43,6 +59,14 @@ module.exports = [
         {
           test: /\.(png|svg|jpg|jpeg|gif)$/i,
           type: 'asset/resource'
+        },
+        {
+          test: /\.s[ac]ss$/i,
+          use: [
+            MCEP.loader,
+            'css-loader',
+            'sass-loader'
+          ]
         }
       ]
     },
@@ -53,6 +77,9 @@ module.exports = [
       new HWP({
          template: path.join(__dirname, '/src/client/widget.html'),
          filename: 'widget.html'
+      }),
+      new MCEP({
+        filename: 'widget.css'
       })
     ]
   }
