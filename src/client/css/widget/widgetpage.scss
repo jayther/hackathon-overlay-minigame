@@ -1,3 +1,29 @@
 .widget-page {
   position: relative;
 }
+
+.widget-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.widget-playerchar-layer {
+}
+
+.widget-fx-layer {
+
+}
+
+.sprite-fx {
+  position: absolute;
+  transform-origin: 0% 0%;
+}
+
+.widget-debug {
+  position: absolute;
+  left: 0;
+  top: 0;
+}

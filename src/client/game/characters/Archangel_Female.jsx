@@ -35,7 +35,18 @@ export default {
         'Archangel_Female/attackUnarmed_2.png',
         'Archangel_Female/attackUnarmed_3.png'
       ],
-      frameDelay: 100
+      frameDelay: 100,
+      fx: {
+        sprites: [
+          'Archangel_Female/attackUnarmed_FX_1.png',
+          'Archangel_Female/attackUnarmed_FX_2.png',
+          'Archangel_Female/attackUnarmed_FX_3.png',
+          'Archangel_Female/attackUnarmed_FX_4.png',
+          'Archangel_Female/attackUnarmed_FX_5.png',
+          'Archangel_Female/attackUnarmed_FX_6.png'
+        ],
+        frameDelay: 100
+      }
     },
     {
       sprites: [
@@ -43,7 +54,18 @@ export default {
         'Archangel_Female/attackUnarmed2_2.png',
         'Archangel_Female/attackUnarmed2_3.png'
       ],
-      frameDelay: 100
+      frameDelay: 100,
+      fx: {
+        sprites: [
+          'Archangel_Female/attackUnarmed2_FX_1.png',
+          'Archangel_Female/attackUnarmed2_FX_2.png',
+          'Archangel_Female/attackUnarmed2_FX_3.png',
+          'Archangel_Female/attackUnarmed2_FX_4.png',
+          'Archangel_Female/attackUnarmed2_FX_5.png',
+          'Archangel_Female/attackUnarmed2_FX_6.png'
+        ],
+        frameDelay: 100
+      }
     },
     {
       sprites: [
@@ -51,7 +73,18 @@ export default {
         'Archangel_Female/attackUnarmed3_2.png',
         'Archangel_Female/attackUnarmed3_3.png'
       ],
-      frameDelay: 100
+      frameDelay: 100,
+      fx: {
+        sprites: [
+          'Archangel_Female/attackUnarmed3_FX_1.png',
+          'Archangel_Female/attackUnarmed3_FX_2.png',
+          'Archangel_Female/attackUnarmed3_FX_3.png',
+          'Archangel_Female/attackUnarmed3_FX_4.png',
+          'Archangel_Female/attackUnarmed3_FX_5.png',
+          'Archangel_Female/attackUnarmed3_FX_6.png'
+        ],
+        frameDelay: 100
+      }
     }
   ]
 };

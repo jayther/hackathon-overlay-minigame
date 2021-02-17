@@ -1,11 +1,13 @@
 import React from 'react';
 import RandUtils from '../utils/RandUtils';
+import SpriteApplier from './SpriteApplier';
 
-class PlayerChar extends React.Component {
+class PlayerChar extends SpriteApplier {
   constructor(props) {
     super(props);
 
     this.character = props.character;
+    this.startFX = props.startFX;
 
     this.state = {};
     this.containerRef = React.createRef();
@@ -28,8 +30,8 @@ class PlayerChar extends React.Component {
     this.sprite = this.spriteRef.current;
     this.containerStyle = this.container.style;
     this.spriteStyle = this.sprite.style;
-    this.containerStyle.left = '100px';
-    this.containerStyle.top = '100px';
+    this.containerStyle.left = `${this.props.position.x}px`;
+    this.containerStyle.top = `${this.props.position.y}px`;
     this.containerStyle.width = `0px`;
     this.containerStyle.height = `0px`;
     this.setAnimState('idle');
@@ -40,6 +42,8 @@ class PlayerChar extends React.Component {
       this.character = this.props.character;
       this.setAnimState(this.animState);
     }
+    this.containerStyle.left = `${this.props.position.x}px`;
+    this.containerStyle.top = `${this.props.position.y}px`;
   }
 
   startAnim(anim) {
@@ -69,34 +73,6 @@ class PlayerChar extends React.Component {
     }
   }
 
-  applySprite(sprite) {
-    let halfWOffset;
-    if (this.flipped) {
-      halfWOffset = Math.ceil(sprite.frame.w / 2);
-    } else {
-      halfWOffset = Math.floor(sprite.frame.w / 2);
-    }
-
-    if (sprite.rotated) {
-      this.spriteStyle.width = `${sprite.frame.h}px`;
-      this.spriteStyle.height = `${sprite.frame.w}px`;
-      this.spriteStyle.transform = `translate(-${halfWOffset}px, 0px) rotate(-90deg)`
-    } else {
-      this.spriteStyle.width = `${sprite.frame.w}px`;
-      this.spriteStyle.height = `${sprite.frame.h}px`;
-      this.spriteStyle.transform = `translate(-${halfWOffset}px, -${sprite.frame.h}px)`;
-    }
-    if (this.flipped) {
-      if (sprite.rotated) {
-        this.spriteStyle.transform += ` rotateX(180deg) translate(0px, -${sprite.frame.w}px)`;
-      } else {
-        this.spriteStyle.transform += ` rotateY(180deg) translate(-${sprite.frame.w}px, 0px)`;
-      }
-    }
-    this.spriteStyle.backgroundImage = `url(${sprite.src})`;
-    this.spriteStyle.backgroundPosition = `left -${sprite.frame.x}px top -${sprite.frame.y}px`;
-  }
-
   toggleFlipped() {
     this.flipped = !this.flipped;
   }
@@ -109,6 +85,9 @@ class PlayerChar extends React.Component {
     const animOrAnims = this.character[animState];
     const anim = Array.isArray(animOrAnims) ? RandUtils.pick(animOrAnims) : animOrAnims;
     this.startAnim(anim);
+    if (anim.fx) {
+      this.startFX(anim.fx, this.props.position, this.flipped, true);
+    }
   }
 
   render() {
