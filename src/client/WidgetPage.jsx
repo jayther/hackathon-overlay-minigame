@@ -3,18 +3,9 @@ import { withApp } from './utils/AppContext';
 import R from './Resources';
 import PlayerChar from './game/PlayerChar';
 import FXAnim from './game/FXAnim';
-import Archangel_Female from './game/characters/Archangel_Female';
-import Archangel_Male from './game/characters/Archangel_Male';
-import Assassin_Female from './game/characters/Assassin_Female';
-import Assassin_Male from './game/characters/Assassin_Male';
-import Archdemon_Female from './game/characters/Archdemon_Female';
-import Archdemon_Male from './game/characters/Archdemon_Male';
-import Highlander_Female from './game/characters/Highlander_Female';
-import Highlander_Male from './game/characters/Highlander_Male';
-import Viking_Female from './game/characters/Viking_Female';
-import Viking_Male from './game/characters/Viking_Male';
-import Samurai_Female from './game/characters/Samurai_Female';
-import Samurai_Male from './game/characters/Samurai_Male';
+import * as All_Characters from './game/characters/All_Characters';
+
+const allCharacters = Object.values(All_Characters);
 
 let fxIdPool = 0;
 
@@ -57,24 +48,12 @@ class WidgetPage extends React.Component {
     super(props);
 
     this.state = {
-      character: Archangel_Female,
+      character: allCharacters[0],
       fxInstances: []
     };
 
-    this.characters = [
-      Archangel_Female,
-      Archangel_Male,
-      Assassin_Female,
-      Assassin_Male,
-      Archdemon_Female,
-      Archdemon_Male,
-      Highlander_Female,
-      Highlander_Male,
-      Viking_Female,
-      Viking_Male,
-      Samurai_Female,
-      Samurai_Male
-    ];
+    this.characters = allCharacters;
+    this.characters.forEach(resolveCharacter);
 
     this.playerRef = React.createRef();
     this.startFX = this.startFX.bind(this);

@@ -24,21 +24,21 @@ export default {
       'Archdemon_Female/run_3.png',
       'Archdemon_Female/run_4.png'
     ],
-    frameDelay: 100
+    frameDelay: 75
   },
   dash: {
     sprites: [
       'Archdemon_Female/dash_1.png',
       'Archdemon_Female/dash_2.png'
     ],
-    frameDelay: 100
+    frameDelay: 75
   },
   dashWeapon: {
     sprites: [
       'Archdemon_Female/dash_sword_1.png',
       'Archdemon_Female/dash_sword_2.png'
     ],
-    frameDelay: 100
+    frameDelay: 75
   },
   spawn: {
     sprites: [

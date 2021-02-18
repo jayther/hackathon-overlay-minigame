@@ -24,21 +24,21 @@ export default {
       'Samurai_Male/run_3.png',
       'Samurai_Male/run_4.png'
     ],
-    frameDelay: 100
+    frameDelay: 75
   },
   dash: {
     sprites: [
       'Samurai_Male/dash_1.png',
       'Samurai_Male/dash_2.png',
     ],
-    frameDelay: 100
+    frameDelay: 75
   },
   dashWeapon: {
     sprites: [
       'Samurai_Male/dash_sword_1.png',
       'Samurai_Male/dash_sword_2.png',
     ],
-    frameDelay: 100
+    frameDelay: 75
   },
   spawn: {
     sprites: [

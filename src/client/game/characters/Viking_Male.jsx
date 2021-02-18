@@ -24,21 +24,21 @@ export default {
       'Viking_Male/run_3.png',
       'Viking_Male/run_4.png'
     ],
-    frameDelay: 100
+    frameDelay: 75
   },
   dash: {
     sprites: [
       'Viking_Male/dash_1.png',
       'Viking_Male/dash_2.png',
     ],
-    frameDelay: 100
+    frameDelay: 75
   },
   dashWeapon: {
     sprites: [
       'Viking_Male/dash_sword_1.png',
       'Viking_Male/dash_sword_2.png',
     ],
-    frameDelay: 100
+    frameDelay: 75
   },
   spawn: {
     sprites: [

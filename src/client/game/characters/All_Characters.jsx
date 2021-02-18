@@ -1,0 +1,36 @@
+
+export { default as Archangel_Female } from './Archangel_Female';
+export { default as Archangel_Male } from './Archangel_Male';
+export { default as Archdemon_Female } from './Archdemon_Female';
+export { default as Archdemon_Male } from './Archdemon_Male';
+export { default as Assassin_Female } from './Assassin_Female';
+export { default as Assassin_Male } from './Assassin_Male';
+export { default as Electric_Knight_Female } from './Electric_Knight_Female';
+export { default as Electric_Knight_Male } from './Electric_Knight_Male';
+export { default as Executioner_Female } from './Executioner_Female';
+export { default as Executioner_Male } from './Executioner_Male';
+export { default as Fire_Knight_Female } from './Fire_Knight_Female';
+export { default as Fire_Knight_Male } from './Fire_Knight_Male';
+export { default as Highlander_Female } from './Highlander_Female';
+export { default as Highlander_Male } from './Highlander_Male';
+export { default as Kings_Guard_Female } from './Kings_Guard_Female';
+export { default as Kings_Guard_Male } from './Kings_Guard_Male';
+export { default as Knight_Female } from './Knight_Female';
+export { default as Knight_Male } from './Knight_Male';
+export { default as Mayan_Female } from './Mayan_Female';
+export { default as Mayan_Male } from './Mayan_Male';
+export { default as Ninja_Female } from './Ninja_Female';
+export { default as Ninja_Male } from './Ninja_Male';
+export { default as Paladin_Female } from './Paladin_Female';
+export { default as Paladin_Male } from './Paladin_Male';
+export { default as Pirate_Female } from './Pirate_Female';
+export { default as Pirate_Male } from './Pirate_Male';
+export { default as Royal_Guard_Female } from './Royal_Guard_Female';
+export { default as Royal_Guard_Male } from './Royal_Guard_Male';
+export { default as Samurai_Female } from './Samurai_Female';
+export { default as Samurai_Male } from './Samurai_Male';
+export { default as Spartan_Female } from './Spartan_Female';
+export { default as Spartan_Male } from './Spartan_Male';
+export { default as Viking_Female } from './Viking_Female';
+export { default as Viking_Male } from './Viking_Male';
+

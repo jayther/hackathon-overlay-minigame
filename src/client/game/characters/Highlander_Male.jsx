@@ -24,21 +24,21 @@ export default {
       'Highlander_Male/run3.png',
       'Highlander_Male/run4.png'
     ],
-    frameDelay: 100
+    frameDelay: 75
   },
   dash: {
     sprites: [
       'Highlander_Male/dash_1.png',
       'Highlander_Male/dash_2.png',
     ],
-    frameDelay: 100
+    frameDelay: 75
   },
   dashWeapon: {
     sprites: [
       'Highlander_Male/dash_sword_1.png',
       'Highlander_Male/dash_sword_2.png',
     ],
-    frameDelay: 100
+    frameDelay: 75
   },
   spawn: {
     sprites: [
