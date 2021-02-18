@@ -113,7 +113,7 @@ class WidgetPage extends React.Component {
   }
 
   render() {
-    const maxCols = 10, spacing = 80;
+    const maxCols = 7, spacing = 120;
     return (
       <div className="widget-page">
         <div className="widget-playerchar-layer widget-layer">
