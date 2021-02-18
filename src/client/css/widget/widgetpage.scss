@@ -20,6 +20,7 @@
 .sprite-fx {
   position: absolute;
   transform-origin: 0% 0%;
+  image-rendering: pixelated;
 }
 
 .widget-debug {

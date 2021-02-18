@@ -13,11 +13,11 @@ class SpriteApplier extends React.Component {
     if (sprite.rotated) {
       this.spriteStyle.width = `${sprite.frame.h}px`;
       this.spriteStyle.height = `${sprite.frame.w}px`;
-      this.spriteStyle.transform = `translate(${sprite.spriteSourceSize.x - halfWOffset}px, ${sprite.spriteSourceSize.y + sprite.spriteSourceSize.h - sprite.sourceSize.h}px) rotate(-90deg)`
+      this.spriteStyle.transform = `scale(2) translate(${sprite.spriteSourceSize.x - halfWOffset}px, ${sprite.spriteSourceSize.y + sprite.spriteSourceSize.h - sprite.sourceSize.h}px) rotate(-90deg)`
     } else {
       this.spriteStyle.width = `${sprite.frame.w}px`;
       this.spriteStyle.height = `${sprite.frame.h}px`;
-      this.spriteStyle.transform = `translate(${sprite.spriteSourceSize.x - halfWOffset}px, ${sprite.spriteSourceSize.y - sprite.sourceSize.h}px)`;
+      this.spriteStyle.transform = `scale(2) translate(${sprite.spriteSourceSize.x - halfWOffset}px, ${sprite.spriteSourceSize.y - sprite.sourceSize.h}px)`;
     }
     if (this.flipped) {
       if (sprite.rotated) {

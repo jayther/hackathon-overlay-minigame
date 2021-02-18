@@ -1,9 +1,11 @@
 .playerchar-con {
   position: absolute;
+  image-rendering: pixelated;
 }
 
 .playerchar {
   overflow: hidden;
   transform-origin: 0% 0%;
   position: relative;
+  image-rendering: pixelated;
 }
