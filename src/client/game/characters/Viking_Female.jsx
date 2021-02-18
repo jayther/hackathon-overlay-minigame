@@ -9,6 +9,14 @@ export default {
     ],
     frameDelay: 150
   },
+  idleWeapon: {
+    sprites: [
+      'Viking_Female/idle_sword_1.png',
+      'Viking_Female/idle_sword_2.png',
+      'Viking_Female/idle_sword_3.png'
+    ],
+    frameDelay: 150
+  },
   run: {
     sprites: [
       'Viking_Female/run_1.png',
@@ -18,6 +26,37 @@ export default {
     ],
     frameDelay: 100
   },
+  dash: {
+    sprites: [
+      'Viking_Female/dash_1.png',
+      'Viking_Female/dash_2.png',
+    ],
+    frameDelay: 100
+  },
+  dashWeapon: {
+    sprites: [
+      'Viking_Female/dash_sword_1.png',
+      'Viking_Female/dash_sword_2.png',
+    ],
+    frameDelay: 100
+  },
+  spawn: {
+    sprites: [
+      'Viking_Female/graveBurst_1.png',
+      'Viking_Female/graveBurst_2.png',
+      'Viking_Female/graveBurst_3.png',
+      'Viking_Female/graveBurst_4.png',
+      'Viking_Female/graveBurst_5.png',
+      'Viking_Female/graveBurst_6.png'
+    ],
+    frameDelay: 100
+  },
+  hit: {
+    sprites: [
+      'Viking_Female/hit_1.png'
+    ],
+    frameDelay: 500
+  },
   dead: {
     sprites: [
       'Viking_Female/dead_1.png',
@@ -26,7 +65,7 @@ export default {
       'Viking_Female/dead_4.png',
       'Viking_Female/dead_5.png'
     ],
-    frameDelay: 150
+    frameDelay: 100
   },
   attacks: [
     {
@@ -82,6 +121,65 @@ export default {
           'Viking_Female/attackUnarmed3_FX_4.png',
           'Viking_Female/attackUnarmed3_FX_5.png',
           'Viking_Female/attackUnarmed3_FX_6.png'
+        ],
+        frameDelay: 100
+      }
+    }
+  ],
+  attacksWeapon: [
+    {
+      sprites: [
+        'Viking_Female/attackWeapon1_1.png',
+        'Viking_Female/attackWeapon1_2.png',
+        'Viking_Female/attackWeapon1_3.png'
+      ],
+      frameDelay: 100,
+      fx: {
+        sprites: [
+          'Viking_Female/attackWeapon1_FX_1.png',
+          'Viking_Female/attackWeapon1_FX_2.png',
+          'Viking_Female/attackWeapon1_FX_3.png',
+          'Viking_Female/attackWeapon1_FX_4.png',
+          'Viking_Female/attackWeapon1_FX_5.png',
+          'Viking_Female/attackWeapon1_FX_6.png'
+        ],
+        frameDelay: 100
+      }
+    },
+    {
+      sprites: [
+        'Viking_Female/attackWeapon2_1.png',
+        'Viking_Female/attackWeapon2_2.png',
+        'Viking_Female/attackWeapon2_3.png'
+      ],
+      frameDelay: 100,
+      fx: {
+        sprites: [
+          'Viking_Female/attackWeapon2_FX_1.png',
+          'Viking_Female/attackWeapon2_FX_2.png',
+          'Viking_Female/attackWeapon2_FX_3.png',
+          'Viking_Female/attackWeapon2_FX_4.png',
+          'Viking_Female/attackWeapon2_FX_5.png',
+          'Viking_Female/attackWeapon2_FX_6.png'
+        ],
+        frameDelay: 100
+      }
+    },
+    {
+      sprites: [
+        'Viking_Female/attackWeapon3_1.png',
+        'Viking_Female/attackWeapon3_2.png',
+        'Viking_Female/attackWeapon3_3.png'
+      ],
+      frameDelay: 100,
+      fx: {
+        sprites: [
+          'Viking_Female/attackWeapon3_FX_1.png',
+          'Viking_Female/attackWeapon3_FX_2.png',
+          'Viking_Female/attackWeapon3_FX_3.png',
+          'Viking_Female/attackWeapon3_FX_4.png',
+          'Viking_Female/attackWeapon3_FX_5.png',
+          'Viking_Female/attackWeapon3_FX_6.png'
         ],
         frameDelay: 100
       }

@@ -2,6 +2,31 @@ import React from 'react';
 import RandUtils from '../utils/RandUtils';
 import SpriteApplier from './SpriteApplier';
 
+const animSetStates = {
+  unarmed: {
+    idle: 'idle',
+    run: 'run',
+    dead: 'dead',
+    attacks: 'attacks',
+    dash: 'dash',
+    spawn: 'spawn',
+    hit: 'hit'
+  },
+  weapon: {
+    idle: 'idleWeapon',
+    run: 'run',
+    dead: 'dead',
+    attacks: 'attacksWeapon',
+    dash: 'dashWeapon',
+    spawn: 'spawn',
+    hit: 'hit'
+  }
+};
+
+function getAnimSetState(state, weapon = false) {
+  return animSetStates[weapon ? 'weapon' : 'unarmed'][state];
+}
+
 class PlayerChar extends SpriteApplier {
   constructor(props) {
     super(props);
@@ -21,6 +46,7 @@ class PlayerChar extends SpriteApplier {
     this.animState = 'idle';
     this.intervalId = -1;
     this.anim = null;
+    this.weapon = false;
 
     this.animStep = this.animStep.bind(this);
   }
@@ -60,10 +86,14 @@ class PlayerChar extends SpriteApplier {
     this.spriteIndex += 1;
     let backToIdle = false;
     if (this.spriteIndex >= this.anim.sprites.length) {
-      if (this.animState === 'idle' || this.animState === 'run') {
-        this.spriteIndex = 0;
-      } else {
-        backToIdle = true;
+      switch (this.animState) {
+        case 'idle':
+        case 'run':
+        case 'dash':
+          this.spriteIndex = 0;
+          break;
+        default:
+          backToIdle = true;
       }
     }
     if (backToIdle) {
@@ -77,12 +107,18 @@ class PlayerChar extends SpriteApplier {
     this.flipped = !this.flipped;
   }
 
+  toggleWeapon() {
+    this.weapon = !this.weapon;
+    this.setAnimState(this.animState);
+  }
+
   setAnimState(animState) {
     this.animState = animState;
-    if (!this.character[animState]) {
-      throw new Error(`PlayerChar.setAnimState: character does not have "${animState}" anim state`);
+    const animSetState = getAnimSetState(animState, this.weapon);
+    if (!this.character[animSetState]) {
+      throw new Error(`PlayerChar.setAnimState: character does not have "${animSetState}" anim state`);
     }
-    const animOrAnims = this.character[animState];
+    const animOrAnims = this.character[animSetState];
     const anim = Array.isArray(animOrAnims) ? RandUtils.pick(animOrAnims) : animOrAnims;
     this.startAnim(anim);
     if (anim.fx) {

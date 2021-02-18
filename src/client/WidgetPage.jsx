@@ -13,6 +13,8 @@ import Highlander_Female from './game/characters/Highlander_Female';
 import Highlander_Male from './game/characters/Highlander_Male';
 import Viking_Female from './game/characters/Viking_Female';
 import Viking_Male from './game/characters/Viking_Male';
+import Samurai_Female from './game/characters/Samurai_Female';
+import Samurai_Male from './game/characters/Samurai_Male';
 
 let fxIdPool = 0;
 
@@ -21,6 +23,10 @@ function resolveAnim(anim) {
     return;
   }
   for (let i = 0; i < anim.sprites.length; i += 1) {
+    if (!R.frames[anim.sprites[i]]) {
+      console.error(`resolveAnim: frame "${anim.sprites[i]}" does not exist`);
+      continue;
+    }
     anim.sprites[i] = R.frames[anim.sprites[i]];
     if (anim.fx) {
       resolveAnim(anim.fx);
@@ -65,7 +71,9 @@ class WidgetPage extends React.Component {
       Highlander_Female,
       Highlander_Male,
       Viking_Female,
-      Viking_Male
+      Viking_Male,
+      Samurai_Female,
+      Samurai_Male
     ];
 
     this.playerRef = React.createRef();
@@ -146,7 +154,11 @@ class WidgetPage extends React.Component {
             <button onClick={() => this.playerRef.current.setAnimState('run')}>Run</button>
             <button onClick={() => this.playerRef.current.setAnimState('dead')}>Dead</button>
             <button onClick={() => this.playerRef.current.setAnimState('attacks')}>Attack</button>
+            <button onClick={() => this.playerRef.current.setAnimState('dash')}>Dash</button>
+            <button onClick={() => this.playerRef.current.setAnimState('spawn')}>Spawn</button>
+            <button onClick={() => this.playerRef.current.setAnimState('hit')}>Hit</button>
             <button onClick={() => this.playerRef.current.toggleFlipped()}>Flip</button>
+            <button onClick={() => this.playerRef.current.toggleWeapon()}>Weapon</button>
           </div>
         </div>
       </div>
