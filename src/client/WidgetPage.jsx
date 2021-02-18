@@ -53,11 +53,17 @@ class WidgetPage extends React.Component {
     };
 
     this.characters = allCharacters;
-    this.characters.forEach(resolveCharacter);
+    this.playerRefs = [];
+    this.characters.forEach(character => {
+      resolveCharacter(character);
+      this.playerRefs.push(React.createRef());
+    });
 
-    this.playerRef = React.createRef();
     this.startFX = this.startFX.bind(this);
     this.onFXEnd = this.onFXEnd.bind(this);
+    this.setAnimState = this.setAnimState.bind(this);
+    this.toggleFlipped = this.toggleFlipped.bind(this);
+    this.toggleWeapon = this.toggleWeapon.bind(this);
   }
 
   startFX(fx, position, flipped = false, autoplay = true) {
@@ -68,9 +74,9 @@ class WidgetPage extends React.Component {
       flipped,
       autoplay
     };
-    const fxInstances = [...this.state.fxInstances, fxInstance];
-    this.setState({
-      fxInstances
+    this.setState((state, props) => {
+      const fxInstances = [...state.fxInstances, fxInstance];
+      return { fxInstances };
     });
     return fxInstance;
   }
@@ -94,18 +100,34 @@ class WidgetPage extends React.Component {
     });
   }
 
+  setAnimState(state) {
+    this.playerRefs.forEach(ref => ref.current.setAnimState(state));
+  }
+
+  toggleFlipped() {
+    this.playerRefs.forEach(ref => ref.current.toggleFlipped());
+  }
+
+  toggleWeapon() {
+    this.playerRefs.forEach(ref => ref.current.toggleWeapon());
+  }
+
   render() {
+    const maxCols = 10, spacing = 80;
     return (
       <div className="widget-page">
         <div className="widget-playerchar-layer widget-layer">
-          <PlayerChar 
-            ref={this.playerRef}
-            character={resolveCharacter(this.state.character)}
-            startFX={this.startFX}
-            position={{
-              x: 200, y: 200
-            }}
-          />
+          { this.characters.map((c, i) => (
+            <PlayerChar 
+              key={i}
+              ref={this.playerRefs[i]}
+              character={resolveCharacter(c)}
+              startFX={this.startFX}
+              position={{
+                x: 100 + (i % maxCols) * spacing, y: 200 + Math.floor(i / maxCols) * spacing
+              }}
+            />
+          )) }
         </div>
         <div className="widget-fx-layer widget-layer">
           { this.state.fxInstances.map(fxInstance => (
@@ -129,15 +151,15 @@ class WidgetPage extends React.Component {
             </select>
           </div>
           <div>
-            <button onClick={() => this.playerRef.current.setAnimState('idle')}>Idle</button>
-            <button onClick={() => this.playerRef.current.setAnimState('run')}>Run</button>
-            <button onClick={() => this.playerRef.current.setAnimState('dead')}>Dead</button>
-            <button onClick={() => this.playerRef.current.setAnimState('attacks')}>Attack</button>
-            <button onClick={() => this.playerRef.current.setAnimState('dash')}>Dash</button>
-            <button onClick={() => this.playerRef.current.setAnimState('spawn')}>Spawn</button>
-            <button onClick={() => this.playerRef.current.setAnimState('hit')}>Hit</button>
-            <button onClick={() => this.playerRef.current.toggleFlipped()}>Flip</button>
-            <button onClick={() => this.playerRef.current.toggleWeapon()}>Weapon</button>
+            <button onClick={() => this.setAnimState('idle')}>Idle</button>
+            <button onClick={() => this.setAnimState('run')}>Run</button>
+            <button onClick={() => this.setAnimState('dead')}>Dead</button>
+            <button onClick={() => this.setAnimState('attacks')}>Attack</button>
+            <button onClick={() => this.setAnimState('dash')}>Dash</button>
+            <button onClick={() => this.setAnimState('spawn')}>Spawn</button>
+            <button onClick={() => this.setAnimState('hit')}>Hit</button>
+            <button onClick={() => this.toggleFlipped()}>Flip</button>
+            <button onClick={() => this.toggleWeapon()}>Weapon</button>
           </div>
         </div>
       </div>
