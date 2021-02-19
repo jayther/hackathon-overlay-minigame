@@ -60,7 +60,7 @@ class PlayerChar extends SpriteApplier {
     this.containerStyle.top = `${this.props.position.y}px`;
     this.containerStyle.width = `0px`;
     this.containerStyle.height = `0px`;
-    this.setAnimState('idle');
+    this.setAnimState('spawn');
   }
 
   componentDidUpdate() {

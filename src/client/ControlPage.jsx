@@ -4,6 +4,35 @@ import SocketBridge from './utils/SocketBridge';
 import appActions from '../shared/AppActions';
 import requiredRewards from '../shared/RequiredRewards';
 
+function PlayersSection(props) {
+  return (
+    <table className="players-section">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Char Type</th>
+          <th>Char Gender</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {props.players.map(player => (
+          <tr key={player.userId}>
+            <td>{player.userDisplayName}</td>
+            <td>{player.characterType}</td>
+            <td>{player.characterGender}</td>
+            <td>
+              <button onClick={() => SocketBridge.socket.emit(appActions.removePlayer, player.userId)}>
+                Remove
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
 function MissingRewardsSection(props) {
   if (props.missingRewards.length === 0) {
     return null;
@@ -145,6 +174,8 @@ function ControlPage(props) {
   return (
     <div>
       <h1>Control</h1>
+      <h2>Players</h2>
+      <PlayersSection players={props.appState.players} />
       <MissingRewardsSection rewards={props.appState.rewards} missingRewards={missingRewards} />
       <EditRewardMap rewards={props.appState.rewards} rewardMap={props.appState.rewardMap} />
       <h2>Redemptions</h2>

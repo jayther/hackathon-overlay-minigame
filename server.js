@@ -219,6 +219,7 @@ class ServerApp {
     socket.emit(appActions.updateApp, this.isAppReady());
     socket.emit(appActions.updateEventSubReady, !!this.eventSub);
     socket.emit(appActions.updateUser, this.user);
+    socket.emit(appActions.allPlayers, this.playerDataFile.data.players);
   }
 
   removeOverlaySocket(socket, reason) {
@@ -238,6 +239,7 @@ class ServerApp {
     socket.on(appActions.createReward, this.onSocketCreateReward.bind(this));
     socket.on(appActions.setRewardToAction, this.onSocketSetRewardToAction.bind(this));
     socket.on(appActions.createRewardForAction, this.onSocketCreateRewardForAction.bind(this));
+    socket.on(appActions.removePlayer, this.onSocketRemovePlayer.bind(this));
     this.controlSockets.push(socket);
     socket.emit(appActions.updateApp, this.isAppReady());
     socket.emit(appActions.updateEventSubReady, !!this.eventSub);
@@ -245,6 +247,7 @@ class ServerApp {
     socket.emit(appActions.updateRewards, this.getRewardObjs());
     socket.emit(appActions.allRedeems, this.getRedeemObjs());
     socket.emit(appActions.updateRewardMap, this.rewardMapFile.data);
+    socket.emit(appActions.allPlayers, this.playerDataFile.data.players);
   }
 
   removeControlSocket(socket, reason) {
@@ -503,6 +506,22 @@ class ServerApp {
     this.controlEmit(appActions.updateRewardMap, this.rewardMapFile.data);
   }
 
+  async onSocketRemovePlayer(userId) {
+    const player = this.playerDataFile.data.players.find(player => userId === player.userId);
+    if (!player) {
+      logger(`onSocketRemovePlayer: "${userId}" not in player data`);
+      return;
+    }
+    if (!player.alive) {
+      logger(`onSocketRemovePlayer: "${player.userDisplayName}" not in arena`);
+      return;
+    }
+    logger(`onSocketRemovePlayer: Removing "${player.userDisplayName}" from arena`);
+    player.alive = false;
+    await this.playerDataFile.save();
+    this.allEmit(appActions.removePlayer, player);
+  }
+
   getRewardObjs() {
     return this.rewards.map(rewardToObj);
   }
@@ -519,12 +538,14 @@ class ServerApp {
         this.twitchUserClient.helix.channelPoints.updateRedemptionStatusByIds(this.user.id, event.rewardId, [event.id], 'CANCELED');
       }, 1000);
       // TODO send "error" to chat
-      logger(`"${player.userName}" already alive in game`);
+      logger(`addPlayer: "${player.userName}" already alive in game`);
       return;
     }
-    console.log('adding player', event);
     if (player) {
+      player.userName = event.userName;
+      player.userDisplayName = event.userDisplayName;
       player.alive = true;
+      logger(`addPlayer: "${player.userName}" set to alive`);
     } else {
       player = {
         ...defaultPlayer,
@@ -536,6 +557,7 @@ class ServerApp {
         characterGender: RandUtils.pick(characterGenders)
       };
       this.playerDataFile.data.players.push(player);
+      logger(`addPlayer: "${player.userName}" created`);
     }
 
     // delayed consume

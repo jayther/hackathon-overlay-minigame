@@ -4,7 +4,9 @@ import PlayerChar from './game/PlayerChar';
 import FXAnim from './game/FXAnim';
 import { resolveCharacter } from './utils/CharacterUtils';
 import { createCharacter } from '../shared/CharacterParts';
-import { subtract, changes } from '../shared/ArrayUtils';
+import SocketBridge from './utils/SocketBridge';
+import appActions from '../shared/AppActions';
+import * as allCharacters from './game/characters/All_Characters';
 
 let fxIdPool = 0;
 
@@ -21,24 +23,59 @@ class WidgetPage extends React.Component {
 
     this.startFX = this.startFX.bind(this);
     this.onFXEnd = this.onFXEnd.bind(this);
+
+    SocketBridge.socket.on(appActions.addPlayer, this.onAddPlayer.bind(this));
+    SocketBridge.socket.on(appActions.updatePlayer, this.onUpdatePlayer.bind(this));
+    SocketBridge.socket.on(appActions.removePlayer, this.onRemovePlayer.bind(this));
   }
 
-  componentDidUpdate() {
-    // TODO better way than these heavy array ops
-    const toAdd = subtract(this.props.appState.players, this.state.playerChars, 'userId');
-    const toRemove = subtract(this.state.playerChars, this.props.appState.players, 'userId');
-    const changed = changes(
-      this.props.appState.players,
-      this.state.playerChars,
-      'userId',
-      ['characterType', 'characterGender']
-    );
+  componentDidMount() {
+    // is this fine...
+    this.props.appState.players.forEach(this.onAddPlayer, this);
+  }
 
-    if (toAdd.length + toRemove.length + changed.length === 0) {
-      return;
-    }
+  onAddPlayer(player) {
+    // assuming no duplicates will be sent
+    this.userIdRefMap[player.userId] = new React.createRef();
+    this.setState((state, props) => {
+      const character = allCharacters[createCharacter(player.characterType, player.characterGender)];
+      const playerChar = {
+        ...player,
+        character: character,
+        position: {
+          x: 200, y: 200
+        }
+      };
+      return {
+        playerChars: [...state.playerChars, playerChar]
+      };
+    })
+  }
 
-    
+  onUpdatePlayer(player) {
+    this.setState((state, props) => {
+      const character = allCharacters[createCharacter(player.characterType, player.characterGender)];
+      return {
+        playerChars: state.playerChars.map(pc => pc.userId === player.userId ? {
+          ...player,
+          character
+        } : pc)
+      };
+    });
+  }
+
+  onRemovePlayer(player) {
+    // TODO animation for exit instead of immediate removal
+    this.setState((state, props) => {
+      const index = state.playerChars.findIndex(playerChar => playerChar.userId === player.userId);
+      if (index === -1) {
+        return {}; // no update
+      }
+      const playerChars = Array.from(state.playerChars);
+      playerChars.splice(index, 1);
+      delete this.userIdRefMap[player.userId]; // is this ok to do this here?
+      return { playerChars };
+    });
   }
 
   startFX(fx, position, flipped = false, autoplay = true) {
@@ -73,7 +110,7 @@ class WidgetPage extends React.Component {
     return (
       <div className="widget-page">
         <div className="widget-playerchar-layer widget-layer">
-          { this.playerChars.map(playerChar => (
+          { this.state.playerChars.map(playerChar => (
             <PlayerChar 
               key={playerChar.userId}
               ref={this.userIdRefMap[playerChar.userId]}

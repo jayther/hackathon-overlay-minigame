@@ -19,7 +19,7 @@ const initialState = {
   redeems: [],
   rewards: [],
   rewardMap: {},
-  playerChars: []
+  players: []
 };
 
 function reducer(state, action) {
@@ -96,17 +96,17 @@ function reducer(state, action) {
       }
       return {
         ...state,
-        playerChars: [...state.playerChars, action.value]
+        players: [...state.players, action.value]
       };
     case appActions.updatePlayer:
       if (!action.value) {
         throw new Error('App action "updateplayer" requires a value');
       }
-      list = Array.from(state.playerChars);
+      list = Array.from(state.players);
       found = false;
-      for (let i = 0; i < state.playerChars.length && !found; i += 1) {
-        if (state.playerChars[i].userId === action.value.userId) {
-          state.playerChars[i] = action.value;
+      for (let i = 0; i < state.players.length && !found; i += 1) {
+        if (state.players[i].userId === action.value.userId) {
+          state.players[i] = action.value;
           found = true;
         }
       }
@@ -115,7 +115,7 @@ function reducer(state, action) {
       }
       return {
         ...state,
-        playerChars: list
+        players: list
       };
     case appActions.removePlayer:
       if (!action.value) {
@@ -128,15 +128,15 @@ function reducer(state, action) {
       } else {
         throw new Error('App action "removeplayer" requires a userId value or an object with userId');
       }
-      index = state.playerChars.findIndex(playerChar => id === playerChar.userId);
+      index = state.players.findIndex(playerChar => id === playerChar.userId);
       if (index === -1) {
         return state;
       }
-      list = Array.from(state.playerChars);
+      list = Array.from(state.players);
       list.splice(index, 1);
       return {
         ...state,
-        playerChars: list
+        players: list
       };
     case appActions.allPlayers:
       if (!action.value) {
@@ -144,7 +144,7 @@ function reducer(state, action) {
       }
       return {
         ...state,
-        playerChars: action.value
+        players: action.value
       };
     default:
       throw new Error(`Unknown app action type: ${action.type}`);
