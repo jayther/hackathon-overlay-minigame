@@ -1,47 +1,13 @@
 import React from 'react';
 import { withApp } from './utils/AppContext';
-import R from './Resources';
 import PlayerChar from './game/PlayerChar';
 import FXAnim from './game/FXAnim';
 import * as All_Characters from './game/characters/All_Characters';
+import { resolveCharacter } from './utils/CharacterUtils';
 
 const allCharacters = Object.values(All_Characters);
 
 let fxIdPool = 0;
-
-function resolveAnim(anim) {
-  if (anim.resolved) {
-    return;
-  }
-  for (let i = 0; i < anim.sprites.length; i += 1) {
-    if (!R.frames[anim.sprites[i]]) {
-      console.error(`resolveAnim: frame "${anim.sprites[i]}" does not exist`);
-      continue;
-    }
-    anim.sprites[i] = R.frames[anim.sprites[i]];
-    if (anim.fx) {
-      resolveAnim(anim.fx);
-    }
-  }
-  anim.resolved = true;
-}
-
-function resolveCharacter(character) {
-  if (character.resolved) {
-    return character;
-  }
-  Object.values(character).forEach(animOrAnims => {
-    if (typeof animOrAnims === 'string') {
-      return;
-    } else if (Array.isArray(animOrAnims)) {
-      animOrAnims.forEach(resolveAnim);
-    } else {
-      resolveAnim(animOrAnims);
-    }
-  });
-  character.resolved = true;
-  return character;
-}
 
 class WidgetPage extends React.Component {
   constructor(props) {
