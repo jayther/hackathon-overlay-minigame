@@ -18,11 +18,12 @@ const initialState = {
   eventSubReady: false,
   redeems: [],
   rewards: [],
-  rewardMap: {}
+  rewardMap: {},
+  playerChars: []
 };
 
 function reducer(state, action) {
-  let list, found;
+  let list, found, id, index;
   switch (action.type) {
     case appActions.updatePage:
       if (!action.pageState) {
@@ -88,6 +89,62 @@ function reducer(state, action) {
       return {
         ...state,
         rewardMap: action.value
+      };
+    case appActions.addPlayer:
+      if (!action.value) {
+        throw new Error('App action "addplayer" requires a value');
+      }
+      return {
+        ...state,
+        playerChars: [...state.playerChars, action.value]
+      };
+    case appActions.updatePlayer:
+      if (!action.value) {
+        throw new Error('App action "updateplayer" requires a value');
+      }
+      list = Array.from(state.playerChars);
+      found = false;
+      for (let i = 0; i < state.playerChars.length && !found; i += 1) {
+        if (state.playerChars[i].userId === action.value.userId) {
+          state.playerChars[i] = action.value;
+          found = true;
+        }
+      }
+      if (!found) {
+        list.push(action.value);
+      }
+      return {
+        ...state,
+        playerChars: list
+      };
+    case appActions.removePlayer:
+      if (!action.value) {
+        throw new Error('App action "removeplayer" requires a value');
+      }
+      if (typeof action.value === 'string') {
+        id = action.value;
+      } else if (action.value.userId) {
+        id = action.value.userId;
+      } else {
+        throw new Error('App action "removeplayer" requires a userId value or an object with userId');
+      }
+      index = state.playerChars.findIndex(playerChar => id === playerChar.userId);
+      if (index === -1) {
+        return state;
+      }
+      list = Array.from(state.playerChars);
+      list.splice(index, 1);
+      return {
+        ...state,
+        playerChars: list
+      };
+    case appActions.allPlayers:
+      if (!action.value) {
+        throw new Error('App action "allplayers" requires a value');
+      }
+      return {
+        ...state,
+        playerChars: action.value
       };
     default:
       throw new Error(`Unknown app action type: ${action.type}`);

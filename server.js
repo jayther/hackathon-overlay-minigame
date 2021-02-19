@@ -10,8 +10,12 @@ const { ClientCredentialsAuthProvider, RefreshableAuthProvider, StaticAuthProvid
 const logger = require('./src/server/logger');
 const JsonDataFile = require('./src/server/JsonDataFile');
 const appActions = require('./src/shared/AppActions');
-const gameActions = require('./src/shared/GameActions');
 const requiredRewards = require('./src/shared/RequiredRewards');
+const RandUtils = require('./src/shared/RandUtils');
+const {
+  characterTypes,
+  characterGenders
+} = require('./src/shared/CharacterParts');
 
 const appSecretsPath = './.appsecrets.json';
 const userTokensPath = './.usertokens.json';
@@ -24,6 +28,19 @@ const twitchApiScopes = [
   'chat:edit',
   'chat:read'
 ];
+
+const defaultPlayer = {
+  userId: null,
+  userName: null,
+  userDisplayName: null,
+  alive: false,
+  characterType: null,
+  characterGender: null,
+  wins: 0,
+  draws: 0,
+  losses: 0,
+  battles: 0
+};
 
 function objToParams(obj) {
   const paramParts = [];
@@ -123,6 +140,10 @@ class ServerApp {
     await this.userTokensFile.load();
     await this.rewardMapFile.load();
     await this.playerDataFile.load();
+
+    if (!this.playerDataFile.data.players) {
+      this.playerDataFile.data.players = [];
+    }
 
     this.app = express();
     this.app.use(express.static(this.settings.staticDir));
@@ -490,9 +511,41 @@ class ServerApp {
     return this.redeems.map(redeemToObj);
   }
 
-  addPlayer(event) {
+  async addPlayer(event) {
+    let player = this.playerDataFile.data.players.find(player => player.userId === event.userId);
+    if (player && player.userId === event.userId && player.alive) {
+      // delayed refund
+      setTimeout(() => {
+        this.twitchUserClient.helix.channelPoints.updateRedemptionStatusByIds(this.user.id, event.rewardId, [event.id], 'CANCELED');
+      }, 1000);
+      // TODO send "error" to chat
+      logger(`"${player.userName}" already alive in game`);
+      return;
+    }
     console.log('adding player', event);
-    //this.allEmit(gameActions.addPlayer, )
+    if (player) {
+      player.alive = true;
+    } else {
+      player = {
+        ...defaultPlayer,
+        userId: event.userId,
+        userName: event.userName,
+        userDisplayName: event.userDisplayName,
+        alive: true,
+        characterType: RandUtils.pick(characterTypes),
+        characterGender: RandUtils.pick(characterGenders)
+      };
+      this.playerDataFile.data.players.push(player);
+    }
+
+    // delayed consume
+    setTimeout(() => {
+      this.twitchUserClient.helix.channelPoints.updateRedemptionStatusByIds(this.user.id, event.rewardId, [event.id], 'FULFILLED');
+    }, 1000);
+
+    await this.playerDataFile.save();
+
+    this.allEmit(appActions.addPlayer, player);
   }
 }
 

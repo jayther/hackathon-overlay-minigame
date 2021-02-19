@@ -1,5 +1,5 @@
 import React from 'react';
-import RandUtils from '../utils/RandUtils';
+import RandUtils from '../../shared/RandUtils';
 import SpriteApplier from './SpriteApplier';
 
 const animSetStates = {

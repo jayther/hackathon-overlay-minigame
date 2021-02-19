@@ -2,10 +2,9 @@ import React from 'react';
 import { withApp } from './utils/AppContext';
 import PlayerChar from './game/PlayerChar';
 import FXAnim from './game/FXAnim';
-import * as All_Characters from './game/characters/All_Characters';
 import { resolveCharacter } from './utils/CharacterUtils';
-
-const allCharacters = Object.values(All_Characters);
+import { createCharacter } from '../shared/CharacterParts';
+import { subtract, changes } from '../shared/ArrayUtils';
 
 let fxIdPool = 0;
 
@@ -14,22 +13,32 @@ class WidgetPage extends React.Component {
     super(props);
 
     this.state = {
-      character: allCharacters[0],
+      playerChars: [],
       fxInstances: []
     };
 
-    this.characters = allCharacters;
-    this.playerRefs = [];
-    this.characters.forEach(character => {
-      resolveCharacter(character);
-      this.playerRefs.push(React.createRef());
-    });
+    this.userIdRefMap = {};
 
     this.startFX = this.startFX.bind(this);
     this.onFXEnd = this.onFXEnd.bind(this);
-    this.setAnimState = this.setAnimState.bind(this);
-    this.toggleFlipped = this.toggleFlipped.bind(this);
-    this.toggleWeapon = this.toggleWeapon.bind(this);
+  }
+
+  componentDidUpdate() {
+    // TODO better way than these heavy array ops
+    const toAdd = subtract(this.props.appState.players, this.state.playerChars, 'userId');
+    const toRemove = subtract(this.state.playerChars, this.props.appState.players, 'userId');
+    const changed = changes(
+      this.props.appState.players,
+      this.state.playerChars,
+      'userId',
+      ['characterType', 'characterGender']
+    );
+
+    if (toAdd.length + toRemove.length + changed.length === 0) {
+      return;
+    }
+
+    
   }
 
   startFX(fx, position, flipped = false, autoplay = true) {
@@ -60,38 +69,17 @@ class WidgetPage extends React.Component {
     });
   }
 
-  setCharacter(characterName) {
-    this.setState({
-      character: this.characters.find(c => c.name === characterName)
-    });
-  }
-
-  setAnimState(state) {
-    this.playerRefs.forEach(ref => ref.current.setAnimState(state));
-  }
-
-  toggleFlipped() {
-    this.playerRefs.forEach(ref => ref.current.toggleFlipped());
-  }
-
-  toggleWeapon() {
-    this.playerRefs.forEach(ref => ref.current.toggleWeapon());
-  }
-
   render() {
-    const maxCols = 7, spacing = 120;
     return (
       <div className="widget-page">
         <div className="widget-playerchar-layer widget-layer">
-          { this.characters.map((c, i) => (
+          { this.playerChars.map(playerChar => (
             <PlayerChar 
-              key={i}
-              ref={this.playerRefs[i]}
-              character={resolveCharacter(c)}
+              key={playerChar.userId}
+              ref={this.userIdRefMap[playerChar.userId]}
+              character={resolveCharacter(playerChar.character)}
               startFX={this.startFX}
-              position={{
-                x: 100 + (i % maxCols) * spacing, y: 200 + Math.floor(i / maxCols) * spacing
-              }}
+              position={playerChar.position}
             />
           )) }
         </div>
@@ -107,26 +95,6 @@ class WidgetPage extends React.Component {
               onEnd={this.onFXEnd}
             />
           ))}
-        </div>
-        <div className="widget-debug">
-          <div>
-            <select onChange={e => this.setCharacter(e.target.value)}>
-              { this.characters.map(character => (
-                <option key={character.name} value={character.name}>{character.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <button onClick={() => this.setAnimState('idle')}>Idle</button>
-            <button onClick={() => this.setAnimState('run')}>Run</button>
-            <button onClick={() => this.setAnimState('dead')}>Dead</button>
-            <button onClick={() => this.setAnimState('attacks')}>Attack</button>
-            <button onClick={() => this.setAnimState('dash')}>Dash</button>
-            <button onClick={() => this.setAnimState('spawn')}>Spawn</button>
-            <button onClick={() => this.setAnimState('hit')}>Hit</button>
-            <button onClick={() => this.toggleFlipped()}>Flip</button>
-            <button onClick={() => this.toggleWeapon()}>Weapon</button>
-          </div>
         </div>
       </div>
     )

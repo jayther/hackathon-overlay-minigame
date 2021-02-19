@@ -1,5 +1,5 @@
 
-export default {
+module.exports = {
   pick: function (list) {
     return list[Math.floor(Math.random() * list.length)];
   },
