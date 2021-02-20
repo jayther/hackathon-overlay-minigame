@@ -16,6 +16,7 @@ const {
   characterTypes,
   characterGenders
 } = require('./src/shared/CharacterParts');
+const { waitForMS } = require('./src/shared/PromiseUtils');
 
 const appSecretsPath = './.appsecrets.json';
 const userTokensPath = './.usertokens.json';
@@ -39,8 +40,11 @@ const defaultPlayer = {
   wins: 0,
   draws: 0,
   losses: 0,
-  battles: 0
+  battles: 0,
+  winStreak: 0
 };
+
+const updateRedeemDelay = 1000; // ms
 
 function objToParams(obj) {
   const paramParts = [];
@@ -114,6 +118,10 @@ function redeemToObj(redeem) {
   };
 }
 
+function filterAlivePlayers(player) {
+  return player.alive;
+}
+
 class ServerApp {
   constructor(settings) {
     this.settings = settings;
@@ -127,6 +135,8 @@ class ServerApp {
     this.user = null;
     this.rewards = [];
     this.redeems = [];
+
+    this.debugAutoRefund = false;
     
     this.rewardFuncMap = {};
     this.rewardFuncMap[requiredRewards.add.key] = this.addPlayer.bind(this);
@@ -143,6 +153,14 @@ class ServerApp {
 
     if (!this.playerDataFile.data.players) {
       this.playerDataFile.data.players = [];
+    }
+    // populate missing props
+    const players = this.playerDataFile.data.players;
+    for (let i = 0; i < players.length; i += 1) {
+      players[i] = {
+        ...defaultPlayer,
+        ...players[i]
+      };
     }
 
     this.app = express();
@@ -219,7 +237,7 @@ class ServerApp {
     socket.emit(appActions.updateApp, this.isAppReady());
     socket.emit(appActions.updateEventSubReady, !!this.eventSub);
     socket.emit(appActions.updateUser, this.user);
-    socket.emit(appActions.allPlayers, this.playerDataFile.data.players);
+    socket.emit(appActions.allPlayers, this.playerDataFile.data.players.filter(filterAlivePlayers));
   }
 
   removeOverlaySocket(socket, reason) {
@@ -240,6 +258,7 @@ class ServerApp {
     socket.on(appActions.setRewardToAction, this.onSocketSetRewardToAction.bind(this));
     socket.on(appActions.createRewardForAction, this.onSocketCreateRewardForAction.bind(this));
     socket.on(appActions.removePlayer, this.onSocketRemovePlayer.bind(this));
+    socket.on(appActions.updateDebugAutoRefund, this.onSocketUpdateDebugAutoRefund.bind(this));
     this.controlSockets.push(socket);
     socket.emit(appActions.updateApp, this.isAppReady());
     socket.emit(appActions.updateEventSubReady, !!this.eventSub);
@@ -247,7 +266,8 @@ class ServerApp {
     socket.emit(appActions.updateRewards, this.getRewardObjs());
     socket.emit(appActions.allRedeems, this.getRedeemObjs());
     socket.emit(appActions.updateRewardMap, this.rewardMapFile.data);
-    socket.emit(appActions.allPlayers, this.playerDataFile.data.players);
+    socket.emit(appActions.allPlayers, this.playerDataFile.data.players.filter(filterAlivePlayers));
+    socket.emit(appActions.updateDebugAutoRefund, this.debugAutoRefund);
   }
 
   removeControlSocket(socket, reason) {
@@ -435,6 +455,32 @@ class ServerApp {
     logger('eventSub started');
   }
 
+  /**
+   * update redeem
+   * @param {string} rewardId 
+   * @param {(string|string[])} redeemIds 
+   * @param {('CANCELED'|'FULFILLED')} status 
+   * @param {boolean} [immediate=false]
+   */
+  async updateRedeem(rewardId, redeemIds, status, immediate = false) {
+    if (!rewardId) {
+      throw new Error('updateRedeem: missing rewardId');
+    }
+    if (!redeemIds) {
+      throw new Error('updateRedeem: missing redeemIds');
+    }
+    const redeemIdsType = typeof redeemIds;
+    if (redeemIdsType !== 'string' && !Array.isArray(redeemIds)) {
+      throw new Error('updateRedeem: redeemIds must be string or array of strings');
+    }
+    const ids = redeemIdsType === 'string' ? [redeemIds] : redeemIds;
+    const useStatus = this.debugAutoRefund ? 'CANCELED' : status;
+    if (!immediate) {
+      await waitForMS(updateRedeemDelay);
+    }
+    return await this.twitchUserClient.helix.channelPoints.updateRedemptionStatusByIds(this.user.id, rewardId, ids, useStatus);
+  }
+
   async onSocketCreateReward(data) {
     await this.twitchUserClient.helix.channelPoints.createCustomReward(this.user.id, data);
   }
@@ -522,6 +568,12 @@ class ServerApp {
     this.allEmit(appActions.removePlayer, player);
   }
 
+  async onSocketUpdateDebugAutoRefund(value) {
+    this.debugAutoRefund = value;
+    logger(`Set debugAutoRefund to ${value}`);
+    this.controlEmit(appActions.updateDebugAutoRefund, this.debugAutoRefund);
+  }
+
   getRewardObjs() {
     return this.rewards.map(rewardToObj);
   }
@@ -534,9 +586,7 @@ class ServerApp {
     let player = this.playerDataFile.data.players.find(player => player.userId === event.userId);
     if (player && player.userId === event.userId && player.alive) {
       // delayed refund
-      setTimeout(() => {
-        this.twitchUserClient.helix.channelPoints.updateRedemptionStatusByIds(this.user.id, event.rewardId, [event.id], 'CANCELED');
-      }, 1000);
+      this.updateRedeem(event.rewardId, event.id, 'CANCELED');
       // TODO send "error" to chat
       logger(`addPlayer: "${player.userName}" already alive in game`);
       return;
@@ -561,9 +611,7 @@ class ServerApp {
     }
 
     // delayed consume
-    setTimeout(() => {
-      this.twitchUserClient.helix.channelPoints.updateRedemptionStatusByIds(this.user.id, event.rewardId, [event.id], 'FULFILLED');
-    }, 1000);
+    this.updateRedeem(event.rewardId, event.id, 'FULFILLED');
 
     await this.playerDataFile.save();
 

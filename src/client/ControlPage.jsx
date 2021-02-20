@@ -132,6 +132,35 @@ function MissingRewardsSection(props) {
   );
 }
 
+function DebugSection(props) {
+  const [show, setShow] = useState(false);
+
+  function toggleShow() {
+    setShow(!show);
+  }
+
+  function onAutoRefundChange(e) {
+    console.log('auto refund change', props.appState.debugAutoRefund, e.target.checked);
+    SocketBridge.socket.emit(appActions.updateDebugAutoRefund, e.target.checked);
+  }
+
+  return (
+    <div>
+      <h2>Debug options <button onClick={toggleShow}>{show ? 'Hide' : 'Show'}</button></h2>
+      { show && (
+        <ul>
+          <li><label>
+            <input type="checkbox"
+              checked={props.appState.debugAutoRefund}
+              onChange={onAutoRefundChange}
+            /> Auto refund
+          </label></li>
+        </ul>
+      )}
+    </div>
+  )
+}
+
 function EditRewardMap(props) {
   const [show, setShow] = useState(false);
 
@@ -178,6 +207,7 @@ function ControlPage(props) {
       <PlayersSection players={props.appState.players} />
       <MissingRewardsSection rewards={props.appState.rewards} missingRewards={missingRewards} />
       <EditRewardMap rewards={props.appState.rewards} rewardMap={props.appState.rewardMap} />
+      <DebugSection appState={props.appState} />
       <h2>Redemptions</h2>
       <ul>
         { props.appState.redeems.map(item => (

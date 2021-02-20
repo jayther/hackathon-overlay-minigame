@@ -19,7 +19,8 @@ const initialState = {
   redeems: [],
   rewards: [],
   rewardMap: {},
-  players: []
+  players: [],
+  debugAutoRefund: false
 };
 
 function reducer(state, action) {
@@ -145,6 +146,11 @@ function reducer(state, action) {
       return {
         ...state,
         players: action.value
+      };
+    case appActions.updateDebugAutoRefund:
+      return {
+        ...state,
+        debugAutoRefund: !!action.value
       };
     default:
       throw new Error(`Unknown app action type: ${action.type}`);
