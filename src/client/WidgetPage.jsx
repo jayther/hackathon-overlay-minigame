@@ -57,7 +57,7 @@ class WidgetPage extends React.Component {
       const character = allCharacters[createCharacter(player.characterType, player.characterGender)];
       return {
         playerChars: state.playerChars.map(pc => pc.userId === player.userId ? {
-          ...player,
+          ...pc,
           character
         } : pc)
       };

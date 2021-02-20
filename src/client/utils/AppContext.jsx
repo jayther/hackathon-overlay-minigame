@@ -105,9 +105,9 @@ function reducer(state, action) {
       }
       list = Array.from(state.players);
       found = false;
-      for (let i = 0; i < state.players.length && !found; i += 1) {
-        if (state.players[i].userId === action.value.userId) {
-          state.players[i] = action.value;
+      for (let i = 0; i < list.length && !found; i += 1) {
+        if (list[i].userId === action.value.userId) {
+          list[i] = action.value;
           found = true;
         }
       }

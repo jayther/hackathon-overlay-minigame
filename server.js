@@ -46,6 +46,10 @@ const defaultPlayer = {
 
 const updateRedeemDelay = 1000; // ms
 
+function has(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
 function objToParams(obj) {
   const paramParts = [];
   for (const [key, value] of Object.entries(obj)) {
@@ -259,6 +263,7 @@ class ServerApp {
     socket.on(appActions.createRewardForAction, this.onSocketCreateRewardForAction.bind(this));
     socket.on(appActions.removePlayer, this.onSocketRemovePlayer.bind(this));
     socket.on(appActions.updateDebugAutoRefund, this.onSocketUpdateDebugAutoRefund.bind(this));
+    socket.on(appActions.updatePlayer, this.onSocketUpdatePlayer.bind(this));
     this.controlSockets.push(socket);
     socket.emit(appActions.updateApp, this.isAppReady());
     socket.emit(appActions.updateEventSubReady, !!this.eventSub);
@@ -572,6 +577,26 @@ class ServerApp {
     this.debugAutoRefund = value;
     logger(`Set debugAutoRefund to ${value}`);
     this.controlEmit(appActions.updateDebugAutoRefund, this.debugAutoRefund);
+  }
+
+  async onSocketUpdatePlayer(userId, data) {
+    const player = this.playerDataFile.data.players.find(player => userId === player.userId);
+    if (!player) {
+      logger(`onSocketUpdatePlayer: "${userId}" not in player data`);
+      return;
+    }
+    const entries = Object.entries(data);
+    const changesMsg = entries.map(([key, value]) => `"${key}": ${value}`).join('; ');
+    logger(`onSocketUpdatePlayer: "${player.userDisplayName}" updating: ${changesMsg}`);
+
+    entries.forEach(([key, value]) => {
+      if (has(player, key)) {
+        player[key] = value;
+      }
+    });
+    
+    await this.playerDataFile.save();
+    this.allEmit(appActions.updatePlayer, player);
   }
 
   getRewardObjs() {

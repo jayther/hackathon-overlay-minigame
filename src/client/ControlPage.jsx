@@ -3,6 +3,8 @@ import { withApp } from './utils/AppContext';
 import SocketBridge from './utils/SocketBridge';
 import appActions from '../shared/AppActions';
 import requiredRewards from '../shared/RequiredRewards';
+import { characterTypes, characterGenders } from '../shared/CharacterParts';
+import { next } from '../shared/ArrayUtils';
 
 function PlayersSection(props) {
   return (
@@ -22,6 +24,16 @@ function PlayersSection(props) {
             <td>{player.characterType}</td>
             <td>{player.characterGender}</td>
             <td>
+              <button onClick={() => SocketBridge.socket.emit(appActions.updatePlayer, player.userId, {
+                characterType: next(characterTypes, player.characterType)
+              })}>
+                Change Type
+              </button>
+              <button onClick={() => SocketBridge.socket.emit(appActions.updatePlayer, player.userId, {
+                characterGender: next(characterGenders, player.characterGender)
+              })}>
+                Change Gender
+              </button>
               <button onClick={() => SocketBridge.socket.emit(appActions.removePlayer, player.userId)}>
                 Remove
               </button>
