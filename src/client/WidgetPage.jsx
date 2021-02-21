@@ -6,6 +6,7 @@ import { resolveCharacter } from './utils/CharacterUtils';
 import { createCharacter } from '../shared/CharacterParts';
 import SocketBridge from './utils/SocketBridge';
 import appActions from '../shared/AppActions';
+import Vec2 from '../shared/math/Vec2';
 import * as allCharacters from './game/characters/All_Characters';
 
 let fxIdPool = 0;
@@ -16,9 +17,12 @@ class WidgetPage extends React.Component {
 
     this.state = {
       playerChars: [],
-      fxInstances: []
+      fxInstances: [],
+      randSegStart: new Vec2(200, 200),
+      randSegEnd: new Vec2(400, 200)
     };
 
+    this.pageRef = React.createRef();
     this.userIdRefMap = {};
 
     this.startFX = this.startFX.bind(this);
@@ -27,11 +31,25 @@ class WidgetPage extends React.Component {
     SocketBridge.socket.on(appActions.addPlayer, this.onAddPlayer.bind(this));
     SocketBridge.socket.on(appActions.updatePlayer, this.onUpdatePlayer.bind(this));
     SocketBridge.socket.on(appActions.removePlayer, this.onRemovePlayer.bind(this));
+    window.addEventListener('resize', this.onResize.bind(this), false);
   }
 
   componentDidMount() {
     // is this fine...
     this.props.appState.players.forEach(this.onAddPlayer, this);
+    // double call on purpose
+    this.onResize();
+    setTimeout(this.onResize.bind(this), 500);
+  }
+
+  onResize() {
+    const style = window.getComputedStyle(this.pageRef.current);
+    const width = parseInt(style.width, 10);
+    const height = parseInt(style.height, 10);
+    this.setState({
+      randSegStart: new Vec2(20, height),
+      randSegEnd: new Vec2(width - 20, height)
+    });
   }
 
   onAddPlayer(player) {
@@ -41,10 +59,7 @@ class WidgetPage extends React.Component {
       const character = allCharacters[createCharacter(player.characterType, player.characterGender)];
       const playerChar = {
         ...player,
-        character: character,
-        position: {
-          x: 200, y: 200
-        }
+        character: character
       };
       return {
         playerChars: [...state.playerChars, playerChar]
@@ -58,6 +73,7 @@ class WidgetPage extends React.Component {
       return {
         playerChars: state.playerChars.map(pc => pc.userId === player.userId ? {
           ...pc,
+          ...player,
           character
         } : pc)
       };
@@ -106,17 +122,23 @@ class WidgetPage extends React.Component {
     });
   }
 
+  movePlayerTo(userId, position) {
+
+  }
+
   render() {
     return (
-      <div className="widget-page">
+      <div className="widget-page" ref={this.pageRef}>
         <div className="widget-playerchar-layer widget-layer">
           { this.state.playerChars.map(playerChar => (
             <PlayerChar 
               key={playerChar.userId}
+              userId={playerChar.userId}
               ref={this.userIdRefMap[playerChar.userId]}
               character={resolveCharacter(playerChar.character)}
               startFX={this.startFX}
-              position={playerChar.position}
+              randSegStart={this.state.randSegStart}
+              randSegEnd={this.state.randSegEnd}
             />
           )) }
         </div>

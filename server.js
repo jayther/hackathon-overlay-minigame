@@ -17,6 +17,7 @@ const {
   characterGenders
 } = require('./src/shared/CharacterParts');
 const { waitForMS } = require('./src/shared/PromiseUtils');
+const { has } = require('./src/shared/ObjectUtils');
 
 const appSecretsPath = './.appsecrets.json';
 const userTokensPath = './.usertokens.json';
@@ -45,10 +46,6 @@ const defaultPlayer = {
 };
 
 const updateRedeemDelay = 1000; // ms
-
-function has(obj, key) {
-  return Object.prototype.hasOwnProperty.call(obj, key);
-}
 
 function objToParams(obj) {
   const paramParts = [];
