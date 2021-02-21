@@ -30,3 +30,17 @@
   left: 0;
   top: 0;
 }
+
+.arena {
+  position: absolute;
+  width: 336px;
+  height: 126px;
+  margin-left: -168px;
+  margin-top: -126px;
+  left: 50%;
+  top: 150%;
+  transition: top 3s linear;
+  transform-origin: 50% 100%;
+  transform: scale(2);
+  image-rendering: pixelated;
+}

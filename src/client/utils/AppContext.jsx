@@ -20,7 +20,9 @@ const initialState = {
   rewards: [],
   rewardMap: {},
   players: [],
-  debugAutoRefund: false
+  debugAutoRefund: false,
+  battleQueue: [],
+  currentBattle: null
 };
 
 function reducer(state, action) {
@@ -151,6 +153,19 @@ function reducer(state, action) {
       return {
         ...state,
         debugAutoRefund: !!action.value
+      };
+    case appActions.updateBattleQueue:
+      if (!action.value) {
+        throw new Error('App action "updatebattlequeue" requires a value');
+      }
+      return {
+        ...state,
+        battleQueue: action.value
+      };
+    case appActions.updateBattle:
+      return {
+        ...state,
+        currentBattle: action.value || null
       };
     default:
       throw new Error(`Unknown app action type: ${action.type}`);

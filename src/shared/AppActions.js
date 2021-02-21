@@ -20,5 +20,11 @@ module.exports = {
   allPlayers: 'allplayers',
   updateDebugAutoRefund: 'updatedebugautorefund',
   addDebugPlayer: 'adddebugplayer',
-  clearDebugPlayers: 'cleardebugplayers'
+  clearDebugPlayers: 'cleardebugplayers',
+  requestBattle: 'requestbattle',
+  startBattle: 'startbattle',
+  cancelBattle: 'cancelbattle',
+  updateBattle: 'updatebattle',
+  updateBattleQueue: 'updatebattlequeue',
+  finishBattle: 'finishBattle'
 };

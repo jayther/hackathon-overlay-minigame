@@ -14,6 +14,7 @@ import R from './Resources';
 
 import spritesheet0img from './assets/spritesheets-0.png';
 import spritesheet1img from './assets/spritesheets-1.png';
+import arenaimg from './assets/arena.png';
 import spritesheet0 from './assets/spritesheets-0.json';
 import spritesheet1 from './assets/spritesheets-1.json';
 
@@ -58,6 +59,7 @@ class Website extends React.Component {
     this.preloader = new Preloader();
     this.preloader.addImgLoader(spritesheet0img);
     this.preloader.addImgLoader(spritesheet1img);
+    this.preloader.addImgLoader(arenaimg);
   }
   componentDidMount() {
     this.init();

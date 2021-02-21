@@ -3,6 +3,18 @@ function pick(list) {
   return list[Math.floor(Math.random() * list.length)];
 }
 
+function pickExcept(list, except) {
+  const pool = list.slice();
+  const excepts = Array.isArray(except) ? except : [except];
+  excepts.forEach(e => {
+    const index = pool.indexOf(e);
+    if (index !== -1) {
+      pool.splice(index, 1);
+    }
+  });
+  return pick(pool);
+}
+
 function between(min, max) {
   return min + Math.random() * (max - min);
 }
@@ -21,6 +33,7 @@ function rollDice(count, sides) {
 
 module.exports = {
   pick,
+  pickExcept,
   between,
   betweenInt,
   rollDice

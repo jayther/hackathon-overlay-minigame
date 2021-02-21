@@ -12,8 +12,10 @@ function PlayersSection(props) {
       <thead>
         <tr>
           <th>Username</th>
-          <th>Char Type</th>
-          <th>Char Gender</th>
+          <th>K/D/T</th>
+          <th>WS</th>
+          <th>Type</th>
+          <th>Gender</th>
           <th>Weapon</th>
           <th>Actions</th>
         </tr>
@@ -22,6 +24,8 @@ function PlayersSection(props) {
         {props.players.map(player => (
           <tr key={player.userId}>
             <td>{player.userDisplayName}</td>
+            <td>{player.wins}/{player.losses}/{player.draws}</td>
+            <td>{player.winStreak}</td>
             <td>{player.characterType}</td>
             <td>{player.characterGender}</td>
             <td>{player.weapon ? 'Yes' : 'No'}</td>
@@ -41,6 +45,9 @@ function PlayersSection(props) {
               })}>
                 Toggle Weapon
               </button>
+              <button onClick={() => SocketBridge.socket.emit(appActions.requestBattle, player.userId)}>
+                Request Battle
+              </button>
               <button onClick={() => SocketBridge.socket.emit(appActions.removePlayer, player.userId)}>
                 Remove
               </button>
@@ -50,6 +57,40 @@ function PlayersSection(props) {
       </tbody>
     </table>
   )
+}
+
+function BattleSection(props) {
+  return (
+    <div>
+      <h2>Battles</h2>
+      <p>
+        Current battle:
+        { 
+          props.battle ?
+          `${props.battle.player1.userDisplayName} vs ${props.battle.player2.userDisplayName}` :
+          'none'
+        }
+      </p>
+      <h3>Queue</h3>
+      <table>
+        <tbody>
+          { props.battleQueue.map(b => (
+            <tr key={b.id}>
+              <td>{b.userDisplayName}</td>
+              <td>
+                <button onClick={() => SocketBridge.socket.emit(appActions.cancelBattle, b.id)}>
+                  Cancel
+                </button>
+                <button onClick={() => SocketBridge.socket.emit(appActions.startBattle, b.id)}>
+                  Start
+                </button>
+              </td>
+            </tr>
+          )) }
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 function MissingRewardsSection(props) {
@@ -231,13 +272,17 @@ function EditRewardMap(props) {
 function ControlPage(props) {
   const mappedActions = Object.values(props.appState.rewardMap);
   const missingRewards = Object.keys(requiredRewards).filter(key => !mappedActions.includes(key));
-
+  const battle = props.appState.currentBattle ? {
+      player1: props.appState.players.find(p => p.userId === props.appState.currentBattle[0]),
+      player2: props.appState.players.find(p => p.userId === props.appState.currentBattle[1])
+    } : null;
 
   return (
     <div>
       <h1>Control</h1>
       <h2>Players</h2>
       <PlayersSection players={props.appState.players} />
+      <BattleSection battle={battle} battleQueue={props.appState.battleQueue} />
       <MissingRewardsSection rewards={props.appState.rewards} missingRewards={missingRewards} />
       <EditRewardMap rewards={props.appState.rewards} rewardMap={props.appState.rewardMap} />
       <DebugSection appState={props.appState} />

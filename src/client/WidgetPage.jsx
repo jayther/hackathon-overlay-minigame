@@ -8,6 +8,7 @@ import SocketBridge from './utils/SocketBridge';
 import appActions from '../shared/AppActions';
 import Vec2 from '../shared/math/Vec2';
 import * as allCharacters from './game/characters/All_Characters';
+import arenaImg from './assets/arena.png';
 
 let fxIdPool = 0;
 
@@ -19,11 +20,18 @@ class WidgetPage extends React.Component {
       playerChars: [],
       fxInstances: [],
       randSegStart: new Vec2(200, 200),
-      randSegEnd: new Vec2(400, 200)
+      randSegEnd: new Vec2(400, 200),
+      showArena: false
     };
 
     this.pageRef = React.createRef();
     this.userIdRefMap = {};
+    this.arenaLeftStairBottom = new Vec2();
+    this.arenaLeftStairTop = new Vec2();
+    this.arenaRightStairBottom = new Vec2();
+    this.arenaRightStairTop = new Vec2();
+    this.arenaLeftPoint = new Vec2();
+    this.arenaRightPoint = new Vec2();
 
     this.startFX = this.startFX.bind(this);
     this.onFXEnd = this.onFXEnd.bind(this);
@@ -50,6 +58,30 @@ class WidgetPage extends React.Component {
       randSegStart: new Vec2(20, height),
       randSegEnd: new Vec2(width - 20, height)
     });
+    this.arenaLeftStairBottom.set(
+      Math.floor(width / 2 - 66),
+      height
+    );
+    this.arenaLeftStairTop.set(
+      Math.floor(width / 2 - 152),
+      height - 90
+    );
+    this.arenaRightStairBottom.set(
+      Math.floor(width / 2 + 66),
+      height
+    );
+    this.arenaRightStairTop.set(
+      Math.floor(width / 2 + 152),
+      height - 90
+    );
+    this.arenaLeftPoint.set(
+      Math.floor(width / 2 - 136),
+      height - 90
+    );
+    this.arenaRightPoint.set(
+      Math.floor(width / 2 - 136),
+      height - 90
+    );
   }
 
   onAddPlayer(player) {
@@ -128,7 +160,13 @@ class WidgetPage extends React.Component {
 
   render() {
     return (
-      <div className="widget-page" ref={this.pageRef}>
+      <div className="widget-page" ref={this.pageRef} onClick={() => {
+        this.setState({ showArena: !this.state.showArena});
+      }}>
+        <div className="arena" style={{
+          backgroundImage: `url('${arenaImg}')`,
+          top: this.state.showArena ? '100%' : '150%'
+        }}></div>
         <div className="widget-playerchar-layer widget-layer">
           { this.state.playerChars.map(playerChar => (
             <PlayerChar 

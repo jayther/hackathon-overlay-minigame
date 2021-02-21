@@ -18,6 +18,7 @@ const {
 } = require('./src/shared/CharacterParts');
 const { waitForMS } = require('./src/shared/PromiseUtils');
 const { has } = require('./src/shared/ObjectUtils');
+const { pickExcept } = require('./src/shared/RandUtils');
 
 const appSecretsPath = './.appsecrets.json';
 const userTokensPath = './.usertokens.json';
@@ -142,6 +143,8 @@ class ServerApp {
     this.user = null;
     this.rewards = [];
     this.redeems = [];
+    this.currentBattle = null;
+    this.battleQueue = [];
 
     this.debugAutoRefund = false;
     
@@ -269,6 +272,9 @@ class ServerApp {
     socket.on(appActions.updatePlayer, this.onSocketUpdatePlayer.bind(this));
     socket.on(appActions.addDebugPlayer, this.onSocketAddDebugPlayer.bind(this));
     socket.on(appActions.clearDebugPlayers, this.onSocketClearDebugPlayers.bind(this));
+    socket.on(appActions.requestBattle, this.onSocketRequestBattle.bind(this));
+    socket.on(appActions.startBattle, this.startBattle.bind(this));
+    socket.on(appActions.cancelBattle, this.cancelBattle.bind(this));
     this.controlSockets.push(socket);
     socket.emit(appActions.updateApp, this.isAppReady());
     socket.emit(appActions.updateEventSubReady, !!this.eventSub);
@@ -495,6 +501,15 @@ class ServerApp {
     return this.playerDataFile.data.players.find(player => userId === player.userId);
   }
 
+  getRewardIdFromAction(actionKey) {
+    for (let [rewardId, k] of Object.entries(this.rewardMapFile.data)) {
+      if (k === actionKey) {
+        return rewardId;
+      }
+    }
+    return null;
+  }
+
   async onSocketCreateReward(data) {
     await this.twitchUserClient.helix.channelPoints.createCustomReward(this.user.id, data);
   }
@@ -652,6 +667,99 @@ class ServerApp {
     this.allEmit(appActions.addPlayer, player);
   }
 
+  async requestBattle(event) {
+    const player = this.getPlayer(event.userId);
+    if (!player) {
+      throw new Error(`requestBattle: "${event.userId}" not in player data`);
+    }
+    if (!player.alive) {
+      throw new Error(`requestBattle: "${player.userDisplayName}" is not alive`);
+    }
+    this.battleQueue.push({
+      id: event.id,
+      rewardId: event.rewardId,
+      userId: event.userId,
+      userName: event.userName,
+      userDisplayName: event.userDisplayName,
+      debug: event.debug || false
+    });
+    this.controlEmit(appActions.updateBattleQueue, this.battleQueue);
+  }
+  async startBattle(eventId) {
+    if (this.currentBattle) {
+      throw new Error(`startBattle: Cannot start battle for "${player.userDisplayName}", battle in progress`);
+    }
+
+    const eventIndex = this.battleQueue.findIndex(e => e.id === eventId);
+    if (eventIndex === -1) {
+      throw new Error(`startBattle: Battle event "${eventId}" not found in queue`);
+    }
+    const event = this.battleQueue[eventIndex];
+    const player = this.getPlayer(event.userId);
+    if (!player) {
+      throw new Error(`startBattle: "${event.userId}" not found in player data`);
+    }
+    if (!player.alive) {
+      throw new Error(`startBattle: "${player.userDisplayName}" is not alive`);
+    }
+    const alivePlayers = this.playerDataFile.data.players.filter(filterAlivePlayers);
+    if (alivePlayers.length < 2) {
+      throw new Error(`startBattle: "${player.userDisplayName}" is the only one alive`);
+    }
+
+    if (!event.debug) {
+      this.updateRedeem(event.rewardId, event.id, 'FULFILLED');
+    }
+
+    this.battleQueue.splice(eventIndex, 1);
+    this.controlEmit(appActions.updateBattleQueue, this.battleQueue);
+    const otherPlayer = pickExcept(alivePlayers, player);
+    this.currentBattle = [player.userId, otherPlayer.userId];
+    this.allEmit(appActions.updateBattle, this.currentBattle);
+  }
+
+  async cancelBattle(eventId) {
+    const eventIndex = this.battleQueue.findIndex(e => e.id === eventId);
+    if (eventIndex === -1) {
+      throw new Error(`cancelBattle: "${eventId}" not in queue`);
+    }
+    const event = this.battleQueue[eventIndex];
+    this.battleQueue.splice(eventIndex, 1);
+    if (!event.debug) {
+      this.updateRedeem(event.rewardId, event.id, 'CANCELED');
+    }
+    this.controlEmit(appActions.updateBattleQueue, this.battleQueue);
+  }
+
+  async finishBattle(winnerUserId, loserUserId) {
+    if (!this.currentBattle) {
+      // battle may have been removed on server side before widget battle ended
+      this.allEmit(appActions.updateBattle, null);
+      return;
+    }
+    const winner = this.getPlayer(winnerUserId);
+    if (!winner) {
+      logger(`finishBattle: "${winnerUserId}" winner not in player data`);
+      return;
+    }
+    const loser = this.getPlayer(loserUserId);
+    if (!loser) {
+      logger(`finishBattle: "${loserUserId}" loser not in player data`);
+      return;
+    }
+    winner.wins += 1;
+    winner.winStreak += 1;
+    winner.battles += 1;
+    loser.losses += 1;
+    loser.winStreak = 0;
+    loser.battles += 1;
+    loser.alive = false;
+    logger(`finishBattle: "${winner.userDisplayName}" won against "${loser.userDisplayName}"`);
+    await this.playerDataFile.save();
+    this.allEmit(appActions.updatePlayer, winner);
+    this.allEmit(appActions.updatePlayer, loser);
+  }
+
   async onSocketAddDebugPlayer() {
     let player = this.playerDataFile.data.players.filter(filterDebugPlayers).find(p => !p.alive);
     if (player) {
@@ -699,6 +807,26 @@ class ServerApp {
     logger('clearDebugPlayers: Cleared all debug players');
     await this.playerDataFile.save();
     alivePlayers.forEach(player => this.allEmit(appActions.removePlayer, player));
+  }
+
+  async onSocketRequestBattle(userId) {
+    const player = this.getPlayer(userId);
+    if (!player) {
+      logger(`onSocketRequestBattle: "${userId}" not found in player data`);
+    }
+    try {
+      const date = new Date();
+      await this.requestBattle({
+        id: `debug-${userId}-${date.getTime()}`,
+        rewardId: this.getRewardIdFromAction(requiredRewards.add.key),
+        userId,
+        userName: player.userName,
+        userDisplayName: player.userDisplayName,
+        debug: true
+      });
+    } catch (e) {
+      logger(`onSocketRequestBattle: Error occurred: ${e.message}`);
+    }
   }
 }
 
