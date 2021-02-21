@@ -30,8 +30,6 @@ const actions = {
   dash: 'dash',
   attack: 'attack',
   hit: 'hit',
-  weapon: 'weapon',
-  unweapon: 'unweapon',
   delay: 'delay'
 };
 
@@ -69,10 +67,10 @@ class PlayerChar extends SpriteApplier {
     this.animState = 'idle';
     this.intervalId = -1;
     this.anim = null;
-    this.weapon = false;
     this.position = new Vec2(200, 200);
     this.speed = 200; // px per second
     this.dashSpeed = 300; // px per second
+    this.weapon = false;
     this.actionQueue = [];
     this.currentAction = null;
     this.executingQueue = false;
@@ -95,6 +93,7 @@ class PlayerChar extends SpriteApplier {
     this.sprite = this.spriteRef.current;
     this.containerStyle = this.container.style;
     this.spriteStyle = this.sprite.style;
+    this.weapon = this.props.weapon;
     this.containerStyle.left = `${this.position.x}px`;
     this.containerStyle.top = `${this.position.y}px`;
     this.containerStyle.width = `0px`;
@@ -104,12 +103,18 @@ class PlayerChar extends SpriteApplier {
   }
 
   componentDidUpdate() {
+    let update = false;
     if (this.character !== this.props.character) {
       this.character = this.props.character;
+      update = true;
+    }
+    if (this.weapon !== this.props.weapon) {
+      this.weapon = this.props.weapon;
+      update = true;
+    }
+    if (update) {
       this.setAnimState(this.animState);
     }
-    this.containerStyle.left = `${this.position.x}px`;
-    this.containerStyle.top = `${this.position.y}px`;
   }
 
   onConTransitionEnd() {
@@ -189,14 +194,6 @@ class PlayerChar extends SpriteApplier {
       case actions.hit:
         this.setAnimState('hit');
         break;
-      case actions.weapon:
-        this.weapon = true;
-        this.setAnimState(this.animState);
-        break;
-      case actions.unweapon:
-        this.weapon = false;
-        this.setAnimState(this.animState);
-        break;
       case actions.delay:
         setTimeout(() => {
           this.processActionQueue();
@@ -252,7 +249,7 @@ class PlayerChar extends SpriteApplier {
   }
 
   toggleWeapon() {
-    this.weapon = !this.weapon;
+    //this.weapon = !this.weapon;
     this.setAnimState(this.animState);
   }
 
@@ -277,6 +274,8 @@ class PlayerChar extends SpriteApplier {
         hp = 0;
       }
       return { hp };
+    }, () => {
+      this.setAnimState('hit');
     });
   }
 

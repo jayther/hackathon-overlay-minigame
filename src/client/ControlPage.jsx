@@ -14,6 +14,7 @@ function PlayersSection(props) {
           <th>Username</th>
           <th>Char Type</th>
           <th>Char Gender</th>
+          <th>Weapon</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -23,6 +24,7 @@ function PlayersSection(props) {
             <td>{player.userDisplayName}</td>
             <td>{player.characterType}</td>
             <td>{player.characterGender}</td>
+            <td>{player.weapon ? 'Yes' : 'No'}</td>
             <td>
               <button onClick={() => SocketBridge.socket.emit(appActions.updatePlayer, player.userId, {
                 characterType: next(characterTypes, player.characterType)
@@ -33,6 +35,11 @@ function PlayersSection(props) {
                 characterGender: next(characterGenders, player.characterGender)
               })}>
                 Change Gender
+              </button>
+              <button onClick={() => SocketBridge.socket.emit(appActions.updatePlayer, player.userId, {
+                weapon: !player.weapon
+              })}>
+                Toggle Weapon
               </button>
               <button onClick={() => SocketBridge.socket.emit(appActions.removePlayer, player.userId)}>
                 Remove

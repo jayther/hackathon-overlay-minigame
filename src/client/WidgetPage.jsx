@@ -136,6 +136,7 @@ class WidgetPage extends React.Component {
               userId={playerChar.userId}
               ref={this.userIdRefMap[playerChar.userId]}
               character={resolveCharacter(playerChar.character)}
+              weapon={playerChar.weapon}
               startFX={this.startFX}
               randSegStart={this.state.randSegStart}
               randSegEnd={this.state.randSegEnd}

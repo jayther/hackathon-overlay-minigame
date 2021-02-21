@@ -39,6 +39,7 @@ const defaultPlayer = {
   debug: false,
   characterType: null,
   characterGender: null,
+  weapon: false,
   wins: 0,
   draws: 0,
   losses: 0,
@@ -490,6 +491,10 @@ class ServerApp {
     return await this.twitchUserClient.helix.channelPoints.updateRedemptionStatusByIds(this.user.id, rewardId, ids, useStatus);
   }
 
+  getPlayer(userId) {
+    return this.playerDataFile.data.players.find(player => userId === player.userId);
+  }
+
   async onSocketCreateReward(data) {
     await this.twitchUserClient.helix.channelPoints.createCustomReward(this.user.id, data);
   }
@@ -562,7 +567,7 @@ class ServerApp {
   }
 
   async onSocketRemovePlayer(userId) {
-    const player = this.playerDataFile.data.players.find(player => userId === player.userId);
+    const player = this.getPlayer(userId);
     if (!player) {
       logger(`onSocketRemovePlayer: "${userId}" not in player data`);
       return;
@@ -584,7 +589,7 @@ class ServerApp {
   }
 
   async onSocketUpdatePlayer(userId, data) {
-    const player = this.playerDataFile.data.players.find(player => userId === player.userId);
+    const player = this.getPlayer(userId);
     if (!player) {
       logger(`onSocketUpdatePlayer: "${userId}" not in player data`);
       return;
@@ -612,7 +617,7 @@ class ServerApp {
   }
 
   async addPlayer(event) {
-    let player = this.playerDataFile.data.players.find(player => player.userId === event.userId);
+    let player = this.getPlayer(event.userId);
     if (player && player.userId === event.userId && player.alive) {
       // delayed refund
       this.updateRedeem(event.rewardId, event.id, 'CANCELED');
