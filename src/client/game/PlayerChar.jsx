@@ -25,6 +25,16 @@ const animSetStates = {
   }
 };
 
+const actions = {
+  move: 'move',
+  dash: 'dash',
+  attack: 'attack',
+  hit: 'hit',
+  weapon: 'weapon',
+  unweapon: 'unweapon',
+  delay: 'delay'
+};
+
 function getAnimSetState(state, weapon = false) {
   return animSetStates[weapon ? 'weapon' : 'unarmed'][state];
 }
@@ -45,7 +55,8 @@ class PlayerChar extends SpriteApplier {
     this.startFX = props.startFX;
 
     this.state = {
-      hp: 1000
+      hp: 1000,
+      showHp: false
     };
     this.containerRef = React.createRef();
     this.spriteRef = React.createRef();
@@ -149,7 +160,7 @@ class PlayerChar extends SpriteApplier {
     let travelTime, delta;
     this.currentAction = action;
     switch (action.type) {
-      case 'move':
+      case actions.move:
         delta = distance(this.position, action.position);
         travelTime = delta / this.speed;
         this.containerStyle.transition = `left ${travelTime}s linear, top ${travelTime}s linear`;
@@ -161,7 +172,7 @@ class PlayerChar extends SpriteApplier {
           this.setAnimState('run');
         }, 50);
         break;
-      case 'dash':
+      case actions.dash:
         travelTime = distance(this.position, action.position) / this.dashSpeed;
         this.containerStyle.transition = `left ${travelTime}s linear, top ${travelTime}s linear`;
         setTimeout(() => {
@@ -172,19 +183,24 @@ class PlayerChar extends SpriteApplier {
           this.setAnimState('dash');
         }, 50);
         break;
-      case 'attack':
+      case actions.attack:
         this.setAnimState('attacks');
         break;
-      case 'hit':
+      case actions.hit:
         this.setAnimState('hit');
         break;
-      case 'weapon':
+      case actions.weapon:
         this.weapon = true;
         this.setAnimState(this.animState);
         break;
-      case 'unweapon':
+      case actions.unweapon:
         this.weapon = false;
         this.setAnimState(this.animState);
+        break;
+      case actions.delay:
+        setTimeout(() => {
+          this.processActionQueue();
+        }, action.duration);
         break;
     }
   }
@@ -261,6 +277,18 @@ class PlayerChar extends SpriteApplier {
         hp = 0;
       }
       return { hp };
+    });
+  }
+
+  resetHp() {
+    this.setState({
+      hp: 1000
+    });
+  }
+
+  setShowHp(show) {
+    this.setState({
+      showHp: show
     });
   }
 

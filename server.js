@@ -36,6 +36,7 @@ const defaultPlayer = {
   userName: null,
   userDisplayName: null,
   alive: false,
+  debug: false,
   characterType: null,
   characterGender: null,
   wins: 0,
@@ -121,6 +122,10 @@ function redeemToObj(redeem) {
 
 function filterAlivePlayers(player) {
   return player.alive;
+}
+
+function filterDebugPlayers(player) {
+  return player.debug;
 }
 
 class ServerApp {
@@ -261,6 +266,8 @@ class ServerApp {
     socket.on(appActions.removePlayer, this.onSocketRemovePlayer.bind(this));
     socket.on(appActions.updateDebugAutoRefund, this.onSocketUpdateDebugAutoRefund.bind(this));
     socket.on(appActions.updatePlayer, this.onSocketUpdatePlayer.bind(this));
+    socket.on(appActions.addDebugPlayer, this.onSocketAddDebugPlayer.bind(this));
+    socket.on(appActions.clearDebugPlayers, this.onSocketClearDebugPlayers.bind(this));
     this.controlSockets.push(socket);
     socket.emit(appActions.updateApp, this.isAppReady());
     socket.emit(appActions.updateEventSubReady, !!this.eventSub);
@@ -638,6 +645,55 @@ class ServerApp {
     await this.playerDataFile.save();
 
     this.allEmit(appActions.addPlayer, player);
+  }
+
+  async onSocketAddDebugPlayer() {
+    let player = this.playerDataFile.data.players.filter(filterDebugPlayers).find(p => !p.alive);
+    if (player) {
+      player.alive = true;
+      logger(`addDebugPlayer: "${player.userName}" respawned`);
+    } else {
+      const date = new Date();
+      const timeStr = date.getTime().toString();
+      const userId = `debug-${timeStr}`;
+      const userName = `db-${timeStr.substr(timeStr.length - 6)}`;
+      const userDisplayName = userName;
+      player = {
+        ...defaultPlayer,
+        userId,
+        userName,
+        userDisplayName,
+        alive: true,
+        characterType: RandUtils.pick(characterTypes),
+        characterGender: RandUtils.pick(characterGenders),
+        debug: true
+      };
+      this.playerDataFile.data.players.push(player);
+      logger(`addDebugPlayer: "${player.userName}" created`);
+    }
+
+    await this.playerDataFile.save();
+
+    this.allEmit(appActions.addPlayer, player);
+  }
+
+  async onSocketClearDebugPlayers() {
+    const indexes = [], alivePlayers = [];
+    this.playerDataFile.data.players.forEach((player, i) => {
+      if (player.debug) {
+        indexes.push(i);
+        if (player.alive) {
+          player.alive = false;
+          alivePlayers.push(player);
+        }
+      }
+    });
+    for (let i = indexes.length - 1; i >= 0; i -= 1) {
+      this.playerDataFile.data.players.splice(indexes[i], 1);
+    }
+    logger('clearDebugPlayers: Cleared all debug players');
+    await this.playerDataFile.save();
+    alivePlayers.forEach(player => this.allEmit(appActions.removePlayer, player));
   }
 }
 

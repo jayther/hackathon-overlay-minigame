@@ -18,5 +18,7 @@ module.exports = {
   updatePlayer: 'updateplayer',
   removePlayer: 'removeplayer',
   allPlayers: 'allplayers',
-  updateDebugAutoRefund: 'updatedebugautorefund'
+  updateDebugAutoRefund: 'updatedebugautorefund',
+  addDebugPlayer: 'adddebugplayer',
+  clearDebugPlayers: 'cleardebugplayers'
 };
