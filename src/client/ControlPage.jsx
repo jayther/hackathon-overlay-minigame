@@ -21,7 +21,7 @@ function PlayersSection(props) {
         </tr>
       </thead>
       <tbody>
-        {props.players.map(player => (
+        {props.players.length ? props.players.map(player => (
           <tr key={player.userId}>
             <td>{player.userDisplayName}</td>
             <td>{player.wins}/{player.losses}/{player.draws}</td>
@@ -53,7 +53,11 @@ function PlayersSection(props) {
               </button>
             </td>
           </tr>
-        ))}
+        )) : (
+          <tr>
+            <td colSpan={7}><em>None</em></td>
+          </tr>
+        )}
       </tbody>
     </table>
   )
@@ -71,10 +75,23 @@ function BattleSection(props) {
           'none'
         }
       </p>
+      <p>
+        Last battle results:
+        {
+          props.battleResults ? (
+            <span>
+              <strong>{props.battleResults.winner.userDisplayName}</strong> vs {props.battleResults.loser.userDisplayName}
+            </span>
+          ) : (
+            <em>None</em>
+          )
+        }
+      </p>
       <h3>Queue</h3>
       <table>
         <tbody>
-          { props.battleQueue.map(b => (
+          { props.battleQueue.length ?
+            props.battleQueue.map(b => (
             <tr key={b.id}>
               <td>{b.userDisplayName}</td>
               <td>
@@ -86,7 +103,11 @@ function BattleSection(props) {
                 </button>
               </td>
             </tr>
-          )) }
+          )) : (
+            <tr>
+              <td colSpan={2}><em>None</em></td>
+            </tr>
+          ) }
         </tbody>
       </table>
     </div>
@@ -273,8 +294,16 @@ function ControlPage(props) {
   const mappedActions = Object.values(props.appState.rewardMap);
   const missingRewards = Object.keys(requiredRewards).filter(key => !mappedActions.includes(key));
   const battle = props.appState.currentBattle ? {
-      player1: props.appState.players.find(p => p.userId === props.appState.currentBattle[0]),
-      player2: props.appState.players.find(p => p.userId === props.appState.currentBattle[1])
+      player1: props.appState.players.find(p => p.userId === props.appState.currentBattle[0]) || {
+        userId: props.appState.currentBattle[0],
+        userDisplayName: props.appState.currentBattle[0],
+        userName: props.appState.currentBattle[0]
+      },
+      player2: props.appState.players.find(p => p.userId === props.appState.currentBattle[1]) || {
+        userId: props.appState.currentBattle[1],
+        userDisplayName: props.appState.currentBattle[1],
+        userName: props.appState.currentBattle[1]
+      }
     } : null;
 
   return (
@@ -282,17 +311,19 @@ function ControlPage(props) {
       <h1>Control</h1>
       <h2>Players</h2>
       <PlayersSection players={props.appState.players} />
-      <BattleSection battle={battle} battleQueue={props.appState.battleQueue} />
+      <BattleSection battle={battle} battleQueue={props.appState.battleQueue} battleResults={props.appState.battleResults} />
       <MissingRewardsSection rewards={props.appState.rewards} missingRewards={missingRewards} />
       <EditRewardMap rewards={props.appState.rewards} rewardMap={props.appState.rewardMap} />
       <DebugSection appState={props.appState} />
       <h2>Redemptions</h2>
       <ul>
-        { props.appState.redeems.map(item => (
+        { props.appState.redeems.length ? props.appState.redeems.map(item => (
           <li key={item.id}>
             <strong>{item.rewardTitle}</strong>: {item.status}
           </li>
-        ))}
+        )) : (
+          <li><em>None</em></li>
+        )}
       </ul>
     </div>
   );

@@ -243,11 +243,13 @@ class ServerApp {
 
   addOverlaySocket(socket) {
     socket.on('disconnect', reason => this.removeOverlaySocket(socket, reason));
+    socket.on(appActions.finishBattle, this.finishBattle.bind(this));
     this.overlaySockets.push(socket);
     socket.emit(appActions.updateApp, this.isAppReady());
     socket.emit(appActions.updateEventSubReady, !!this.eventSub);
     socket.emit(appActions.updateUser, this.user);
     socket.emit(appActions.allPlayers, this.playerDataFile.data.players.filter(filterAlivePlayers));
+    socket.emit(appActions.updateBattle, this.currentBattle);
   }
 
   removeOverlaySocket(socket, reason) {
@@ -284,6 +286,8 @@ class ServerApp {
     socket.emit(appActions.updateRewardMap, this.rewardMapFile.data);
     socket.emit(appActions.allPlayers, this.playerDataFile.data.players.filter(filterAlivePlayers));
     socket.emit(appActions.updateDebugAutoRefund, this.debugAutoRefund);
+    socket.emit(appActions.updateBattle, this.currentBattle);
+    socket.emit(appActions.updateBattleQueue, this.battleQueue);
   }
 
   removeControlSocket(socket, reason) {
@@ -754,10 +758,13 @@ class ServerApp {
     loser.winStreak = 0;
     loser.battles += 1;
     loser.alive = false;
+    this.currentBattle = null;
     logger(`finishBattle: "${winner.userDisplayName}" won against "${loser.userDisplayName}"`);
     await this.playerDataFile.save();
+    this.controlEmit(appActions.updateBattleResults, { winner, loser });
+    this.allEmit(appActions.updateBattle, this.currentBattle);
     this.allEmit(appActions.updatePlayer, winner);
-    this.allEmit(appActions.updatePlayer, loser);
+    this.allEmit(appActions.removePlayer, loser);
   }
 
   async onSocketAddDebugPlayer() {

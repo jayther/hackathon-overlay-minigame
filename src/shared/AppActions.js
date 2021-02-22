@@ -26,5 +26,6 @@ module.exports = {
   cancelBattle: 'cancelbattle',
   updateBattle: 'updatebattle',
   updateBattleQueue: 'updatebattlequeue',
-  finishBattle: 'finishBattle'
+  finishBattle: 'finishBattle',
+  updateBattleResults: 'updateBattleResults'
 };

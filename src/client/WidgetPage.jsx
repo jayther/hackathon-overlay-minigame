@@ -33,6 +33,8 @@ class WidgetPage extends React.Component {
     this.arenaLeftPoint = new Vec2();
     this.arenaRightPoint = new Vec2();
 
+    this.runningBattle = false;
+
     this.startFX = this.startFX.bind(this);
     this.onFXEnd = this.onFXEnd.bind(this);
 
@@ -48,6 +50,37 @@ class WidgetPage extends React.Component {
     // double call on purpose
     this.onResize();
     setTimeout(this.onResize.bind(this), 500);
+    this.maybeExecuteBattle();
+  }
+
+  componentDidUpdate() {
+    this.maybeExecuteBattle();
+  }
+
+  maybeExecuteBattle() {
+    if (this.runningBattle) {
+      return;
+    }
+    if (!this.props.appState.currentBattle) {
+      return;
+    }
+    this.runningBattle = true;
+    console.log('executing battle');
+    this.setState({
+      lastWinner: null
+    });
+    setTimeout(() => {
+      let winnerUserId, loserUserId;
+      if (Math.random() < 0.5) {
+        winnerUserId = this.props.appState.currentBattle[0];
+        loserUserId = this.props.appState.currentBattle[1];
+      } else {
+        winnerUserId = this.props.appState.currentBattle[1];
+        loserUserId = this.props.appState.currentBattle[0];
+      }
+      SocketBridge.socket.emit(appActions.finishBattle, winnerUserId, loserUserId);
+      this.runningBattle = false;
+    }, 3000);
   }
 
   onResize() {

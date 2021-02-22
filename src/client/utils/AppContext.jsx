@@ -22,7 +22,8 @@ const initialState = {
   players: [],
   debugAutoRefund: false,
   battleQueue: [],
-  currentBattle: null
+  currentBattle: null,
+  winner: null
 };
 
 function reducer(state, action) {
@@ -166,6 +167,11 @@ function reducer(state, action) {
       return {
         ...state,
         currentBattle: action.value || null
+      };
+    case appActions.updateBattleResults:
+      return {
+        ...state,
+        battleResults: action.value || null
       };
     default:
       throw new Error(`Unknown app action type: ${action.type}`);

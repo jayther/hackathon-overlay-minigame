@@ -6,6 +6,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { AppProvider, pageStates, withApp } from './utils/AppContext.jsx';
 import WidgetPage from './WidgetPage';
+import DebugWidgetPage from './DebugWidgetPage';
 import SocketBridge from './utils/SocketBridge';
 import Deferred from './utils/Deferred';
 import appActions from '../shared/AppActions';
