@@ -130,6 +130,12 @@ function filterDebugPlayers(player) {
   return player.debug;
 }
 
+function bindAndLog(promisable, thisArg) {
+  return () => {
+    return promisable.apply(thisArg, promisable).catch(e => logger(e.message));
+  };
+}
+
 class ServerApp {
   constructor(settings) {
     this.settings = settings;
@@ -149,7 +155,7 @@ class ServerApp {
     this.debugAutoRefund = false;
     
     this.rewardFuncMap = {};
-    this.rewardFuncMap[requiredRewards.add.key] = this.addPlayer.bind(this);
+    this.rewardFuncMap[requiredRewards.add.key] = bindAndLog(this.addPlayer, this);
   }
   async init() {
     logger('Starting ServerApp');
@@ -243,7 +249,7 @@ class ServerApp {
 
   addOverlaySocket(socket) {
     socket.on('disconnect', reason => this.removeOverlaySocket(socket, reason));
-    socket.on(appActions.finishBattle, this.finishBattle.bind(this));
+    socket.on(appActions.finishBattle, bindAndLog(this.finishBattle, this));
     this.overlaySockets.push(socket);
     socket.emit(appActions.updateApp, this.isAppReady());
     socket.emit(appActions.updateEventSubReady, !!this.eventSub);
@@ -265,18 +271,18 @@ class ServerApp {
 
   addControlSocket(socket) {
     socket.on('disconnect', reason => this.removeControlSocket(socket, reason));
-    socket.on('appsetup', this.onAppSetup.bind(this));
-    socket.on(appActions.createReward, this.onSocketCreateReward.bind(this));
-    socket.on(appActions.setRewardToAction, this.onSocketSetRewardToAction.bind(this));
-    socket.on(appActions.createRewardForAction, this.onSocketCreateRewardForAction.bind(this));
-    socket.on(appActions.removePlayer, this.onSocketRemovePlayer.bind(this));
-    socket.on(appActions.updateDebugAutoRefund, this.onSocketUpdateDebugAutoRefund.bind(this));
-    socket.on(appActions.updatePlayer, this.onSocketUpdatePlayer.bind(this));
-    socket.on(appActions.addDebugPlayer, this.onSocketAddDebugPlayer.bind(this));
-    socket.on(appActions.clearDebugPlayers, this.onSocketClearDebugPlayers.bind(this));
-    socket.on(appActions.requestBattle, this.onSocketRequestBattle.bind(this));
-    socket.on(appActions.startBattle, this.startBattle.bind(this));
-    socket.on(appActions.cancelBattle, this.cancelBattle.bind(this));
+    socket.on('appsetup', bindAndLog(this.onAppSetup, this));
+    socket.on(appActions.createReward, bindAndLog(this.onSocketCreateReward, this));
+    socket.on(appActions.setRewardToAction, bindAndLog(this.onSocketSetRewardToAction, this));
+    socket.on(appActions.createRewardForAction, bindAndLog(this.onSocketCreateRewardForAction, this));
+    socket.on(appActions.removePlayer, bindAndLog(this.onSocketRemovePlayer, this));
+    socket.on(appActions.updateDebugAutoRefund, bindAndLog(this.onSocketUpdateDebugAutoRefund, this));
+    socket.on(appActions.updatePlayer, bindAndLog(this.onSocketUpdatePlayer, this));
+    socket.on(appActions.addDebugPlayer, bindAndLog(this.onSocketAddDebugPlayer, this));
+    socket.on(appActions.clearDebugPlayers, bindAndLog(this.onSocketClearDebugPlayers, this));
+    socket.on(appActions.requestBattle, bindAndLog(this.onSocketRequestBattle, this));
+    socket.on(appActions.startBattle, bindAndLog(this.startBattle, this));
+    socket.on(appActions.cancelBattle, bindAndLog(this.cancelBattle, this));
     this.controlSockets.push(socket);
     socket.emit(appActions.updateApp, this.isAppReady());
     socket.emit(appActions.updateEventSubReady, !!this.eventSub);
@@ -384,16 +390,13 @@ class ServerApp {
 
   async startTwitchUser() {
     if (!this.isAppReady()) {
-      logger('Cannot start twitch: no app secrets');
-      return;
+      throw new Error('Cannot start twitch: no app secrets');
     }
     if (!this.areUserTokensReady()) {
-      logger('Cannot start twitch: no user tokens');
-      return;
+      throw new Error('Cannot start twitch: no user tokens');
     }
     if (this.twitchUserClient) {
-      logger('twitchUserClient already started');
-      return;
+      throw new Error('twitchUserClient already started');
     }
     logger('Starting twitch user...');
     const authProvider = new RefreshableAuthProvider(
@@ -429,12 +432,10 @@ class ServerApp {
 
   async startTwitchApp() {
     if (!this.isAppReady()) {
-      logger('Cannot start twitch: no app secrets');
-      return;
+      throw new Error('Cannot start twitch: no app secrets');
     }
     if (this.twitchAppClient) {
-      logger('twitchAppClient already started');
-      return;
+      throw new Error('twitchAppClient already started');
     }
     logger('Starting twitch app...');
     const authProvider = new ClientCredentialsAuthProvider(this.appSecretsFile.data.clientId, this.appSecretsFile.data.clientSecret);
@@ -445,16 +446,13 @@ class ServerApp {
 
   async startEventSub() {
     if (!this.twitchAppClient) {
-      logger(`Cannot start eventSub: twitchAppClient not ready`);
-      return;
+      throw new Error(`Cannot start eventSub: twitchAppClient not ready`);
     }
     if (!this.user) {
-      logger(`Cannot start eventSub: missing user (twitchUserClient started but did not get user details)`);
-      return;
+      throw new Error(`Cannot start eventSub: missing user (twitchUserClient started but did not get user details)`);
     }
     if (this.eventSub) {
-      logger('eventSub already started');
-      return;
+      throw new Error('eventSub already started');
     }
     logger('Starting eventSub...');
     this.eventSub = new EventSubListener(this.twitchAppClient, new NgrokAdapter());
@@ -462,15 +460,15 @@ class ServerApp {
     logger('Removing old subscriptions...');
     await this.twitchAppClient.helix.eventSub.deleteAllSubscriptions();
     logger('Subscribing to reward add events...');
-    this.rewardAddSub = await this.eventSub.subscribeToChannelRewardAddEvents(this.user.id, this.onRewardAdd.bind(this));
+    this.rewardAddSub = await this.eventSub.subscribeToChannelRewardAddEvents(this.user.id, bindAndLog(this.onRewardAdd, this));
     logger('Subscribing to reward remove events...');
-    this.rewardRemoveSub = await this.eventSub.subscribeToChannelRewardRemoveEvents(this.user.id, this.onRewardRemove.bind(this));
+    this.rewardRemoveSub = await this.eventSub.subscribeToChannelRewardRemoveEvents(this.user.id, bindAndLog(this.onRewardRemove, this));
     logger('Subscribing to reward update events...');
-    this.rewardUpdteSub = await this.eventSub.subscribeToChannelRewardUpdateEvents(this.user.id, this.onRewardUpdate.bind(this));
+    this.rewardUpdteSub = await this.eventSub.subscribeToChannelRewardUpdateEvents(this.user.id, bindAndLog(this.onRewardUpdate, this));
     logger('Subscribing to redeem add events...');
-    this.redeemSub = await this.eventSub.subscribeToChannelRedemptionAddEvents(this.user.id, this.onRedeem.bind(this));
+    this.redeemSub = await this.eventSub.subscribeToChannelRedemptionAddEvents(this.user.id, bindAndLog(this.onRedeem, this));
     logger('Subscribing to redeem update events...');
-    this.redeemUpdateSub = await this.eventSub.subscribeToChannelRedemptionUpdateEvents(this.user.id, this.onRedeemUpdate.bind(this));
+    this.redeemUpdateSub = await this.eventSub.subscribeToChannelRedemptionUpdateEvents(this.user.id, bindAndLog(this.onRedeemUpdate, this));
     this.allEmit(appActions.updateEventSubReady, !!this.eventSub);
     logger('eventSub started');
   }
@@ -503,6 +501,10 @@ class ServerApp {
 
   getPlayer(userId) {
     return this.playerDataFile.data.players.find(player => userId === player.userId);
+  }
+
+  isInBattle(userId) {
+    return this.currentBattle ? this.currentBattle.includes(userId) : false;
   }
 
   getRewardIdFromAction(actionKey) {
@@ -588,12 +590,10 @@ class ServerApp {
   async onSocketRemovePlayer(userId) {
     const player = this.getPlayer(userId);
     if (!player) {
-      logger(`onSocketRemovePlayer: "${userId}" not in player data`);
-      return;
+      throw new Error(`onSocketRemovePlayer: "${userId}" not in player data`);
     }
     if (!player.alive) {
-      logger(`onSocketRemovePlayer: "${player.userDisplayName}" not in arena`);
-      return;
+      throw new Error(`onSocketRemovePlayer: "${player.userDisplayName}" not in arena`);
     }
     logger(`onSocketRemovePlayer: Removing "${player.userDisplayName}" from arena`);
     player.alive = false;
@@ -610,8 +610,7 @@ class ServerApp {
   async onSocketUpdatePlayer(userId, data) {
     const player = this.getPlayer(userId);
     if (!player) {
-      logger(`onSocketUpdatePlayer: "${userId}" not in player data`);
-      return;
+      throw new Error(`onSocketUpdatePlayer: "${userId}" not in player data`);
     }
     const entries = Object.entries(data);
     const changesMsg = entries.map(([key, value]) => `"${key}": ${value}`).join('; ');
@@ -641,8 +640,7 @@ class ServerApp {
       // delayed refund
       this.updateRedeem(event.rewardId, event.id, 'CANCELED');
       // TODO send "error" to chat
-      logger(`addPlayer: "${player.userName}" already alive in game`);
-      return;
+      throw new Error(`addPlayer: "${player.userName}" already alive in game`);
     }
     if (player) {
       player.userName = event.userName;
@@ -743,13 +741,11 @@ class ServerApp {
     }
     const winner = this.getPlayer(winnerUserId);
     if (!winner) {
-      logger(`finishBattle: "${winnerUserId}" winner not in player data`);
-      return;
+      throw new Error(`finishBattle: "${winnerUserId}" winner not in player data`);
     }
     const loser = this.getPlayer(loserUserId);
     if (!loser) {
-      logger(`finishBattle: "${loserUserId}" loser not in player data`);
-      return;
+      throw new Error(`finishBattle: "${loserUserId}" loser not in player data`);
     }
     winner.wins += 1;
     winner.winStreak += 1;
@@ -819,7 +815,7 @@ class ServerApp {
   async onSocketRequestBattle(userId) {
     const player = this.getPlayer(userId);
     if (!player) {
-      logger(`onSocketRequestBattle: "${userId}" not found in player data`);
+      throw new Error(`onSocketRequestBattle: "${userId}" not found in player data`);
     }
     try {
       const date = new Date();
@@ -841,5 +837,9 @@ class ServerApp {
   const settings = await fs.readJSON('./settings.json');
   logger('loaded settings.json');
   const serverApp = new ServerApp(settings);
-  await serverApp.init();
+  try {
+    await serverApp.init();
+  } catch(e) {
+    logger(`server init error occurred: ${e.message}`);
+  }
 }());
