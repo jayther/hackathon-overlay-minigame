@@ -1,6 +1,8 @@
 .playerchar-con {
   position: absolute;
   image-rendering: pixelated;
+  transition: opacity 1s linear;
+  opacity: 1;
 }
 
 .playerchar {

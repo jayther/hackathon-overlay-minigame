@@ -15,6 +15,10 @@ function pickExcept(list, except) {
   return pick(pool);
 }
 
+function pickArgs(...list) {
+  return pick(list);
+}
+
 function between(min, max) {
   return min + Math.random() * (max - min);
 }
@@ -31,10 +35,37 @@ function rollDice(count, sides) {
   return sum;
 }
 
+function shuffleNew(array) {
+  const pool = array.slice();
+  const n = [];
+  while (pool.length > 0) {
+    const index = Math.floor(Math.random() * pool.length);
+    n.push(pool[index]);
+    pool.splice(index, 1);
+  }
+  return n;
+}
+
+function shuffleInPlace(array) {
+  let target, temp;
+  for (let i = 0; i < array.length - 1; i += 1) {
+    target = Math.floor(Math.random() * array.length);
+    if (target === i) {
+      continue;
+    }
+    temp = array[i];
+    array[i] = array[target];
+    array[target] = temp;
+  }
+  return array; // just return the same array for chaining
+}
 module.exports = {
   pick,
   pickExcept,
+  pickArgs,
   between,
   betweenInt,
-  rollDice
+  rollDice,
+  shuffleNew,
+  shuffleInPlace
 };

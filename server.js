@@ -131,8 +131,8 @@ function filterDebugPlayers(player) {
 }
 
 function bindAndLog(promisable, thisArg) {
-  return () => {
-    return promisable.apply(thisArg, promisable).catch(e => logger(e.message));
+  return (...args) => {
+    return promisable.apply(thisArg, args).catch(e => logger(e.message));
   };
 }
 

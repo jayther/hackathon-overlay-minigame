@@ -9,8 +9,17 @@ import appActions from '../shared/AppActions';
 import Vec2 from '../shared/math/Vec2';
 import * as allCharacters from './game/characters/All_Characters';
 import arenaImg from './assets/arena.png';
+import EventEmitter from 'eventemitter3';
+import BattleRunner from './game/BattleRunner';
+import JRect from '../shared/math/JRect';
 
 let fxIdPool = 0;
+
+const arenaDimensions = {
+  width: 336,
+  height: 126
+};
+const arenaScale = 2;
 
 class WidgetPage extends React.Component {
   constructor(props) {
@@ -26,14 +35,21 @@ class WidgetPage extends React.Component {
 
     this.pageRef = React.createRef();
     this.userIdRefMap = {};
-    this.arenaLeftStairBottom = new Vec2();
-    this.arenaLeftStairTop = new Vec2();
-    this.arenaRightStairBottom = new Vec2();
-    this.arenaRightStairTop = new Vec2();
-    this.arenaLeftPoint = new Vec2();
-    this.arenaRightPoint = new Vec2();
+    this.arena = {
+      leftStairBottom: new Vec2(),
+      leftStairTop: new Vec2(),
+      rightStairBottom: new Vec2(),
+      rightStairTop: new Vec2(),
+      leftPoint: new Vec2(),
+      rightPoint: new Vec2()
+    };
+    this.arenaRef = React.createRef();
+    this.arenaRect = new JRect();
+    this.arenaRect.setWidth(arenaDimensions.width * arenaScale);
+    this.arenaRect.setHeight(arenaDimensions.height * arenaScale);
 
     this.runningBattle = false;
+    this.events = new EventEmitter();
 
     this.startFX = this.startFX.bind(this);
     this.onFXEnd = this.onFXEnd.bind(this);
@@ -47,40 +63,59 @@ class WidgetPage extends React.Component {
   componentDidMount() {
     // is this fine...
     this.props.appState.players.forEach(this.onAddPlayer, this);
+    this.arenaRef.current.addEventListener('transitionend', this.onArenaTransitionEnd.bind(this), false);
     // double call on purpose
     this.onResize();
     setTimeout(this.onResize.bind(this), 500);
-    this.maybeExecuteBattle();
+    //this.maybeExecuteBattle();
   }
 
   componentDidUpdate() {
     this.maybeExecuteBattle();
   }
 
-  maybeExecuteBattle() {
+  async maybeExecuteBattle() {
     if (this.runningBattle) {
       return;
     }
     if (!this.props.appState.currentBattle) {
       return;
     }
+    const player1UserId = this.props.appState.currentBattle[0];
+    const player2UserId = this.props.appState.currentBattle[1];
+    const player1Ref = this.userIdRefMap[player1UserId];
+    const player2Ref = this.userIdRefMap[player2UserId];
+    if (!player1Ref || !player1Ref.current) {
+      console.log(`maybeExecuteBattle(): ${player1UserId} does not have a ref (might be just initial run)`);
+      return;
+    }
+    if (!player2Ref || !player2Ref.current) {
+      console.log(`maybeExecuteBattle(): ${player2UserId} does not have a ref (might be just initial run)`);
+      return;
+    }
+
     this.runningBattle = true;
     console.log('executing battle');
-    this.setState({
-      lastWinner: null
+    const player1 = this.props.appState.players.find(p => p.userId === player1UserId);
+    const player2 = this.props.appState.players.find(p => p.userId === player2UserId);
+    const battleRunner = new BattleRunner({
+      players: [
+        {
+          ...player1,
+          playerChar: player1Ref.current
+        },
+        {
+          ...player2,
+          playerChar: player2Ref.current
+        }
+      ],
+      arena: this.arena,
+      setShowArena: this.setShowArena.bind(this)
     });
-    setTimeout(() => {
-      let winnerUserId, loserUserId;
-      if (Math.random() < 0.5) {
-        winnerUserId = this.props.appState.currentBattle[0];
-        loserUserId = this.props.appState.currentBattle[1];
-      } else {
-        winnerUserId = this.props.appState.currentBattle[1];
-        loserUserId = this.props.appState.currentBattle[0];
-      }
-      SocketBridge.socket.emit(appActions.finishBattle, winnerUserId, loserUserId);
-      this.runningBattle = false;
-    }, 3000);
+
+    await battleRunner.run();
+    SocketBridge.socket.emit(appActions.finishBattle, battleRunner.winner.userId, battleRunner.loser.userId);
+    this.runningBattle = false;
   }
 
   onResize() {
@@ -91,30 +126,42 @@ class WidgetPage extends React.Component {
       randSegStart: new Vec2(20, height),
       randSegEnd: new Vec2(width - 20, height)
     });
-    this.arenaLeftStairBottom.set(
-      Math.floor(width / 2 - 66),
-      height
+    this.arenaRect.setCenter(
+      Math.floor(width / 2),
+      Math.floor(height - this.arenaRect.getHeight() / 2)
     );
-    this.arenaLeftStairTop.set(
-      Math.floor(width / 2 - 152),
-      height - 90
+    this.arena.leftStairBottom.set(
+      Math.floor(this.arenaRect.left + 96 * arenaScale),
+      Math.floor(this.arenaRect.bottom)
     );
-    this.arenaRightStairBottom.set(
-      Math.floor(width / 2 + 66),
-      height
+    this.arena.leftStairTop.set(
+      Math.floor(this.arenaRect.left + 16 * arenaScale),
+      Math.floor(this.arenaRect.top + 38 * arenaScale)
     );
-    this.arenaRightStairTop.set(
-      Math.floor(width / 2 + 152),
-      height - 90
+    this.arena.rightStairBottom.set(
+      Math.floor(this.arenaRect.right - 96 * arenaScale),
+      Math.floor(this.arenaRect.bottom)
     );
-    this.arenaLeftPoint.set(
-      Math.floor(width / 2 - 136),
-      height - 90
+    this.arena.rightStairTop.set(
+      Math.floor(this.arenaRect.right - 16 * arenaScale),
+      Math.floor(this.arenaRect.top + 38 * arenaScale)
     );
-    this.arenaRightPoint.set(
-      Math.floor(width / 2 - 136),
-      height - 90
+    this.arena.leftPoint.set(
+      Math.floor(this.arenaRect.left + 120 * arenaScale),
+      Math.floor(this.arenaRect.top + 38 * arenaScale)
     );
+    this.arena.rightPoint.set(
+      Math.floor(this.arenaRect.right - 120 * arenaScale),
+      Math.floor(this.arenaRect.top + 38 * arenaScale)
+    );
+  }
+
+  onArenaTransitionEnd() {
+    this.events.emit('arenaTransitionEnd');
+  }
+
+  waitForArenaTransitionEnd() {
+    return new Promise(resolve => this.events.once('arenaTransitionEnd', resolve));
   }
 
   onAddPlayer(player) {
@@ -187,16 +234,23 @@ class WidgetPage extends React.Component {
     });
   }
 
-  movePlayerTo(userId, position) {
-
+  setShowArena(show) {
+    if (this.state.showArena === show) {
+      return Promise.resolve();
+    }
+    this.setState({
+      showArena: show
+    });
+    return this.waitForArenaTransitionEnd();
   }
 
   render() {
+    const isInBattle = (userId) => {
+      return this.props.appState.currentBattle ? this.props.appState.currentBattle.includes(userId) : false;
+    };
     return (
-      <div className="widget-page" ref={this.pageRef} onClick={() => {
-        this.setState({ showArena: !this.state.showArena});
-      }}>
-        <div className="arena" style={{
+      <div className="widget-page" ref={this.pageRef}>
+        <div ref={this.arenaRef} className="arena" style={{
           backgroundImage: `url('${arenaImg}')`,
           top: this.state.showArena ? '100%' : '150%'
         }}></div>
@@ -206,6 +260,7 @@ class WidgetPage extends React.Component {
               key={playerChar.userId}
               userId={playerChar.userId}
               ref={this.userIdRefMap[playerChar.userId]}
+              inBattle={isInBattle(playerChar.userId)}
               character={resolveCharacter(playerChar.character)}
               weapon={playerChar.weapon}
               startFX={this.startFX}

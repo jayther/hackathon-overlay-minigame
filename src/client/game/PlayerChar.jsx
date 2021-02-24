@@ -1,8 +1,10 @@
 import React from 'react';
+import EventEmitter from 'eventemitter3';
 import RandUtils from '../../shared/RandUtils';
 import SpriteApplier from './SpriteApplier';
 import Vec2 from '../../shared/math/Vec2';
 import { distance } from '../../shared/math/JMath';
+import { waitForMS } from '../../shared/PromiseUtils';
 
 const animSetStates = {
   unarmed: {
@@ -30,7 +32,9 @@ const actions = {
   dash: 'dash',
   attack: 'attack',
   hit: 'hit',
-  delay: 'delay'
+  delay: 'delay',
+  die: 'die',
+  face: 'face'
 };
 
 function getAnimSetState(state, weapon = false) {
@@ -56,6 +60,7 @@ class PlayerChar extends SpriteApplier {
       hp: 1000,
       showHp: false
     };
+    this.hp = 1000;
     this.containerRef = React.createRef();
     this.spriteRef = React.createRef();
     this.container = null;
@@ -70,7 +75,9 @@ class PlayerChar extends SpriteApplier {
     this.position = new Vec2(200, 200);
     this.speed = 200; // px per second
     this.dashSpeed = 300; // px per second
+    this.hitSpeed = 150; // px per second
     this.weapon = false;
+    this.inBattle = false;
     this.actionQueue = [];
     this.currentAction = null;
     this.executingQueue = false;
@@ -81,6 +88,7 @@ class PlayerChar extends SpriteApplier {
       max: 6000
     };
 
+    this.events = new EventEmitter();
     this.animStep = this.animStep.bind(this);
   }
 
@@ -98,7 +106,8 @@ class PlayerChar extends SpriteApplier {
     this.containerStyle.top = `${this.position.y}px`;
     this.containerStyle.width = `0px`;
     this.containerStyle.height = `0px`;
-    this.container.addEventListener('transitionend', this.onConTransitionEnd.bind(this), false);
+    // unreliable; using setTimeout()
+    // this.container.addEventListener('transitionend', this.onConTransitionEnd.bind(this), false);
     this.setAnimState('spawn');
   }
 
@@ -111,6 +120,12 @@ class PlayerChar extends SpriteApplier {
     if (this.weapon !== this.props.weapon) {
       this.weapon = this.props.weapon;
       update = true;
+    }
+    if (this.inBattle !== this.props.inBattle) {
+      this.inBattle = this.props.inBattle;
+      if (!this.inBattle && this.randomMoveWhenIdle) {
+        this.startRandomMove();
+      }
     }
     if (update) {
       this.setAnimState(this.animState);
@@ -127,12 +142,15 @@ class PlayerChar extends SpriteApplier {
     }
 
     this.randomMoveId = setTimeout(() => {
-      const pos = randPos(this.props.randSegStart, this.props.randSegEnd);
-      // prevent getting stuck due to zero distance
-      if (pos.x === this.position.x && pos.y === this.position.y) {
-        pos.x += 1;
+      for (let i = 0; i < 1; i += 1) {
+        const pos = randPos(this.props.randSegStart, this.props.randSegEnd);
+        // prevent getting stuck due to zero distance
+        //pos.y -= betweenInt(0, 300);
+        if (pos.x === this.position.x && pos.y === this.position.y) {
+          pos.x += 1;
+        }
+        this.moveTo(pos);
       }
-      this.moveTo(pos)
     }, RandUtils.betweenInt(
       this.randomMoveDelayBounds.min,
       this.randomMoveDelayBounds.max
@@ -146,13 +164,35 @@ class PlayerChar extends SpriteApplier {
     }
   }
 
+  async cssTransitionMoveTo(position, speed, animState, moveBackwards = false) {
+    const oldPos = this.position.copy();
+    const delta = distance(oldPos, position);
+    let travelTime = Math.floor(delta / speed * 1000); // ms
+    if (travelTime < 10) {
+      travelTime = 10;
+    }
+    this.containerStyle.transition = `opacity 1s linear, left ${travelTime}ms linear, top ${travelTime}ms linear`;
+    await waitForMS(50); // wait for css to be applied
+    this.flipped = position.x > oldPos.x;
+    if (moveBackwards) {
+      this.flipped = !this.flipped;
+    }
+    this.containerStyle.left = `${position.x}px`;
+    this.containerStyle.top = `${position.y}px`;
+    this.position.set(position);
+    this.setAnimState(animState);
+    await waitForMS(travelTime);
+    this.processActionQueue();
+  }
+
   processActionQueue() {
     if (this.actionQueue.length === 0) {
       this.currentAction = null;
       this.executingQueue = false;
-      this.containerStyle.transition = '';
+      this.containerStyle.transition = 'opacity 1s linear';
       this.setAnimState('idle');
-      if (this.randomMoveWhenIdle) {
+      this.events.emit('idle', this);
+      if (this.randomMoveWhenIdle && !this.props.inBattle) {
         this.startRandomMove();
       }
       return;
@@ -162,43 +202,36 @@ class PlayerChar extends SpriteApplier {
     this.executingQueue = true;
 
     const action = this.actionQueue.shift();
-    let travelTime, delta;
     this.currentAction = action;
     switch (action.type) {
       case actions.move:
-        delta = distance(this.position, action.position);
-        travelTime = delta / this.speed;
-        this.containerStyle.transition = `left ${travelTime}s linear, top ${travelTime}s linear`;
-        setTimeout(() => {
-          this.flipped = action.position.x > this.position.x;
-          this.containerStyle.left = `${action.position.x}px`;
-          this.containerStyle.top = `${action.position.y}px`;
-          this.position.set(action.position);
-          this.setAnimState('run');
-        }, 50);
+        this.cssTransitionMoveTo(action.position, this.speed, 'run');
         break;
       case actions.dash:
-        travelTime = distance(this.position, action.position) / this.dashSpeed;
-        this.containerStyle.transition = `left ${travelTime}s linear, top ${travelTime}s linear`;
-        setTimeout(() => {
-          this.flipped = action.position.x > this.position.x;
-          this.containerStyle.left = `${action.position.x}px`;
-          this.containerStyle.top = `${action.position.y}px`;
-          this.position.set(action.position);
-          this.setAnimState('dash');
-        }, 50);
+        this.cssTransitionMoveTo(action.position, this.dashSpeed, 'dash');
         break;
       case actions.attack:
         this.setAnimState('attacks');
         break;
       case actions.hit:
-        this.setAnimState('hit');
+        this.hit(action.damage);
+        this.cssTransitionMoveTo(action.position, this.hitSpeed, 'hit', true);
         break;
       case actions.delay:
         setTimeout(() => {
           this.processActionQueue();
         }, action.duration);
         break;
+      case actions.die:
+        this.setAnimState('dead');
+        break;
+      case actions.face:
+        this.flipped = action.position.x > this.position.x;
+        this.setAnimState(this.animState);
+        this.processActionQueue();
+        break;
+      default:
+        console.error(`processActionQueue: Unknown action type: "${action.type}"`);
     }
   }
 
@@ -207,10 +240,62 @@ class PlayerChar extends SpriteApplier {
     if (!this.executingQueue) {
       this.processActionQueue();
     }
+    return this;
   }
 
   moveTo(position) {
-    this.addAction({ type: 'move', position });
+    this.addAction({ type: actions.move, position });
+    return this;
+  }
+
+  dashTo(position) {
+    this.addAction({ type: actions.dash, position });
+    return this;
+  }
+
+  hitTo(position, damage) {
+    this.addAction({ type: actions.hit, position, damage });
+    return this;
+  }
+
+  hitToDelta(dx, damage) {
+    const position = this.position.copy();
+    position.x += dx;
+    return this.hitTo(position, damage);
+  }
+
+  attack() {
+    this.addAction({ type: actions.attack });
+    return this;
+  }
+
+  delay(duration) {
+    this.addAction({ type: actions.delay, duration });
+    return this;
+  }
+
+  die() {
+    this.addAction({ type: actions.die });
+    return this;
+  }
+
+  face(position) {
+    this.addAction({ type: actions.face, position });
+  }
+
+  resetHp() {
+    this.hp = 1000;
+    this.setState({
+      hp: this.hp
+    });
+  }
+
+  fadeIn() {
+    this.containerStyle.opacity = 1;
+  }
+
+  fadeOut() {
+    this.containerStyle.opacity = 0;
   }
 
   startAnim(anim) {
@@ -223,6 +308,12 @@ class PlayerChar extends SpriteApplier {
     this.applySprite(this.anim.sprites[this.spriteIndex]);
   }
 
+  stopCurrentAnim() {
+    if (this.intervalId > -1) {
+      clearInterval(this.intervalId);
+    }
+  }
+
   animStep() {
     this.spriteIndex += 1;
     let ended = false;
@@ -231,6 +322,7 @@ class PlayerChar extends SpriteApplier {
         case 'idle':
         case 'run':
         case 'dash':
+        case 'hit':
           this.spriteIndex = 0;
           break;
         default:
@@ -238,7 +330,12 @@ class PlayerChar extends SpriteApplier {
       }
     }
     if (ended) {
-      this.processActionQueue();
+      if (this.animState === 'dead') {
+        this.stopCurrentAnim();
+        this.fadeOut();
+      } else {
+        this.processActionQueue();
+      }
     } else {
       this.applySprite(this.anim.sprites[this.spriteIndex]);
     }
@@ -268,27 +365,22 @@ class PlayerChar extends SpriteApplier {
   }
 
   hit(damage) {
-    this.setState((state, props) => {
-      let hp = state.hp - damage;
-      if (hp < 0) {
-        hp = 0;
-      }
-      return { hp };
-    }, () => {
-      this.setAnimState('hit');
-    });
-  }
-
-  resetHp() {
+    let hp = this.hp - damage;
+    this.hp = hp;
     this.setState({
-      hp: 1000
+      hp
     });
+    return hp;
   }
 
   setShowHp(show) {
     this.setState({
       showHp: show
     });
+  }
+
+  waitForIdle() {
+    return new Promise(resolve => this.events.once('idle', resolve));
   }
 
   render() {

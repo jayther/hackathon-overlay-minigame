@@ -36,6 +36,22 @@ function distance(posA, posB) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
+function sign(num) {
+  return num > 0 ? 1 : num < 0 ? -1 : 0;
+}
+
+function round10NthPlace(num, n) {
+  return Math.round(num * Math.pow(10, n)) / Math.pow(10, n); 
+}
+
+function floor10NthPlace(num, n) {
+  return Math.floor(num * Math.pow(10, n)) / Math.pow(10, n);
+}
+
+function ceil10NthPlace(num, n) {
+  return Math.ceil(num * Math.pow(10, n)) / Math.pow(10, n);
+}
+
 module.exports = {
   normalizeAngle,
   radToDeg,
@@ -43,5 +59,9 @@ module.exports = {
   lerp,
   clamp,
   clamp01,
-  distance
+  distance,
+  sign,
+  round10NthPlace,
+  floor10NthPlace,
+  ceil10NthPlace
 };
