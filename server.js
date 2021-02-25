@@ -7,7 +7,8 @@ const { ApiClient } = require('twitch');
 const { EventSubListener } = require('twitch-eventsub');
 const { NgrokAdapter } = require('twitch-eventsub-ngrok');
 const { ClientCredentialsAuthProvider, RefreshableAuthProvider, StaticAuthProvider } = require('twitch-auth');
-const logger = require('./src/server/logger');
+const logger = require('./src/server/utils/logger');
+const { bindAndLog } = require('./src/server/utils/LogUtils');
 const JsonDataFile = require('./src/server/JsonDataFile');
 const appActions = require('./src/shared/AppActions');
 const requiredRewards = require('./src/shared/RequiredRewards');
@@ -20,6 +21,7 @@ const { waitForMS } = require('./src/shared/PromiseUtils');
 const { has } = require('./src/shared/ObjectUtils');
 const { pick, pickArgs, pickExcept, betweenInt } = require('./src/shared/RandUtils');
 const fantasyNames = require('./src/server/FantasyNames');
+const socketTypes = require('./src/shared/SocketTypes');
 
 const appSecretsPath = './.appsecrets.json';
 const userTokensPath = './.usertokens.json';
@@ -129,12 +131,6 @@ function filterAlivePlayers(player) {
 
 function filterDebugPlayers(player) {
   return player.debug;
-}
-
-function bindAndLog(promisable, thisArg) {
-  return (...args) => {
-    return promisable.apply(thisArg, args).catch(e => logger(e.message));
-  };
 }
 
 function mockCase(word, even = false) {
@@ -255,11 +251,13 @@ class ServerApp {
 
     const socketType = socket.handshake.query.type;
     switch (socketType) {
-      case 'overlay':
+      case socketTypes.overlay:
+        socket.join(socketType);
         this.addOverlaySocket(socket);
         logger('Overlay socket connected');
         break;
-      case 'control':
+      case socketTypes.control:
+        socket.join(socketType);
         this.addControlSocket(socket);
         logger('Control socket connected');
         break;
@@ -347,16 +345,16 @@ class ServerApp {
   }
 
   allEmit(eventName, ...data) {
-    this.controlEmit(eventName, ...data);
-    this.overlayEmit(eventName, ...data);
+    this.io.to(socketTypes.control).emit(eventName, ...data);
+    this.io.to(socketTypes.overlay).emit(eventName, ...data);
   }
 
   overlayEmit(eventName, ...data) {
-    this.overlaySockets.forEach(socket => socket.emit(eventName, ...data));
+    this.io.to(socketTypes.overlay).emit(eventName, ...data);
   }
 
   controlEmit(eventName, ...data) {
-    this.controlSockets.forEach(socket => socket.emit(eventName, ...data));
+    this.io.to(socketTypes.control).emit(eventName, ...data);
   }
 
   async onAppSetup(clientId, clientSecret) {

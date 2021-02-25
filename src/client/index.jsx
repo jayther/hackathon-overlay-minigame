@@ -8,6 +8,7 @@ import SetupApp from './SetupApp';
 import SetupUser from './SetupUser';
 import ControlPage from './ControlPage';
 import SocketBridge from './utils/SocketBridge';
+import socketTypes from '../shared/SocketTypes';
 import Deferred from './utils/Deferred';
 import appActions from '../shared/AppActions';
 
@@ -36,7 +37,7 @@ class Website extends React.Component {
 
   async init() {
     this.props.appDispatch({ type: appActions.updatePage, pageState: pageStates.loading });
-    SocketBridge.init(SocketBridge.types.control);
+    SocketBridge.init(socketTypes.control);
     SocketBridge.socket.onAny(this.onSocketAny.bind(this));
     await this.waitForAppReadyData();
     this.props.appDispatch({ type: appActions.updatePage, pageState: pageStates.ready });

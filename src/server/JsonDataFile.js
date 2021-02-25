@@ -1,5 +1,5 @@
 const fs = require('fs-extra');
-const logger = require('./logger');
+const logger = require('./utils/logger');
 
 class JsonDataFile {
   constructor(path) {

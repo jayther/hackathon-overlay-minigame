@@ -1,22 +1,14 @@
 import { io } from 'socket.io-client';
 import Deferred from './Deferred';
 import settings from '../../../settings.json';
-
-const types = {
-  control: 'control',
-  overlay: 'overlay'
-};
+import socketTypes from '../../shared/SocketTypes';
 
 class SocketBridge {
-  constructor() {
-    this.types = types;
-  }
-
   init(type) {
     if (!type) {
       throw new Error('Missing type in init');
     }
-    if (!Object.values(types).some(value => value === type)) {
+    if (!Object.values(socketTypes).some(value => value === type)) {
       throw new Error('Invalid type in init');
     }
     this.socket = io(`http://localhost:${settings.socketPort}`, {

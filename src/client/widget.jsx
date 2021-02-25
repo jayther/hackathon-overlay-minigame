@@ -7,6 +7,7 @@ import ReactDOM from 'react-dom';
 import { AppProvider, pageStates, withApp } from './utils/AppContext.jsx';
 import WidgetPage from './WidgetPage';
 import SocketBridge from './utils/SocketBridge';
+import socketTypes from '../shared/SocketTypes';
 import Deferred from './utils/Deferred';
 import appActions from '../shared/AppActions';
 import Preloader from './utils/Preloader';
@@ -68,7 +69,7 @@ class Website extends React.Component {
   async init() {
     console.log('init called');
     this.props.appDispatch({ type: appActions.updatePage, pageState: pageStates.loading });
-    SocketBridge.init(SocketBridge.types.overlay);
+    SocketBridge.init(socketTypes.overlay);
     SocketBridge.socket.onAny(this.onSocketAny.bind(this));
     if (!this.props.appState.appReady) {
       await this.waitForAppReadyData();
