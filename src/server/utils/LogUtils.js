@@ -6,6 +6,11 @@ function bindAndLog(promisable, thisArg) {
   };
 }
 
+function logOnCatch(promisable) {
+  return promisable.catch(e => logger(e.message));
+}
+
 module.exports = {
-  bindAndLog
+  bindAndLog,
+  logOnCatch
 };
