@@ -18,7 +18,8 @@ const {
 } = require('./src/shared/CharacterParts');
 const { waitForMS } = require('./src/shared/PromiseUtils');
 const { has } = require('./src/shared/ObjectUtils');
-const { pickExcept } = require('./src/shared/RandUtils');
+const { pick, pickArgs, pickExcept, betweenInt } = require('./src/shared/RandUtils');
+const fantasyNames = require('./src/server/FantasyNames');
 
 const appSecretsPath = './.appsecrets.json';
 const userTokensPath = './.usertokens.json';
@@ -134,6 +135,44 @@ function bindAndLog(promisable, thisArg) {
   return (...args) => {
     return promisable.apply(thisArg, args).catch(e => logger(e.message));
   };
+}
+
+function mockCase(word, even = false) {
+  let mockWord = '';
+  for (let i = 0; i < word.length; i += 1) {
+    const isEven = (i % 2) === 0;
+    if (isEven === even) {
+      mockWord += word.charAt(i).toUpperCase();
+    }
+  }
+  return mockWord;
+}
+
+function randDisplayUserName() {
+  const first = pick(fantasyNames),
+    second = pick(fantasyNames);
+  const delimiter = pickArgs('', '_');
+  
+  // names are capitalized by default
+  const style = betweenInt(0, 7);
+  switch (style) {
+    case 0: // capitalize both
+      return first + delimiter + second;
+    case 1: // capitalize first
+      return first + delimiter + second.toLowerCase();
+    case 2: // capitalize second
+      return first.toLowerCase() + delimiter + second;
+    case 3: // all caps
+      return first.toUpperCase() + delimiter + second.toUpperCase();
+    case 4: // all lowercase
+      return first.toLowerCase() + delimiter + second.toLowerCase();
+    case 5: // even mock
+      return mockCase(first, true) + delimiter + mockCase(second, true);
+    case 6: // odd mock
+      return mockCase(first, false) + delimiter + mockCase(second, false);
+    default: // safety
+      return first + delimiter + second;
+  }
 }
 
 class ServerApp {
@@ -772,8 +811,8 @@ class ServerApp {
       const date = new Date();
       const timeStr = date.getTime().toString();
       const userId = `debug-${timeStr}`;
-      const userName = `db-${timeStr.substr(timeStr.length - 6)}`;
-      const userDisplayName = userName;
+      const userDisplayName = randDisplayUserName();
+      const userName = userDisplayName.toLowerCase();
       player = {
         ...defaultPlayer,
         userId,
