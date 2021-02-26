@@ -1,5 +1,8 @@
 import React from 'react';
 import EventEmitter from 'eventemitter3';
+
+import OutlinedText from './OutlinedText';
+
 import RandUtils from '../../shared/RandUtils';
 import SpriteApplier from './SpriteApplier';
 import Vec2 from '../../shared/math/Vec2';
@@ -48,6 +51,9 @@ function randPos(segStart, segEnd) {
   return pos;
 }
 
+const labelOffset = 25;
+const scale = 2;
+
 class PlayerChar extends SpriteApplier {
   constructor(props) {
     super(props);
@@ -58,7 +64,8 @@ class PlayerChar extends SpriteApplier {
 
     this.state = {
       hp: 1000,
-      showHp: false
+      showHp: false,
+      labelY: 0
     };
     this.hp = 1000;
     this.containerRef = React.createRef();
@@ -359,6 +366,11 @@ class PlayerChar extends SpriteApplier {
     const animOrAnims = this.character[animSetState];
     const anim = Array.isArray(animOrAnims) ? RandUtils.pick(animOrAnims) : animOrAnims;
     this.startAnim(anim);
+    // use first sprite as basis
+    const sprite = anim.sprites[0];
+    this.setState({
+      labelY: -sprite.sourceSize.h * scale - labelOffset
+    });
     if (anim.fx) {
       this.startFX(anim.fx, this.position, this.flipped, true);
     }
@@ -386,6 +398,15 @@ class PlayerChar extends SpriteApplier {
   render() {
     return (
       <div ref={this.containerRef} className="playerchar-con">
+        <div className="playerchar-label-con">
+          <OutlinedText className="playerchar-label"
+            text={this.props.userDisplayName}
+            style={{
+              zIndex: this.props.index,
+              top: `${this.state.labelY}px`
+            }}
+          />
+        </div>
         <div ref={this.spriteRef} className="playerchar"></div>
       </div>
     )

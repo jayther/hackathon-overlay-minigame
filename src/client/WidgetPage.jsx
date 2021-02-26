@@ -255,10 +255,12 @@ class WidgetPage extends React.Component {
           top: this.state.showArena ? '100%' : '150%'
         }}></div>
         <div className="widget-playerchar-layer widget-layer">
-          { this.state.playerChars.map(playerChar => (
+          { this.state.playerChars.map((playerChar, i) => (
             <PlayerChar 
               key={playerChar.userId}
               userId={playerChar.userId}
+              userDisplayName={playerChar.userDisplayName}
+              index={i + 1}
               ref={this.userIdRefMap[playerChar.userId]}
               inBattle={isInBattle(playerChar.userId)}
               character={resolveCharacter(playerChar.character)}

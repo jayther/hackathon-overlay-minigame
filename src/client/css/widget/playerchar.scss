@@ -11,3 +11,27 @@
   position: relative;
   image-rendering: pixelated;
 }
+
+.playerchar-label-con {
+  position: relative;
+}
+
+.playerchar-label {
+  position: absolute;
+  left: -100px;
+  top: -150px;
+  width: 200px;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.playerchar-label .outline {
+  text-align: center;
+  width: 100%;
+}
+
+.playerchar-label .fill {
+  text-align: center;
+  width: 100%;
+}

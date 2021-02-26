@@ -44,3 +44,24 @@
   transform: scale(2);
   image-rendering: pixelated;
 }
+
+
+.outlined-text {
+  color: white;
+}
+
+.outlined-text .outline {
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: black;
+  -webkit-text-stroke: 8px black;
+  z-index: 2;
+}
+
+.outlined-text .fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+}
