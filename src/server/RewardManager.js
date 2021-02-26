@@ -56,6 +56,11 @@ class RewardManager {
     this.playerManager = playerManager;
     // is there a better way of doing this?
     this.playerManager.updateRedeem = this.updateRedeem.bind(this);
+    this.playerManager.approveRedeem = this.approveRedeem.bind(this);
+    this.playerManager.rejectRedeem = this.rejectRedeem.bind(this);
+    this.battleManager.updateRedeem = this.updateRedeem.bind(this);
+    this.battleManager.approveRedeem = this.approveRedeem.bind(this);
+    this.battleManager.rejectRedeem = this.rejectRedeem.bind(this);
 
     this.rewards = [];
     this.redeems = [];
@@ -65,6 +70,10 @@ class RewardManager {
     this.rewardFuncMap[requiredRewards.add.key] = bindAndLog(
       this.playerManager.addPlayer,
       this.playerManager
+    );
+    this.rewardFuncMap[requiredRewards.duel.key] = bindAndLog(
+      this.battleManager.requestBattle,
+      this.battleManager
     );
     globalEmitter.on(socketEvents.overlayAdded, this.onOverlayAdded, this);
     globalEmitter.on(socketEvents.controlAdded, this.onControlAdded, this);
@@ -108,7 +117,6 @@ class RewardManager {
     socket.on(appActions.setRewardToAction, bindAndLog(this.onSocketSetRewardToAction, this));
     socket.on(appActions.createRewardForAction, bindAndLog(this.onSocketCreateRewardForAction, this));
     socket.on(appActions.updateDebugAutoRefund, bindAndLog(this.onSocketUpdateDebugAutoRefund, this));
-    socket.on(appActions.requestBattle, bindAndLog(this.onSocketRequestBattle, this));
     socket.emit(appActions.updateEventSubReady, !!this.twitchManager.eventSub);
     socket.emit(appActions.updateRewards, this.getRewardObjs());
     socket.emit(appActions.allRedeems, this.getRedeemObjs());
@@ -144,6 +152,20 @@ class RewardManager {
       .updateRedemptionStatusByIds(
         this.twitchManager.user.id, rewardId, ids, useStatus
       );
+  }
+
+  async approveRedeem(event, immediate = false) {
+    if (event.debug) {
+      return;
+    }
+    return this.updateRedeem(event.rewardId, event.id, 'FULFILLED', immediate);
+  }
+
+  async rejectRedeem(event, immediate = false) {
+    if (event.debug) {
+      return;
+    }
+    return this.updateRedeem(event.rewardId, event.id, 'CANCELED', immediate);
   }
 
   getRewardIdFromAction(actionKey) {
@@ -210,47 +232,9 @@ class RewardManager {
     this.socketManager.allEmit(appActions.updateRedeem, payload);
   }
 
-  async requestBattle(event) {
-    const player = this.getPlayer(event.userId);
-    if (!player) {
-      throw new Error(`requestBattle: "${event.userId}" not in player data`);
-    }
-    if (!player.alive) {
-      throw new Error(`requestBattle: "${player.userDisplayName}" is not alive`);
-    }
-    await this.battleManager.addBattle({
-      id: event.id,
-      rewardId: event.rewardId,
-      userId: event.userId,
-      userName: event.userName,
-      userDisplayName: event.userDisplayName,
-      debug: event.debug || false
-    });
-  }
-
-  async onSocketRequestBattle(userId) {
-    const player = this.getPlayer(userId);
-    if (!player) {
-      throw new Error(`onSocketRequestBattle: "${userId}" not found in player data`);
-    }
-    try {
-      const date = new Date();
-      await this.requestBattle({
-        id: `debug-${userId}-${date.getTime()}`,
-        rewardId: this.getRewardIdFromAction(requiredRewards.add.key),
-        userId,
-        userName: player.userName,
-        userDisplayName: player.userDisplayName,
-        debug: true
-      });
-    } catch (e) {
-      logger(`onSocketRequestBattle: Error occurred: ${e.message}`);
-    }
-  }
-
   async onSocketCreateRewardForAction(data, actionKey) {
     logger(`Creating reward for action "${actionKey}"...`);
-    const reward = await this.twitchUserClient
+    const reward = await this.twitchManager.userClient
       .helix.channelPoints
       .createCustomReward(this.twitchManager.user.id, data);
     this.files.rewardMap.data[reward.id] = actionKey;

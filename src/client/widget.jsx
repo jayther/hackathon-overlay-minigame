@@ -18,6 +18,7 @@ import spritesheet1img from './assets/spritesheets-1.png';
 import arenaimg from './assets/arena.png';
 import spritesheet0 from './assets/spritesheets-0.json';
 import spritesheet1 from './assets/spritesheets-1.json';
+import hpBar from './assets/hp-bar.png';
 
 const IdlePage = () => {
   return (
@@ -61,6 +62,7 @@ class Website extends React.Component {
     this.preloader.addImgLoader(spritesheet0img);
     this.preloader.addImgLoader(spritesheet1img);
     this.preloader.addImgLoader(arenaimg);
+    this.preloader.addImgLoader(hpBar);
   }
   componentDidMount() {
     this.init();

@@ -1,0 +1,18 @@
+.hp {
+  width: 200px;
+  position: absolute;
+  left: -100px;
+  top: 0;
+  transition: top 250ms ease-out;
+}
+
+.hp-inner {
+  width: 100%;
+  overflow: hidden;
+  transition: width 250ms ease-out;
+}
+
+.hp-bar {
+  width: 100%;
+  transition: width 250ms ease-out;
+}

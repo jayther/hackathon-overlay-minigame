@@ -11,6 +11,7 @@ const globalEmitter = require('./utils/GlobalEmitter');
 const { socketEvents } = require('./consts');
 const { bindAndLog } = require('./utils/LogUtils');
 const { has } = require('../shared/ObjectUtils');
+const { ExpectedError } = require('./errors');
 
 const defaultPlayer = {
   userId: null,
@@ -88,6 +89,14 @@ class PlayerManager {
     throw new Error('PlayerManager.updateRedeem: must be overridden');
   }
 
+  async approveRedeem() { // empty, override
+    throw new Error('PlayerManager.approveRedeem: must be overridden');
+  }
+
+  async rejectRedeem() { // empty, override
+    throw new Error('PlayerManager.rejectRedeem: must be overridden');
+  }
+
   onOverlayAdded(socket) {
     socket.emit(appActions.allPlayers, this.files.playerData.data.players.filter(filterAlivePlayers));
   }
@@ -108,9 +117,9 @@ class PlayerManager {
     let player = this.getPlayer(event.userId);
     if (player && player.userId === event.userId && player.alive) {
       // delayed refund
-      this.updateRedeem(event.rewardId, event.id, 'CANCELED');
+      this.rejectRedeem(event);
       // TODO send "error" to chat
-      throw new Error(`addPlayer: "${player.userName}" already alive in game`);
+      throw new ExpectedError(`addPlayer: "${player.userName}" already alive in game`);
     }
     if (player) {
       player.userName = event.userName;
@@ -132,7 +141,7 @@ class PlayerManager {
     }
 
     // delayed consume
-    this.updateRedeem(event.rewardId, event.id, 'FULFILLED');
+    this.approveRedeem(event);
 
     await this.files.playerData.save();
 
@@ -191,7 +200,7 @@ class PlayerManager {
   async onSocketUpdatePlayer(userId, data) {
     const player = this.getPlayer(userId);
     if (!player) {
-      throw new Error(`onSocketUpdatePlayer: "${userId}" not in player data`);
+      throw new ExpectedError(`onSocketUpdatePlayer: "${userId}" not in player data`);
     }
     const entries = Object.entries(data);
     const changesMsg = entries.map(([key, value]) => `"${key}": ${value}`).join('; ');
@@ -210,10 +219,10 @@ class PlayerManager {
   async onSocketRemovePlayer(userId) {
     const player = this.getPlayer(userId);
     if (!player) {
-      throw new Error(`onSocketRemovePlayer: "${userId}" not in player data`);
+      throw new ExpectedError(`onSocketRemovePlayer: "${userId}" not in player data`);
     }
     if (!player.alive) {
-      throw new Error(`onSocketRemovePlayer: "${player.userDisplayName}" not in arena`);
+      throw new ExpectedError(`onSocketRemovePlayer: "${player.userDisplayName}" not in arena`);
     }
     logger(`onSocketRemovePlayer: Removing "${player.userDisplayName}" from arena`);
     player.alive = false;

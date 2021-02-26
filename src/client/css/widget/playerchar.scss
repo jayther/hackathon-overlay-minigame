@@ -21,9 +21,12 @@
   left: -100px;
   top: -150px;
   width: 200px;
+  height: 25px;
   color: white;
   font-size: 20px;
   font-weight: bold;
+  transition: top 250ms ease-out;
+  overflow: hidden;
 }
 
 .playerchar-label .outline {

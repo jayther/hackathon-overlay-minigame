@@ -77,6 +77,10 @@ class BattleRunner {
     this.rightPlayer.playerChar.moveTo(this.arena.rightStairBottom)
       .moveTo(this.arena.rightStairTop)
       .moveTo(this.arena.rightPoint);
+    this.leftPlayer.playerChar.setShowHp(true);
+    this.rightPlayer.playerChar.setShowHp(true);
+    this.leftPlayer.playerChar.setSide('left');
+    this.rightPlayer.playerChar.setSide('right');
 
     await Promise.all([
       this.leftPlayer.playerChar.waitForIdle(),
@@ -135,7 +139,6 @@ class BattleRunner {
       }
       this.leftTurn = !this.leftTurn;
     }
-    this.winner.playerChar.resetHp();
   }
   async leavingArena() {
     if (this.winner === this.leftPlayer) {
@@ -145,6 +148,9 @@ class BattleRunner {
       this.winner.playerChar.moveTo(this.arena.rightStairTop)
         .moveTo(this.arena.rightStairBottom);
     }
+    this.winner.playerChar.setSide(null);
+    this.winner.playerChar.resetHp();
+    this.winner.playerChar.setShowHp(false);
     await this.winner.playerChar.waitForIdle();
   }
   async hidingArena() {

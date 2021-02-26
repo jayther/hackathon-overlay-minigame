@@ -8,6 +8,7 @@ import SpriteApplier from './SpriteApplier';
 import Vec2 from '../../shared/math/Vec2';
 import { distance } from '../../shared/math/JMath';
 import { waitForMS } from '../../shared/PromiseUtils';
+import HPBar from './HPBar';
 
 const animSetStates = {
   unarmed: {
@@ -40,6 +41,9 @@ const actions = {
   face: 'face'
 };
 
+const maxHp = 1000;
+const hpBarOffset = 31;
+
 function getAnimSetState(state, weapon = false) {
   return animSetStates[weapon ? 'weapon' : 'unarmed'][state];
 }
@@ -63,11 +67,12 @@ class PlayerChar extends SpriteApplier {
     this.startFX = props.startFX;
 
     this.state = {
-      hp: 1000,
+      hp: maxHp,
       showHp: false,
-      labelY: 0
+      labelY: 0,
+      side: null
     };
-    this.hp = 1000;
+    this.hp = maxHp;
     this.containerRef = React.createRef();
     this.spriteRef = React.createRef();
     this.container = null;
@@ -291,7 +296,7 @@ class PlayerChar extends SpriteApplier {
   }
 
   resetHp() {
-    this.hp = 1000;
+    this.hp = maxHp;
     this.setState({
       hp: this.hp
     });
@@ -395,9 +400,23 @@ class PlayerChar extends SpriteApplier {
     return new Promise(resolve => this.events.once('idle', resolve));
   }
 
+  setSide(side) {
+    this.setState({
+      side
+    });
+  }
+
   render() {
     return (
       <div ref={this.containerRef} className="playerchar-con">
+        { this.state.showHp ? (
+            <HPBar
+              y={this.state.labelY - hpBarOffset - (this.state.side === 'right' ? hpBarOffset : 0)}
+              amount={this.state.hp}
+              max={maxHp}
+            />
+          ) : null
+        }
         <div className="playerchar-label-con">
           <OutlinedText className="playerchar-label"
             text={this.props.userDisplayName}
