@@ -10,7 +10,8 @@ export function MissingRewardsSection(props) {
   const [rewardData, setRewardData] = useState({
     title: '',
     cost: 1,
-    prompt: ''
+    prompt: '',
+    userInputRequired: false
   });
   const [showCreateForKey, setShowCreateForKey] = useState(null);
   const [showExistingForKey, setShowExistingForKey] = useState(null);
@@ -19,9 +20,7 @@ export function MissingRewardsSection(props) {
 
   function createReward(key) {
     setRewardData({
-      title: requiredRewards[key].defaultTitle,
-      cost: requiredRewards[key].defaultCost,
-      prompt: requiredRewards[key].defaultPrompt
+      ...requiredRewards[key]
     });
     setShowCreateForKey(key);
     setShowExistingForKey(null);
@@ -69,6 +68,10 @@ export function MissingRewardsSection(props) {
                     <tr>
                       <td>Prompt:</td>
                       <td><input type="text" value={rewardData.prompt} onChange={e => setRewardData({ ...rewardData, prompt: e.target.value })} /></td>
+                    </tr>
+                    <tr>
+                      <td>User Input Required:</td>
+                      <td><input type="checkbox" checked={rewardData.userInputRequired} onChange={e => setRewardData({ ...rewardData, userInputRequired: e.target.checked })} /></td>
                     </tr>
                     <tr>
                       <td></td>

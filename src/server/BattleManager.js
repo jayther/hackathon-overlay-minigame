@@ -57,6 +57,9 @@ class BattleManager {
   getPlayer(userId) {
     return this.files.playerData.data.players.find(player => userId === player.userId);
   }
+  getPlayerFromUserName(userName) {
+    return this.files.playerData.data.players.find(player => userName === player.userName);
+  }
 
   getRewardIdFromAction(actionKey) {
     for (let [rewardId, k] of Object.entries(this.files.rewardMap.data)) {
@@ -71,10 +74,12 @@ class BattleManager {
     const player = this.getPlayer(event.userId);
     if (!player) {
       this.rejectRedeem(event);
+      // TODO send error in chat
       throw new ExpectedError(`requestBattle: "${event.userId}" not in player data`);
     }
     if (!player.alive) {
       this.rejectRedeem(event);
+      // TODO send error in chat
       throw new ExpectedError(`requestBattle: "${player.userDisplayName}" is not alive`);
     }
     await this.addBattle({
@@ -83,9 +88,60 @@ class BattleManager {
       userId: event.userId,
       userName: event.userName,
       userDisplayName: event.userDisplayName,
+      target: null,
       debug: event.debug || false
     });
     logger(`requestBattle: "${player.userDisplayName}" requested a random duel`);
+  }
+
+  async requestSpecificBattle(event) {
+    const player = this.getPlayer(event.userId);
+    if (!player) {
+      this.rejectRedeem(event);
+      // TODO send error in chat
+      throw new ExpectedError(`requestSpecificBattle: "${event.userId}" not in player data`);
+    }
+    if (!player.alive) {
+      this.rejectRedeem(event);
+      // TODO send error in chat
+      throw new ExpectedError(`requestSpecificBattle: "${player.userDisplayName}" is not alive`);
+    }
+    if (!event.input || event.input.length === 0) {
+      this.rejectRedeem(event);
+      // TODO send error in chat
+      throw new ExpectedError(`requestSpecificBattle: no userName specified`);
+    }
+
+    let targetUserName = event.input.trim().toLowerCase();
+    if (targetUserName.charAt(0) === '@') {
+      targetUserName = targetUserName.substring(1);
+    }
+    const target = this.getPlayerFromUserName(targetUserName);
+    if (!target) {
+      this.rejectRedeem(event);
+      // TODO send error chat
+      throw new ExpectedError(`requestSpecificBattle: target "${targetUserName}" not in player data`);
+    }
+    if (!target.alive) {
+      this.rejectRedeem(event);
+      // TODO send error in chat
+      throw new ExpectedError(`requestSpecificBattle: target "${target.userDisplayName}" is not alive`);
+    }
+
+    await this.addBattle({
+      id: event.id,
+      rewardId: event.rewardId,
+      userId: event.userId,
+      userName: event.userName,
+      userDisplayName: event.userDisplayName,
+      target: {
+        userId: target.userId,
+        userName: target.userName,
+        userDisplayName: target.userDisplayName
+      },
+      debug: event.debug || false
+    });
+    logger(`requestSpecificBattle: "${player.userDisplayName}" requested a specific duel with "${target.userDisplayName}"`);
   }
 
   async addBattle(battle) {
@@ -95,6 +151,7 @@ class BattleManager {
 
   async startBattle(eventId) {
     if (this.currentBattle) {
+      // TODO send error chat
       throw new ExpectedError(`startBattle: Cannot start battle for "${player.userDisplayName}", battle in progress`);
     }
 
@@ -105,21 +162,37 @@ class BattleManager {
     const event = this.battleQueue[eventIndex];
     const player = this.getPlayer(event.userId);
     if (!player) {
+      // TODO send error chat
       throw new ExpectedError(`startBattle: "${event.userId}" not found in player data`);
     }
     if (!player.alive) {
+      // TODO send error chat
       throw new ExpectedError(`startBattle: "${player.userDisplayName}" is not alive`);
     }
-    const alivePlayers = this.files.playerData.data.players.filter(filterAlivePlayers);
-    if (alivePlayers.length < 2) {
-      throw new ExpectedError(`startBattle: "${player.userDisplayName}" is the only one alive`);
+    let otherPlayer;
+    if (event.target) {
+      otherPlayer = this.getPlayer(event.target.userId);
+      if (!otherPlayer) {
+        // TODO send error chat
+        throw new ExpectedError(`startBattle: target "${event.target.userDisplayName}" not found in player data`);
+      }
+      if (!otherPlayer.alive) {
+        // TODO send error chat
+        throw new ExpectedError(`startBattle: target "${otherPlayer.userDisplayName}" is not alive`);
+      }
+    } else {
+      const alivePlayers = this.files.playerData.data.players.filter(filterAlivePlayers);
+      if (alivePlayers.length < 2) {
+        // TODO send error chat
+        throw new ExpectedError(`startBattle: "${player.userDisplayName}" is the only one alive`);
+      }
+      otherPlayer = pickExcept(alivePlayers, player);
     }
 
     this.approveRedeem(event);
 
     this.battleQueue.splice(eventIndex, 1);
     this.socketManager.controlEmit(appActions.updateBattleQueue, this.battleQueue);
-    const otherPlayer = pickExcept(alivePlayers, player);
     this.currentBattle = [player.userId, otherPlayer.userId];
     this.socketManager.allEmit(appActions.updateBattle, this.currentBattle);
     logger(`startBattle: "${player.userDisplayName}" starting a duel with "${otherPlayer.userDisplayName}"`);
@@ -167,21 +240,42 @@ class BattleManager {
     this.socketManager.allEmit(appActions.removePlayer, loser);
   }
 
-  async onSocketRequestBattle(userId) {
+  async onSocketRequestBattle(userId, targetUserId = null) {
     const player = this.getPlayer(userId);
     if (!player) {
       throw new ExpectedError(`onSocketRequestBattle: "${userId}" not found in player data`);
     }
+    let targetUserName = null;
+    if (targetUserId) {
+      const targetPlayer = this.getPlayer(targetUserId);
+      if (!targetPlayer) {
+        throw new ExpectedError(`onSocketRequestBattle: target "${targetUserId}" not found in player data`);
+      }
+      targetUserName = targetPlayer.userName;
+    }
     try {
       const date = new Date();
-      await this.requestBattle({
-        id: `debug-${userId}-${date.getTime()}`,
-        rewardId: this.getRewardIdFromAction(requiredRewards.add.key),
-        userId,
-        userName: player.userName,
-        userDisplayName: player.userDisplayName,
-        debug: true
-      });
+      if (targetUserName) {
+        await this.requestSpecificBattle({
+          id: `debug-${userId}-${date.getTime()}`,
+          rewardId: this.getRewardIdFromAction(requiredRewards.duelSomeone.key),
+          userId,
+          userName: player.userName,
+          userDisplayName: player.userDisplayName,
+          input: targetUserName,
+          debug: true
+        });
+      } else {
+        await this.requestBattle({
+          id: `debug-${userId}-${date.getTime()}`,
+          rewardId: this.getRewardIdFromAction(requiredRewards.duel.key),
+          userId,
+          userName: player.userName,
+          userDisplayName: player.userDisplayName,
+          input: null,
+          debug: true
+        });
+      }
     } catch (e) {
       logger(`onSocketRequestBattle: Error occurred: ${e.message}`);
     }

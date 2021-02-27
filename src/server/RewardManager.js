@@ -75,6 +75,10 @@ class RewardManager {
       this.battleManager.requestBattle,
       this.battleManager
     );
+    this.rewardFuncMap[requiredRewards.duelSomeone.key] = bindAndLog(
+      this.battleManager.requestSpecificBattle,
+      this.battleManager
+    );
     globalEmitter.on(socketEvents.overlayAdded, this.onOverlayAdded, this);
     globalEmitter.on(socketEvents.controlAdded, this.onControlAdded, this);
   }

@@ -29,6 +29,7 @@ export function BattleSection(props) {
             props.battleQueue.map(b => (
               <tr key={b.id}>
                 <td>{b.userDisplayName}</td>
+                <td>{b.target ? `vs. ${b.target.userDisplayName}` : 'vs. random'}</td>
                 <td>
                   <button onClick={() => SocketBridge.socket.emit(appActions.cancelBattle, b.id)}>
                     Cancel
@@ -40,7 +41,7 @@ export function BattleSection(props) {
               </tr>
             )) : (
               <tr>
-                <td colSpan={2}><em>None</em></td>
+                <td colSpan={3}><em>None</em></td>
               </tr>
             )}
         </tbody>

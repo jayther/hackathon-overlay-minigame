@@ -4,6 +4,29 @@ import appActions from '../../shared/AppActions';
 import { characterTypes, characterGenders } from '../../shared/CharacterParts';
 import { next } from '../../shared/ArrayUtils';
 
+function filterOneId(userId) {
+  return player => player.userId !== userId;
+}
+
+function SpecificBattleDropdown(props) {
+  function onChange(e) {
+    if (e.target.value === 'none') {
+      return;
+    }
+    SocketBridge.socket.emit(appActions.requestBattle, props.userId, e.target.value);
+  }
+  return (
+    <select onChange={onChange} value="none">
+      <option value="none">Specific Battle</option>
+      { props.players.filter(filterOneId(props.userId)).map(player => (
+        <option key={player.userId} value={player.userId}>
+          { player.userDisplayName }
+        </option>
+      ))}
+    </select>
+  )
+}
+
 export function PlayersSection(props) {
   return (
     <table className="players-section">
@@ -43,9 +66,12 @@ export function PlayersSection(props) {
               })}>
                 Toggle Weapon
               </button>
+              <br />
               <button onClick={() => SocketBridge.socket.emit(appActions.requestBattle, player.userId)}>
                 Request Battle
               </button>
+              <SpecificBattleDropdown players={props.players} userId={player.userId} />
+              <br />
               <button onClick={() => SocketBridge.socket.emit(appActions.removePlayer, player.userId)}>
                 Remove
               </button>
