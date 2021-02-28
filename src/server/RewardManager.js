@@ -44,41 +44,16 @@ function redeemToObj(redeem) {
 }
 
 class RewardManager {
-  constructor(
-    settings, files, socketManager, 
-    twitchManager, battleManager, playerManager
-  ) {
+  constructor(settings, files, socketManager, twitchManager) {
     this.settings = settings;
     this.files = files;
     this.socketManager = socketManager;
     this.twitchManager = twitchManager;
-    this.battleManager = battleManager;
-    this.playerManager = playerManager;
-    // is there a better way of doing this?
-    this.playerManager.updateRedeem = this.updateRedeem.bind(this);
-    this.playerManager.approveRedeem = this.approveRedeem.bind(this);
-    this.playerManager.rejectRedeem = this.rejectRedeem.bind(this);
-    this.battleManager.updateRedeem = this.updateRedeem.bind(this);
-    this.battleManager.approveRedeem = this.approveRedeem.bind(this);
-    this.battleManager.rejectRedeem = this.rejectRedeem.bind(this);
 
     this.rewards = [];
     this.redeems = [];
     this.debugAutoRefund = false;
     
-    this.rewardFuncMap = {};
-    this.rewardFuncMap[requiredRewards.add.key] = bindAndLog(
-      this.playerManager.addPlayer,
-      this.playerManager
-    );
-    this.rewardFuncMap[requiredRewards.duel.key] = bindAndLog(
-      this.battleManager.requestBattle,
-      this.battleManager
-    );
-    this.rewardFuncMap[requiredRewards.duelSomeone.key] = bindAndLog(
-      this.battleManager.requestSpecificBattle,
-      this.battleManager
-    );
     globalEmitter.on(socketEvents.overlayAdded, this.onOverlayAdded, this);
     globalEmitter.on(socketEvents.controlAdded, this.onControlAdded, this);
   }
@@ -181,10 +156,6 @@ class RewardManager {
     return null;
   }
 
-  getPlayer(userId) {
-    return this.files.playerData.data.players.find(player => userId === player.userId);
-  }
-
   async onSocketCreateReward(data) {
     await this.twitchManager.userClient
       .helix.channelPoints
@@ -218,9 +189,9 @@ class RewardManager {
   async onRedeem(event) {
     const payload = redeemToObj(event);
     this.redeems.push(event);
-    const action = this.files.rewardMap.data[event.rewardId];
-    if (action && this.rewardFuncMap[action]) {
-      this.rewardFuncMap[action](event);
+    const rewardKey = this.files.rewardMap.data[event.rewardId];
+    if (rewardKey && requiredRewards[rewardKey]) {
+      globalEmitter.emit(requiredRewards[rewardKey].eventName, event);
     }
     this.socketManager.allEmit(appActions.addRedeem, payload);
   }

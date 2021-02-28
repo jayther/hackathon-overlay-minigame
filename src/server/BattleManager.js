@@ -13,28 +13,23 @@ function filterAlivePlayers(player) {
 }
 
 class BattleManager {
-  constructor(settings, files, socketManager, twitchManager) {
+  constructor(
+    settings, files, socketManager, twitchManager,
+    rewardManager, playerManager
+  ) {
     this.settings = settings;
     this.files = files;
     this.socketManager = socketManager;
     this.twitchManager = twitchManager;
+    this.rewardManager = rewardManager;
+    this.playerManager = playerManager;
 
     this.currentBattle = null;
     this.battleQueue = [];
     globalEmitter.on(socketEvents.overlayAdded, this.onOverlayAdded, this);
     globalEmitter.on(socketEvents.controlAdded, this.onControlAdded, this);
-  }
-
-  async updateRedeem() { // empty, override
-    throw new Error('BattleManager.updateRedeem: must be overridden');
-  }
-
-  async approveRedeem() { // empty, override
-    throw new Error('BattleManager.approveRedeem: must be overridden');
-  }
-
-  async rejectRedeem() { // empty, override
-    throw new Error('BattleManager.rejectRedeem: must be overridden');
+    globalEmitter.on(requiredRewards.duel.eventName, bindAndLog(this.requestBattle, this));
+    globalEmitter.on(requiredRewards.duelSomeone.eventName, bindAndLog(this.requestSpecificBattle, this));
   }
 
   onOverlayAdded(socket) {
@@ -54,31 +49,15 @@ class BattleManager {
     return this.currentBattle ? this.currentBattle.includes(userId) : false;
   }
 
-  getPlayer(userId) {
-    return this.files.playerData.data.players.find(player => userId === player.userId);
-  }
-  getPlayerFromUserName(userName) {
-    return this.files.playerData.data.players.find(player => userName === player.userName);
-  }
-
-  getRewardIdFromAction(actionKey) {
-    for (let [rewardId, k] of Object.entries(this.files.rewardMap.data)) {
-      if (k === actionKey) {
-        return rewardId;
-      }
-    }
-    return null;
-  }
-
   async requestBattle(event) {
-    const player = this.getPlayer(event.userId);
+    const player = this.playerManager.getPlayer(event.userId);
     if (!player) {
-      this.rejectRedeem(event);
+      this.rewardManager.rejectRedeem(event);
       // TODO send error in chat
       throw new ExpectedError(`requestBattle: "${event.userId}" not in player data`);
     }
     if (!player.alive) {
-      this.rejectRedeem(event);
+      this.rewardManager.rejectRedeem(event);
       // TODO send error in chat
       throw new ExpectedError(`requestBattle: "${player.userDisplayName}" is not alive`);
     }
@@ -95,19 +74,19 @@ class BattleManager {
   }
 
   async requestSpecificBattle(event) {
-    const player = this.getPlayer(event.userId);
+    const player = this.playerManager.getPlayer(event.userId);
     if (!player) {
-      this.rejectRedeem(event);
+      this.rewardManager.rejectRedeem(event);
       // TODO send error in chat
       throw new ExpectedError(`requestSpecificBattle: "${event.userId}" not in player data`);
     }
     if (!player.alive) {
-      this.rejectRedeem(event);
+      this.rewardManager.rejectRedeem(event);
       // TODO send error in chat
       throw new ExpectedError(`requestSpecificBattle: "${player.userDisplayName}" is not alive`);
     }
     if (!event.input || event.input.length === 0) {
-      this.rejectRedeem(event);
+      this.rewardManager.rejectRedeem(event);
       // TODO send error in chat
       throw new ExpectedError(`requestSpecificBattle: no userName specified`);
     }
@@ -116,14 +95,14 @@ class BattleManager {
     if (targetUserName.charAt(0) === '@') {
       targetUserName = targetUserName.substring(1);
     }
-    const target = this.getPlayerFromUserName(targetUserName);
+    const target = this.playerManager.getPlayerFromUserName(targetUserName);
     if (!target) {
-      this.rejectRedeem(event);
+      this.rewardManager.rejectRedeem(event);
       // TODO send error chat
       throw new ExpectedError(`requestSpecificBattle: target "${targetUserName}" not in player data`);
     }
     if (!target.alive) {
-      this.rejectRedeem(event);
+      this.rewardManager.rejectRedeem(event);
       // TODO send error in chat
       throw new ExpectedError(`requestSpecificBattle: target "${target.userDisplayName}" is not alive`);
     }
@@ -160,7 +139,7 @@ class BattleManager {
       throw new Error(`startBattle: Battle event "${eventId}" not found in queue`);
     }
     const event = this.battleQueue[eventIndex];
-    const player = this.getPlayer(event.userId);
+    const player = this.playerManager.getPlayer(event.userId);
     if (!player) {
       // TODO send error chat
       throw new ExpectedError(`startBattle: "${event.userId}" not found in player data`);
@@ -171,7 +150,7 @@ class BattleManager {
     }
     let otherPlayer;
     if (event.target) {
-      otherPlayer = this.getPlayer(event.target.userId);
+      otherPlayer = this.playerManager.getPlayer(event.target.userId);
       if (!otherPlayer) {
         // TODO send error chat
         throw new ExpectedError(`startBattle: target "${event.target.userDisplayName}" not found in player data`);
@@ -189,7 +168,7 @@ class BattleManager {
       otherPlayer = pickExcept(alivePlayers, player);
     }
 
-    this.approveRedeem(event);
+    this.rewardManager.approveRedeem(event);
 
     this.battleQueue.splice(eventIndex, 1);
     this.socketManager.controlEmit(appActions.updateBattleQueue, this.battleQueue);
@@ -205,7 +184,7 @@ class BattleManager {
     }
     const event = this.battleQueue[eventIndex];
     this.battleQueue.splice(eventIndex, 1);
-    this.rejectRedeem(event);
+    this.rewardManager.rejectRedeem(event);
     this.socketManager.controlEmit(appActions.updateBattleQueue, this.battleQueue);
     logger(`cancelBattle: Cancelled a duel request from "${event.userDisplayName}"`)
   }
@@ -216,11 +195,11 @@ class BattleManager {
       this.socketManager.allEmit(appActions.updateBattle, null);
       return;
     }
-    const winner = this.getPlayer(winnerUserId);
+    const winner = this.playerManager.getPlayer(winnerUserId);
     if (!winner) {
       throw new Error(`finishBattle: "${winnerUserId}" winner not in player data`);
     }
-    const loser = this.getPlayer(loserUserId);
+    const loser = this.playerManager.getPlayer(loserUserId);
     if (!loser) {
       throw new Error(`finishBattle: "${loserUserId}" loser not in player data`);
     }
@@ -241,13 +220,13 @@ class BattleManager {
   }
 
   async onSocketRequestBattle(userId, targetUserId = null) {
-    const player = this.getPlayer(userId);
+    const player = this.playerManager.getPlayer(userId);
     if (!player) {
       throw new ExpectedError(`onSocketRequestBattle: "${userId}" not found in player data`);
     }
     let targetUserName = null;
     if (targetUserId) {
-      const targetPlayer = this.getPlayer(targetUserId);
+      const targetPlayer = this.playerManager.getPlayer(targetUserId);
       if (!targetPlayer) {
         throw new ExpectedError(`onSocketRequestBattle: target "${targetUserId}" not found in player data`);
       }
@@ -258,7 +237,7 @@ class BattleManager {
       if (targetUserName) {
         await this.requestSpecificBattle({
           id: `debug-${userId}-${date.getTime()}`,
-          rewardId: this.getRewardIdFromAction(requiredRewards.duelSomeone.key),
+          rewardId: this.rewardManager.getRewardIdFromAction(requiredRewards.duelSomeone.key),
           userId,
           userName: player.userName,
           userDisplayName: player.userDisplayName,
@@ -268,7 +247,7 @@ class BattleManager {
       } else {
         await this.requestBattle({
           id: `debug-${userId}-${date.getTime()}`,
-          rewardId: this.getRewardIdFromAction(requiredRewards.duel.key),
+          rewardId: this.rewardManager.getRewardIdFromAction(requiredRewards.duel.key),
           userId,
           userName: player.userName,
           userDisplayName: player.userDisplayName,

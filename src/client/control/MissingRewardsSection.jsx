@@ -19,9 +19,11 @@ export function MissingRewardsSection(props) {
   const [existingRewardPressed, setExistingRewardPressed] = useState(false);
 
   function createReward(key) {
-    setRewardData({
+    const rewardData = {
       ...requiredRewards[key]
-    });
+    };
+    delete rewardData.eventName;
+    setRewardData(rewardData);
     setShowCreateForKey(key);
     setShowExistingForKey(null);
     setCreateRewardPressed(false);

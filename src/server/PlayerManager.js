@@ -7,6 +7,7 @@ const {
   characterTypes
 } = require('../shared/CharacterParts');
 const appActions = require('../shared/AppActions');
+const requiredRewards = require('../shared/RequiredRewards');
 const globalEmitter = require('./utils/GlobalEmitter');
 const { socketEvents } = require('./consts');
 const { bindAndLog } = require('./utils/LogUtils');
@@ -76,25 +77,15 @@ function randDisplayUserName() {
 }
 
 class PlayerManager {
-  constructor(settings, files, socketManager, twitchManager) {
+  constructor(settings, files, socketManager, twitchManager, rewardManager) {
     this.settings = settings;
     this.files = files;
     this.socketManager = socketManager;
     this.twitchManager = twitchManager;
+    this.rewardManager = rewardManager;
     globalEmitter.on(socketEvents.overlayAdded, this.onOverlayAdded, this);
     globalEmitter.on(socketEvents.controlAdded, this.onControlAdded, this);
-  }
-
-  async updateRedeem() { // empty, override
-    throw new Error('PlayerManager.updateRedeem: must be overridden');
-  }
-
-  async approveRedeem() { // empty, override
-    throw new Error('PlayerManager.approveRedeem: must be overridden');
-  }
-
-  async rejectRedeem() { // empty, override
-    throw new Error('PlayerManager.rejectRedeem: must be overridden');
+    globalEmitter.on(requiredRewards.add.eventName, bindAndLog(this.addPlayer, this));
   }
 
   onOverlayAdded(socket) {
@@ -112,12 +103,16 @@ class PlayerManager {
   getPlayer(userId) {
     return this.files.playerData.data.players.find(player => userId === player.userId);
   }
+  
+  getPlayerFromUserName(userName) {
+    return this.files.playerData.data.players.find(player => userName === player.userName);
+  }
 
   async addPlayer(event) {
     let player = this.getPlayer(event.userId);
     if (player && player.userId === event.userId && player.alive) {
       // delayed refund
-      this.rejectRedeem(event);
+      this.rewardManager.rejectRedeem(event);
       // TODO send "error" to chat
       throw new ExpectedError(`addPlayer: "${player.userName}" already alive in game`);
     }
@@ -141,11 +136,15 @@ class PlayerManager {
     }
 
     // delayed consume
-    this.approveRedeem(event);
+    this.rewardManager.approveRedeem(event);
 
     await this.files.playerData.save();
 
     this.socketManager.allEmit(appActions.addPlayer, player);
+  }
+
+  async addWeapon(event) {
+    // TODO
   }
 
   async onSocketAddDebugPlayer() {

@@ -34,15 +34,16 @@ class ServerApp {
     this.twitchManager = new TwitchManager(
       settings, this.files, this.socketManager
     );
-    this.playerManager = new PlayerManager(
+    this.rewardManager = new RewardManager(
       settings, this.files, this.socketManager, this.twitchManager
+    );
+    this.playerManager = new PlayerManager(
+      settings, this.files, this.socketManager, this.twitchManager,
+      this.rewardManager
     );
     this.battleManager = new BattleManager(
-      settings, this.files, this.socketManager, this.twitchManager
-    );
-    this.rewardManager = new RewardManager(
       settings, this.files, this.socketManager, this.twitchManager,
-      this.battleManager, this.playerManager
+      this.rewardManager, this.playerManager
     );
   }
   async init() {
