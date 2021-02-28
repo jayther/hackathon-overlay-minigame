@@ -114,7 +114,15 @@ class BattleRunner {
       // TODO crits (dash through?)
       // TODO weapon damages
       // 
-      const damage = betweenInt(150, 250);
+      let damage, hitMarkerText;
+      if (Math.random() < 0.1) {
+        damage = betweenInt(300, 325);
+        hitMarkerText = `${damage}!!`;
+      } else {
+        damage = betweenInt(150, 250);
+        hitMarkerText = `${damage}`;
+      }
+
       const attackPos = defender.playerChar.position.copy();
       const deltaSign = sign(attacker.playerChar.position.x - defender.playerChar.position.x);
       const attackPosDelta = deltaSign * attackDistance;
@@ -126,7 +134,7 @@ class BattleRunner {
       const hitMarkerPos = defender.playerChar.position.copy();
       hitMarkerPos.y += hitMarkerOffset;
       setTimeout(() => {
-        this.startHitMarker(hitMarkerPos, `${damage}`)
+        this.startHitMarker(hitMarkerPos, hitMarkerText)
       }, hitDelay);
       const waitForAll = [
         attacker.playerChar.waitForIdle()
