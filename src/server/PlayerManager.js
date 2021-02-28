@@ -11,7 +11,7 @@ const requiredRewards = require('../shared/RequiredRewards');
 const globalEmitter = require('./utils/GlobalEmitter');
 const { socketEvents } = require('./consts');
 const { bindAndLog } = require('./utils/LogUtils');
-const { has } = require('../shared/ObjectUtils');
+const { has, applyKnownProps } = require('../shared/ObjectUtils');
 const { ExpectedError } = require('./errors');
 
 const defaultPlayer = {
@@ -103,9 +103,41 @@ class PlayerManager {
   getPlayer(userId) {
     return this.files.playerData.data.players.find(player => userId === player.userId);
   }
-  
+
   getPlayerFromUserName(userName) {
     return this.files.playerData.data.players.find(player => userName === player.userName);
+  }
+
+  update(idOrObj, playerObj = null) {
+    const idOrObjType = typeof idOrObj;
+    const playerObjType = typeof playerObj;
+    const validCall = (idOrObjType === 'object' && !playerObj) || (idOrObjType === 'string' && playerObjType === 'object');
+    if (!validCall) {
+      throw new Error('update: Invalid call. Valid calls are update(string, obj) or update(obj)');
+    }
+    let userId;
+    if (idOrObjType === 'string') {
+      userId = idOrObj;
+    } else {
+      playerObj = idOrObj;
+      userId = playerObj.userId;
+    }
+    if (this.files.playerData.data.players.indexOf(playerObj) !== -1) {
+      // player object directly modified, no need to update
+      return;
+    }
+    let player = this.files.playerData.data.players.find(p => p.userId === userId);
+
+    if (!player) {
+      player = { ...defaultPlayer };
+      this.files.playerData.data.players.push(player);
+    }
+    // only apply known properties
+    applyKnownProps(player, playerObj);
+  }
+
+  async save() {
+    await this.files.playerData.save();
   }
 
   async addPlayer(event) {
@@ -120,6 +152,7 @@ class PlayerManager {
       player.userName = event.userName;
       player.userDisplayName = event.userDisplayName;
       player.alive = true;
+      player.weapon = false;
       logger(`addPlayer: "${player.userName}" respawned`);
     } else {
       player = {
@@ -135,16 +168,11 @@ class PlayerManager {
       logger(`addPlayer: "${player.userName}" created`);
     }
 
-    // delayed consume
-    this.rewardManager.approveRedeem(event);
-
     await this.files.playerData.save();
 
-    this.socketManager.allEmit(appActions.addPlayer, player);
-  }
+    this.rewardManager.approveRedeem(event);
 
-  async addWeapon(event) {
-    // TODO
+    this.socketManager.allEmit(appActions.addPlayer, player);
   }
 
   async onSocketAddDebugPlayer() {
@@ -205,11 +233,7 @@ class PlayerManager {
     const changesMsg = entries.map(([key, value]) => `"${key}": ${value}`).join('; ');
     logger(`onSocketUpdatePlayer: "${player.userDisplayName}" updating: ${changesMsg}`);
 
-    entries.forEach(([key, value]) => {
-      if (has(player, key)) {
-        player[key] = value;
-      }
-    });
+    this.update(userId, data);
     
     await this.files.playerData.save();
     this.socketManager.allEmit(appActions.updatePlayer, player);

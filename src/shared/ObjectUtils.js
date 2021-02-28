@@ -15,7 +15,16 @@ function objToParams(obj) {
   return paramParts.join('&');
 }
 
+function applyKnownProps(base, obj) {
+  for (const key of Object.keys(base)) {
+    if (has(obj, key)) {
+      base[key] = obj[key];
+    }
+  }
+}
+
 module.exports = {
   has,
-  objToParams
+  objToParams,
+  applyKnownProps
 };

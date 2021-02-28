@@ -30,6 +30,7 @@ class BattleManager {
     globalEmitter.on(socketEvents.controlAdded, this.onControlAdded, this);
     globalEmitter.on(requiredRewards.duel.eventName, bindAndLog(this.requestBattle, this));
     globalEmitter.on(requiredRewards.duelSomeone.eventName, bindAndLog(this.requestSpecificBattle, this));
+    globalEmitter.on(requiredRewards.weaponize.eventName, bindAndLog(this.weaponize, this));
   }
 
   onOverlayAdded(socket) {
@@ -123,6 +124,37 @@ class BattleManager {
     logger(`requestSpecificBattle: "${player.userDisplayName}" requested a specific duel with "${target.userDisplayName}"`);
   }
 
+  async weaponize(event) {
+    const player = this.playerManager.getPlayer(event.userId);
+    if (!player) {
+      this.rewardManager.rejectRedeem(event);
+      // TODO send "error" to chat
+      throw new ExpectedError(`weaponize: "${event.userDisplayName}" not in player data`);
+    }
+    if (!player.alive) {
+      this.rewardManager.rejectRedeem(event);
+      // TODO send "error" to chat
+      throw new ExpectedError(`weaponize: "${player.userDisplayName}" not alive`);
+    }
+    if (player.weapon) {
+      this.rewardManager.rejectRedeem(event);
+      // TODO send "error" to chat
+      throw new ExpectedError(`weaponize: "${player.userDisplayName}" already has a weapon`);
+    }
+    if (this.isInBattle(player.userId)) {
+      this.rewardManager.rejectRedeem(event);
+      // TODO send "error" to chat
+      throw new ExpectedError(`weaponize: "${player.userDisplayName}" cannot equip weapon during battle`);
+    }
+
+    player.weapon = true;
+    this.playerManager.update(player);
+    await this.playerManager.save();
+    this.rewardManager.approveRedeem(event);
+    this.socketManager.allEmit(appActions.updatePlayer, player);
+    logger(`weaponize: "${player.userDisplayName}" is now weaponized`);
+  }
+
   async addBattle(battle) {
     this.battleQueue.push(battle);
     this.socketManager.controlEmit(appActions.updateBattleQueue, this.battleQueue);
@@ -212,7 +244,9 @@ class BattleManager {
     loser.alive = false;
     this.currentBattle = null;
     logger(`finishBattle: "${winner.userDisplayName}" won against "${loser.userDisplayName}"`);
-    await this.files.playerData.save();
+    this.playerManager.update(winner);
+    this.playerManager.update(loser);
+    await this.playerManager.save();
     this.socketManager.controlEmit(appActions.updateBattleResults, { winner, loser });
     this.socketManager.allEmit(appActions.updateBattle, this.currentBattle);
     this.socketManager.allEmit(appActions.updatePlayer, winner);
