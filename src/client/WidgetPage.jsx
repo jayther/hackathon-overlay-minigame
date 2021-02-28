@@ -2,6 +2,7 @@ import React from 'react';
 import { withApp } from './utils/AppContext';
 import PlayerChar from './game/PlayerChar';
 import FXAnim from './game/FXAnim';
+import HitMarker from './game/HitMarker';
 import { resolveCharacter } from './utils/CharacterUtils';
 import { createCharacter } from '../shared/CharacterParts';
 import SocketBridge from './utils/SocketBridge';
@@ -14,6 +15,7 @@ import BattleRunner from './game/BattleRunner';
 import JRect from '../shared/math/JRect';
 
 let fxIdPool = 0;
+let hitMarkerIdPool = 0;
 
 const arenaDimensions = {
   width: 336,
@@ -28,6 +30,7 @@ class WidgetPage extends React.Component {
     this.state = {
       playerChars: [],
       fxInstances: [],
+      hitMarkers: [],
       randSegStart: new Vec2(200, 200),
       randSegEnd: new Vec2(400, 200),
       showArena: false
@@ -53,6 +56,8 @@ class WidgetPage extends React.Component {
 
     this.startFX = this.startFX.bind(this);
     this.onFXEnd = this.onFXEnd.bind(this);
+    this.startHitMarker = this.startHitMarker.bind(this);
+    this.onHitMarkerEnd = this.onHitMarkerEnd.bind(this);
 
     SocketBridge.socket.on(appActions.addPlayer, this.onAddPlayer.bind(this));
     SocketBridge.socket.on(appActions.updatePlayer, this.onUpdatePlayer.bind(this));
@@ -110,7 +115,8 @@ class WidgetPage extends React.Component {
         }
       ],
       arena: this.arena,
-      setShowArena: this.setShowArena.bind(this)
+      setShowArena: this.setShowArena.bind(this),
+      startHitMarker: this.startHitMarker
     });
 
     await battleRunner.run();
@@ -234,6 +240,33 @@ class WidgetPage extends React.Component {
     });
   }
 
+  startHitMarker(position, text) {
+    const hitMarker = {
+      id: hitMarkerIdPool++,
+      position,
+      text
+    };
+    this.setState((state, props) => {
+      const hitMarkers = [...state.hitMarkers, hitMarker];
+      return { hitMarkers };
+    });
+    return hitMarker;
+  }
+
+  onHitMarkerEnd(hitMarkerId) {
+    // wrapping up this in function state in case multiple hitmarkers ended at the same time
+    this.setState((state, props) => {
+      const index = state.hitMarkers.findIndex(hitMarker => hitMarker.id === hitMarkerId);
+      if (index === -1) {
+        console.log(`Tried to remove a hitmarker that is not in state (id: ${hitMarkerId})`);
+        return;
+      }
+      const hitMarkers = Array.from(state.hitMarkers);
+      hitMarkers.splice(index, 1);
+      return { hitMarkers };
+    });
+  }
+
   setShowArena(show) {
     if (this.state.showArena === show) {
       return Promise.resolve();
@@ -281,6 +314,17 @@ class WidgetPage extends React.Component {
               flipped={fxInstance.flipped}
               autoplay={fxInstance.autoplay}
               onEnd={this.onFXEnd}
+            />
+          ))}
+        </div>
+        <div className="widget-hitmarker-layer widget-layer">
+          { this.state.hitMarkers.map(hitMarker => (
+            <HitMarker
+              key={hitMarker.id}
+              id={hitMarker.id}
+              position={hitMarker.position}
+              text={hitMarker.text}
+              onEnd={this.onHitMarkerEnd}
             />
           ))}
         </div>

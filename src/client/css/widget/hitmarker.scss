@@ -1,0 +1,33 @@
+.hitmarker-con {
+  position: absolute;
+}
+
+.hitmarker {
+  position: relative;
+  left: -25px;
+  top: 0px;
+  width: 50px;
+  height: 25px;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  overflow: hidden;
+  animation: hitmarker-anim 1.5s linear;
+  animation-fill-mode: forwards;
+}
+
+.hitmarker .outline {
+  text-align: center;
+  width: 100%;
+}
+
+.hitmarker .fill {
+  text-align: center;
+  width: 100%;
+}
+
+@keyframes hitmarker-anim {
+  0% { top: 0px; opacity: 1; }
+  50% { top: -25px; opacity: 1; }
+  100% { top: -50px; opacity: 0; }
+}

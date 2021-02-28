@@ -11,10 +11,11 @@ function OutlinedText(props) {
   if (props.classList) {
     classNames = classNames.concat(props.classList);
   }
+  const text = (props.children && props.children.length > 0) ? props.children : props.text;
   return (
-    <div className={classNames.join(' ')} style={props.style}>
-      <div className="outline">{props.text}</div>
-      <div className="fill">{props.text}</div>
+    <div className={classNames.join(' ')} style={props.style} onAnimationEnd={props.onAnimationEnd}>
+      <div className="outline">{text}</div>
+      <div className="fill">{text}</div>
     </div>
   );
 }

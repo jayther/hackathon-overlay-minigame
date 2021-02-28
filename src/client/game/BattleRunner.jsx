@@ -10,6 +10,7 @@ const defaultOptions = {
 const attackDistance = 40;
 const hitDistance = 60;
 const hitDelay = 100; // ms
+const hitMarkerOffset = -100;
 
 class BattleRunner {
   constructor(options) {
@@ -32,6 +33,9 @@ class BattleRunner {
     if (typeof opts.setShowArena !== 'function') {
       throw new Error('BattleRunner(): setShowArena is a required property and must be a function');
     }
+    if (typeof opts.startHitMarker !== 'function') {
+      throw new Error('BattleRunner(): startHitMarker is a required property and must be a function');
+    }
     console.log(opts.players);
     const shuffled = shuffleNew(options.players);
     this.leftPlayer = shuffled[0];
@@ -42,6 +46,7 @@ class BattleRunner {
 
     this.arena = opts.arena;
     this.setShowArena = opts.setShowArena;
+    this.startHitMarker = opts.startHitMarker;
 
     this.state = 0;
     this.stateMap = [
@@ -118,6 +123,11 @@ class BattleRunner {
       await attacker.playerChar.waitForIdle();
       attacker.playerChar.attack().moveTo(attackPoint).face(defendPoint);
       defender.playerChar.delay(hitDelay).hitToDelta(-deltaSign * hitDistance, damage);
+      const hitMarkerPos = defender.playerChar.position.copy();
+      hitMarkerPos.y += hitMarkerOffset;
+      setTimeout(() => {
+        this.startHitMarker(hitMarkerPos, `${damage}`)
+      }, hitDelay);
       const waitForAll = [
         attacker.playerChar.waitForIdle()
       ];
