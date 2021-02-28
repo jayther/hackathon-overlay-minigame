@@ -99,6 +99,7 @@ class PlayerChar extends SpriteApplier {
       min: 3000, // ms
       max: 6000
     };
+    this.delayActionId = -1;
 
     this.events = new EventEmitter();
     this.animStep = this.animStep.bind(this);
@@ -141,6 +142,14 @@ class PlayerChar extends SpriteApplier {
     }
     if (update) {
       this.setAnimState(this.animState);
+    }
+  }
+
+  componentWillUnmount() {
+    this.stopRandomMove();
+    this.stopCurrentAnim();
+    if (this.delayActionId !== -1) {
+      clearTimeout(this.delayActionId);
     }
   }
 
@@ -230,7 +239,8 @@ class PlayerChar extends SpriteApplier {
         this.cssTransitionMoveTo(action.position, this.hitSpeed, 'hit', true);
         break;
       case actions.delay:
-        setTimeout(() => {
+        this.delayActionId = setTimeout(() => {
+          this.delayActionId = -1;
           this.processActionQueue();
         }, action.duration);
         break;
