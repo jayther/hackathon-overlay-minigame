@@ -13,6 +13,7 @@ const hitDelay = 100; // ms
 const missDelay = 200; // ms
 const hitMarkerOffset = -100;
 const missDistance = 100;
+const weaponBoost = 50;
 
 class BattleRunner {
   constructor(options) {
@@ -112,19 +113,18 @@ class BattleRunner {
 
       // normal attack
       // TODO use dice rolls
-      // TODO add miss chance
-      // TODO crits (dash through?)
       // TODO weapon damages
       // 
       let damage, hitMarkerText, rand = Math.random();
+      let damageBoost = attacker.playerChar.weapon ? weaponBoost : 0;
       if (rand < 0.1) {
-        damage = betweenInt(300, 325);
+        damage = betweenInt(300, 325) + damageBoost;
         hitMarkerText = `${damage}!!`;
-      } else if (rand < 0.6) {
+      } else if (rand < 0.2) {
         damage = 0;
         hitMarkerText = 'Miss';
       } else {
-        damage = betweenInt(150, 250);
+        damage = betweenInt(150, 250) + damageBoost;
         hitMarkerText = `${damage}`;
       }
 
