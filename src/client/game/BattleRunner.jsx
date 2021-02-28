@@ -10,7 +10,9 @@ const defaultOptions = {
 const attackDistance = 40;
 const hitDistance = 60;
 const hitDelay = 100; // ms
+const missDelay = 200; // ms
 const hitMarkerOffset = -100;
+const missDistance = 100;
 
 class BattleRunner {
   constructor(options) {
@@ -114,10 +116,13 @@ class BattleRunner {
       // TODO crits (dash through?)
       // TODO weapon damages
       // 
-      let damage, hitMarkerText;
-      if (Math.random() < 0.1) {
+      let damage, hitMarkerText, rand = Math.random();
+      if (rand < 0.1) {
         damage = betweenInt(300, 325);
         hitMarkerText = `${damage}!!`;
+      } else if (rand < 0.6) {
+        damage = 0;
+        hitMarkerText = 'Miss';
       } else {
         damage = betweenInt(150, 250);
         hitMarkerText = `${damage}`;
@@ -129,20 +134,30 @@ class BattleRunner {
       attackPos.x += attackPosDelta;
       attacker.playerChar.moveTo(attackPos);
       await attacker.playerChar.waitForIdle();
-      attacker.playerChar.attack().moveTo(attackPoint).face(defendPoint);
-      defender.playerChar.delay(hitDelay).hitToDelta(-deltaSign * hitDistance, damage);
+      let hitMarkerDelay;
+      if (damage === 0) { // miss
+        attacker.playerChar.delay(missDelay).attack().moveTo(attackPoint).face(defendPoint);
+        const missPos = defender.playerChar.position.copy();
+        missPos.x += -deltaSign * missDistance;
+        defender.playerChar.moveTo(missPos);
+        hitMarkerDelay = missDelay + hitDelay;
+      } else { // hit
+        attacker.playerChar.attack().moveTo(attackPoint).face(defendPoint);
+        defender.playerChar.delay(hitDelay).hitToDelta(-deltaSign * hitDistance, damage);
+        hitMarkerDelay = hitDelay;
+      }
       const hitMarkerPos = defender.playerChar.position.copy();
       hitMarkerPos.y += hitMarkerOffset;
       setTimeout(() => {
         this.startHitMarker(hitMarkerPos, hitMarkerText)
-      }, hitDelay);
+      }, hitMarkerDelay);
       const waitForAll = [
         attacker.playerChar.waitForIdle()
       ];
       const defenderFutureHp = defender.playerChar.hp - damage;
-      if (defenderFutureHp <= 0) {
+      if (defenderFutureHp <= 0) { // ded
         defender.playerChar.die();
-      } else {
+      } else { // alive still, move back
         defender.playerChar.moveTo(defendPoint);
         waitForAll.push(defender.playerChar.waitForIdle());
       }
