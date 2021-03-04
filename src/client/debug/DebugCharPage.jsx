@@ -83,6 +83,7 @@ class DebugCharPage extends React.Component {
     super(props);
 
     this.state = {
+      characterIndex: 0,
       character: resolveCharacter(allCharacters[0]),
       anim: allCharacters[0].idle,
       animKey: 'idle',
@@ -108,9 +109,11 @@ class DebugCharPage extends React.Component {
   }
 
   onCharacterSelect(e) {
-    const character = resolveCharacter(allCharacters[e.target.value]);
+    const characterIndex = e.target.value;
+    const character = resolveCharacter(allCharacters[characterIndex]);
     this.setState({
-      character: character,
+      characterIndex,
+      character,
       anim: character.idle,
       animKey: 'idle',
       animKeys: getAnimKeys(character),
@@ -255,7 +258,7 @@ class DebugCharPage extends React.Component {
         </div>
         <div className="info-controls-con">
           <div className="character-list-con">
-            <select onChange={this.onCharacterSelect} value={this.state.character}>
+            <select onChange={this.onCharacterSelect} value={this.state.characterIndex}>
               {allCharacters.map((character, index) => (
                 <option key={character.name} value={index}>
                   {character.name}
