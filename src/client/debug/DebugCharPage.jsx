@@ -255,14 +255,14 @@ class DebugCharPage extends React.Component {
         </div>
         <div className="info-controls-con">
           <div className="character-list-con">
-            <select onChange={this.onCharacterSelect} defaultValue={this.state.character}>
+            <select onChange={this.onCharacterSelect} value={this.state.character}>
               {allCharacters.map((character, index) => (
                 <option key={character.name} value={index}>
                   {character.name}
                 </option>
               ))}
             </select>
-            <select onChange={this.onAnimSelect} defaultValue={this.state.animKey}>
+            <select onChange={this.onAnimSelect} value={this.state.animKey}>
               {this.state.animKeys.map(key => (
                 <option key={key} value={key}>
                   {key}
@@ -270,7 +270,7 @@ class DebugCharPage extends React.Component {
               ))}
             </select>
             {Array.isArray(this.state.character[this.state.animKey]) ? (
-              <select onChange={this.onAnimIndexSelect} defaultValue={this.state.animIndex}>
+              <select onChange={this.onAnimIndexSelect} value={this.state.animIndex}>
                 {this.state.character[this.state.animKey].map((anim, index) => (
                   <option key={index} value={index}>
                     {index}
