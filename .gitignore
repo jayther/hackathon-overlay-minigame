@@ -119,3 +119,6 @@ dist
 .usertokens.json
 .rewardmap.json
 .playerdata.json
+
+dist-debug
+src/client/assets/backup

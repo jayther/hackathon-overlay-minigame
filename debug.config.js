@@ -6,7 +6,7 @@ module.exports = {
   entry: path.join(__dirname, '/src/client/debug.jsx'),
   output: {
     filename: 'debug.js',
-    path: path.join(__dirname, '/dist/')
+    path: path.join(__dirname, '/dist-debug/')
   },
   module: {
     rules:[
@@ -35,7 +35,7 @@ module.exports = {
   plugins: [
     new HWP({
        template: path.join(__dirname, '/src/client/debug.html'),
-       filename: 'debug.html'
+       filename: 'index.html'
     }),
     new MCEP({
       filename: 'debug.css'

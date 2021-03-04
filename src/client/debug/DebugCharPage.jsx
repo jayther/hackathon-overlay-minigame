@@ -2,6 +2,8 @@ import React from 'react';
 import DebugChar from './DebugChar';
 import * as All_Characters from '../game/characters/All_Characters';
 import { resolveCharacter } from '../utils/CharacterUtils';
+import spritesheets0 from '../assets/spritesheets-0.json';
+import spritesheets1 from '../assets/spritesheets-1.json';
 
 const spriteScale = 2;
 
@@ -92,7 +94,9 @@ class DebugCharPage extends React.Component {
       nonce: 0,
       changeAnim: true,
       changeFx: false,
-      overlayFx: false
+      overlayFx: false,
+      exportResults0: 'idle',
+      exportResults1: 'idle'
     };
 
     this.onCharacterSelect = this.onCharacterSelect.bind(this);
@@ -106,6 +110,7 @@ class DebugCharPage extends React.Component {
     this.onRight = this.onRight.bind(this);
     this.onDown = this.onDown.bind(this);
     this.onFloor = this.onFloor.bind(this);
+    this.onExport = this.onExport.bind(this);
   }
 
   onCharacterSelect(e) {
@@ -237,6 +242,58 @@ class DebugCharPage extends React.Component {
     }
   }
 
+  async onExport() {
+    const data0 = JSON.stringify(spritesheets0, null, 2);
+    const data1 = JSON.stringify(spritesheets1, null, 2);
+
+    try {
+      this.setState({
+        exportResults0: 'exporting...'
+      });
+      const resp = await fetch('spritesheets/spritesheets-0.json', {
+        method: 'POST',
+        cache: 'no-cache',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: data0
+      });
+      const respStr = await resp.text();
+      this.setState({
+        exportResults0: respStr
+      });
+    } catch (e) {
+      this.setState({
+        exportResults0: e.message
+      });
+      console.error(e);
+      return;
+    }
+    try {
+      this.setState({
+        exportResults1: 'exporting...'
+      });
+      const resp = await fetch('spritesheets/spritesheets-1.json', {
+        method: 'POST',
+        cache: 'no-cache',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: data1
+      });
+      const respStr = await resp.text();
+      this.setState({
+        exportResults1: respStr
+      });
+    } catch (e) {
+      this.setState({
+        exportResults1: e.message
+      });
+      console.error(e);
+      return;
+    }
+  }
+
   render() {
     const combinedSpriteConNames = ['combined-sprite-con'];
     const combinedSpriteConStyle = {};
@@ -330,9 +387,7 @@ class DebugCharPage extends React.Component {
                   <td></td>
                 </tr>
                 <tr>
-                  <td>
-
-                  </td>
+                  <td></td>
                   <td>
                     <button onClick={this.onFloor}>Floor</button>
                   </td>
@@ -340,6 +395,13 @@ class DebugCharPage extends React.Component {
                 </tr>
               </tbody>
             </table>
+          </div>
+          <div className="export-con">
+            <button onClick={this.onExport}>Export</button>
+            <div className="export-results">
+              <p><strong>spritesheets-0.json:</strong> {this.state.exportResults0}</p>
+              <p><strong>spritesheets-1.json:</strong> {this.state.exportResults1}</p>
+            </div>
           </div>
         </div>
       </div>
