@@ -4,6 +4,7 @@ class SpriteApplier extends React.Component {
   constructor(props) {
     super(props);
 
+    this.flipped = false;
     this.spriteStyle = null;
   }
 

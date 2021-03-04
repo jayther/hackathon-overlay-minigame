@@ -5,3 +5,37 @@
     padding: 2px 5px;
   }
 }
+
+.debug-char-page {
+  display: flex;
+  flex-direction: row;
+}
+
+.combined-sprite-con {
+  position: relative;
+}
+.sprite-con {
+  position: relative;
+  padding: 5px;
+}
+.fx-con {
+  position: relative;
+  padding: 5px;
+}
+
+.combined-sprite-con.overlay-fx {
+  width: 250px;
+  padding: 5px;
+
+  .sprite-con {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+  .fx-con {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+}
+

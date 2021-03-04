@@ -6,7 +6,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import Preloader from './utils/Preloader';
 import Deferred from './utils/Deferred';
-import DebugSpritePage from './debug/DebugSpritePage';
+import DebugCharPage from './debug/DebugCharPage';
+import R from './Resources';
 
 import spritesheet0img from './assets/spritesheets-0.png';
 import spritesheet0 from './assets/spritesheets-0.json';
@@ -61,8 +62,14 @@ class Website extends React.Component {
 
     await deferred.promise;
 
-    spritesheet0.frames.forEach(frame => frame.src = spritesheet0img);
-    spritesheet1.frames.forEach(frame => frame.src = spritesheet1img);
+    spritesheet0.frames.forEach(frame => {
+      frame.src = spritesheet0img;
+      R.frames[frame.filename] = frame;
+    });
+    spritesheet1.frames.forEach(frame => {
+      frame.src = spritesheet1img;
+      R.frames[frame.filename] = frame;
+    });
 
     this.setState({
       preloaded: true
@@ -72,7 +79,7 @@ class Website extends React.Component {
   render() {
     return (
       !this.state.preloaded ? <LoadingPage text="preloading images" /> :
-      <DebugSpritePage />
+      <DebugCharPage />
     );
   }
 }

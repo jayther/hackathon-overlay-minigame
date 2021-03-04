@@ -28,22 +28,41 @@ class DebugSprite extends SpriteApplier {
   constructor(props) {
     super(props);
 
+    this.sprite = null;
+    this.state = {
+      width: 0,
+      height: 0
+    };
     this.spriteRef = React.createRef();
     this.sourceRef = React.createRef();
   }
   componentDidMount() {
     this.spriteStyle = this.spriteRef.current.style;
+    this.setState({
+      width: this.props.sprite.sourceSize.w,
+      height: this.props.sprite.sourceSize.h
+    });
     this.applySprite(this.props.sprite);
   }
   componentDidUpdate() {
+    if (this.sprite !== this.props.sprite) {
+      this.setState({
+        width: this.props.sprite.sourceSize.w,
+        height: this.props.sprite.sourceSize.h
+      });
+    }
     this.applySprite(this.props.sprite);
+  }
+  applySprite(sprite) {
+    this.sprite = sprite;
+    super.applySprite(sprite);
   }
 
   render() {
     const outlineStyle = {
       ...debugSpriteOutlineStyle,
-      width: `${this.props.sprite.sourceSize.w * spriteScale}px`,
-      height: `${this.props.sprite.sourceSize.h * spriteScale}px`
+      width: `${this.state.width * spriteScale}px`,
+      height: `${this.state.height * spriteScale}px`
     };
     return (
       <div className="debug-sprite-outline" style={outlineStyle}>
