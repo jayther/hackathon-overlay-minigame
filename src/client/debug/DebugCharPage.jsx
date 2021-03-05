@@ -6,6 +6,13 @@ import spritesheets0 from '../assets/spritesheets-0.json';
 import spritesheets1 from '../assets/spritesheets-1.json';
 
 const spriteScale = 2;
+const animSpeeds = [
+  0.1,
+  0.25,
+  0.5,
+  0.75,
+  1
+];
 
 const allCharacters = Object.values(All_Characters);
 
@@ -91,6 +98,10 @@ class DebugCharPage extends React.Component {
       animKey: 'idle',
       animIndex: -1,
       animKeys: getAnimKeys(allCharacters[0]),
+      animSpriteIndex: -1,
+      animSpeed: 1,
+      fxSpriteIndex: -1,
+      fxSpeed: 1,
       nonce: 0,
       changeAnim: true,
       changeFx: false,
@@ -105,6 +116,10 @@ class DebugCharPage extends React.Component {
     this.onChangeAnimChanged = this.onChangeAnimChanged.bind(this);
     this.onFXChanged = this.onFXChanged.bind(this);
     this.onOverlayFxChanged = this.onOverlayFxChanged.bind(this);
+    this.onAnimSpriteIndexChanged = this.onAnimSpriteIndexChanged.bind(this);
+    this.onAnimSpeedChanged = this.onAnimSpeedChanged.bind(this);
+    this.onFxSpriteIndexChanged = this.onFxSpriteIndexChanged.bind(this);
+    this.onFxSpeedChanged = this.onFxSpeedChanged.bind(this);
     this.onLeft = this.onLeft.bind(this);
     this.onUp = this.onUp.bind(this);
     this.onRight = this.onRight.bind(this);
@@ -114,7 +129,7 @@ class DebugCharPage extends React.Component {
   }
 
   onCharacterSelect(e) {
-    const characterIndex = e.target.value;
+    const characterIndex = parseInt(e.target.value);
     const character = resolveCharacter(allCharacters[characterIndex]);
     this.setState({
       characterIndex,
@@ -123,6 +138,8 @@ class DebugCharPage extends React.Component {
       animKey: 'idle',
       animKeys: getAnimKeys(character),
       animIndex: 0,
+      animSpriteIndex: -1,
+      fxSpriteIndex: -1,
       changeFx: false
     });
   }
@@ -134,16 +151,20 @@ class DebugCharPage extends React.Component {
       anim: Array.isArray(anim) ? anim[0] : anim,
       animKey,
       animIndex: 0,
+      animSpriteIndex: -1,
+      fxSpriteIndex: -1,
       changeFx: false
     });
   }
 
   onAnimIndexSelect(e) {
-    const animIndex = e.target.value;
+    const animIndex = parseInt(e.target.value);
     const anims = this.state.character[this.state.animKey];
     this.setState({
       anim: anims[animIndex],
-      animIndex
+      animIndex,
+      animSpriteIndex: -1,
+      fxSpriteIndex: -1,
     });
   }
 
@@ -165,12 +186,42 @@ class DebugCharPage extends React.Component {
     });
   }
 
+  onAnimSpriteIndexChanged(e) {
+    this.setState({
+      animSpriteIndex: parseInt(e.target.value)
+    });
+  }
+
+  onAnimSpeedChanged(e) {
+    this.setState({
+      animSpeed: parseFloat(e.target.value)
+    });
+  }
+
+  onFxSpriteIndexChanged(e) {
+    this.setState({
+      fxSpriteIndex: parseInt(e.target.value)
+    });
+  }
+
+  onFxSpeedChanged(e) {
+    this.setState({
+      fxSpeed: parseFloat(e.target.value)
+    });
+  }
+
   adjustAnim(dx, dy) {
     this.setState(state => {
-      state.anim.sprites.forEach(sprite => {
+      if (state.anim.animSpriteIndex === -1) {
+        state.anim.sprites.forEach(sprite => {
+          sprite.spriteSourceSize.x += dx;
+          sprite.spriteSourceSize.y += dy;
+        });
+      } else {
+        const sprite = state.anim.sprites[state.animSpriteIndex];
         sprite.spriteSourceSize.x += dx;
         sprite.spriteSourceSize.y += dy;
-      });
+      }
       return {
         nonce: state.nonce + 1
       };
@@ -182,10 +233,16 @@ class DebugCharPage extends React.Component {
       return;
     }
     this.setState(state => {
-      state.anim.fx.sprites.forEach(sprite => {
+      if (state.anim.fxSpriteIndex === -1) {
+        state.anim.fx.sprites.forEach(sprite => {
+          sprite.spriteSourceSize.x += dx;
+          sprite.spriteSourceSize.y += dy;
+        });
+      } else {
+        const sprite = state.anim.fx.sprites[state.fxSpriteIndex];
         sprite.spriteSourceSize.x += dx;
         sprite.spriteSourceSize.y += dy;
-      });
+      }
       return {
         nonce: state.nonce + 1
       };
@@ -305,11 +362,11 @@ class DebugCharPage extends React.Component {
       <div className="debug-char-page">
         <div className={combinedSpriteConNames.join(' ')} style={combinedSpriteConStyle}>
           <div className="sprite-con">
-            <DebugChar anim={this.state.anim} />
+            <DebugChar anim={this.state.anim} speed={this.state.animSpeed} spriteIndex={this.state.animSpriteIndex} />
           </div>
           {this.state.anim.fx && (
             <div className="fx-con">
-              <DebugChar anim={this.state.anim.fx} />
+              <DebugChar anim={this.state.anim.fx} speed={this.state.fxSpeed} spriteIndex={this.state.fxSpriteIndex} />
             </div>
           )}
         </div>
@@ -339,11 +396,55 @@ class DebugCharPage extends React.Component {
               </select>
             ) : null}
           </div>
+          <div className="anim-control-con">
+            <div>
+              <label>
+                Anim Frame index:
+                <select onChange={this.onAnimSpriteIndexChanged} value={this.state.animSpriteIndex}>
+                  <option value={-1}>Play all</option>
+                  {this.state.anim.sprites.map((sprite, index) => (
+                    <option key={index} value={index}>{index}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div>
+              <label>
+                Anim Speed:
+                <select onChange={this.onAnimSpeedChanged} value={this.state.animSpeed}>
+                  {animSpeeds.map((speed, index) => (
+                    <option key={index} value={speed}>{speed}x</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div>
+              <label>
+                FX Frame index:
+                <select onChange={this.onFxSpriteIndexChanged} value={this.state.fxSpriteIndex} disabled={!this.state.anim.fx}>
+                  <option value={-1}>Play all</option>
+                  {this.state.anim.fx ? this.state.anim.fx.sprites.map((sprite, index) => (
+                    <option key={index} value={index}>{index}</option>
+                  )) : null}
+                </select>
+              </label>
+            </div>
+            <div>
+              <label>
+                FX Speed:
+                <select onChange={this.onFxSpeedChanged} value={this.state.fxSpeed} disabled={!this.state.anim.fx}>
+                  {animSpeeds.map((speed, index) => (
+                    <option key={index} value={speed}>{speed}x</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
           <div className="info-con">
-            <SpriteInfo sprite={this.state.anim.sprites[0]} />
+            <SpriteInfo sprite={this.state.anim.sprites[this.state.animSpriteIndex === -1 ? 0 : this.state.animSpriteIndex]} />
             <div></div>
             {this.state.anim.fx && (
-              <SpriteInfo sprite={this.state.anim.fx.sprites[0]} />
+              <SpriteInfo sprite={this.state.anim.fx.sprites[this.state.fxSpriteIndex === -1 ? 0 : this.state.fxSpriteIndex]} />
             )}
           </div>
           <div className="controls-con">

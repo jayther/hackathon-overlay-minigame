@@ -1,4 +1,5 @@
 import DebugSprite from './DebugSprite';
+import { has } from '../../shared/ObjectUtils';
 
 class DebugChar extends DebugSprite {
   constructor(props) {
@@ -7,14 +8,43 @@ class DebugChar extends DebugSprite {
     this.anim = null;
     this.intervalId = -1;
     this.spriteIndex = 0;
+    this.speed = 1;
     this.animStep = this.animStep.bind(this);
   }
   componentDidMount() {
     this.spriteStyle = this.spriteRef.current.style;
-    this.startCurrentAnim();
+    this.speed = this.props.speed || 1;
+    this.startOrGoto();
   }
   componentDidUpdate() {
-    this.startCurrentAnim();
+    this.speed = this.props.speed || 1;
+    this.startOrGoto();
+  }
+
+  startOrGoto() {
+    if (has(this.props, 'spriteIndex') && this.props.spriteIndex !== -1) {
+      this.gotoAndStop(this.props.spriteIndex);
+    } else {
+      this.startCurrentAnim();
+    }
+  }
+
+  gotoAndStop(spriteIndex) {
+    if (spriteIndex < 0 || spriteIndex >= this.props.anim.sprites.length) {
+      throw new Error(`DebugChar.gotoAndStop: spriteIndex out of range (${spriteIndex} out of ${this.props.anim.sprites.length})`);
+    }
+    this.stopAnim();
+    this.anim = this.props.anim;
+    this.spriteIndex = spriteIndex;
+    // causes a setState loop
+    // const sprite = this.props.anim.sprites[0];
+    // if (this.sprite !== sprite) {
+    //   this.setState({
+    //     width: sprite.sourceSize.w,
+    //     height: sprite.sourceSize.h
+    //   });
+    // }
+    this.applySprite(this.anim.sprites[this.spriteIndex]);
   }
 
   startCurrentAnim() {
@@ -34,7 +64,7 @@ class DebugChar extends DebugSprite {
     }
     this.anim = anim;
     this.spriteIndex = 0;
-    this.intervalId = setInterval(this.animStep, anim.frameDelay);
+    this.intervalId = setInterval(this.animStep, Math.round(anim.frameDelay * (1 / this.speed)));
     this.applySprite(this.anim.sprites[this.spriteIndex]);
   }
 
