@@ -38,7 +38,8 @@ const actions = {
   hit: 'hit',
   delay: 'delay',
   die: 'die',
-  face: 'face'
+  face: 'face',
+  spawn: 'spawn'
 };
 
 const maxHp = 1000;
@@ -88,6 +89,7 @@ class PlayerChar extends SpriteApplier {
     this.speed = 200; // px per second
     this.dashSpeed = 300; // px per second
     this.hitSpeed = 150; // px per second
+    this.spawnSpeed = 300; // px per second
     this.weapon = false;
     this.inBattle = false;
     this.actionQueue = [];
@@ -107,8 +109,12 @@ class PlayerChar extends SpriteApplier {
 
   componentDidMount() {
     const pos = Vec2.lerp(this.props.randSegStart, this.props.randSegEnd, Math.random());
+    const stationary = this.isSpawnStationary();
     pos.x = Math.floor(pos.x);
     pos.y = Math.floor(pos.y);
+    if (!stationary) {
+      pos.y += 100;
+    }
     this.position.set(pos);
     this.container = this.containerRef.current;
     this.sprite = this.spriteRef.current;
@@ -121,7 +127,13 @@ class PlayerChar extends SpriteApplier {
     this.containerStyle.height = `0px`;
     // unreliable; using setTimeout()
     // this.container.addEventListener('transitionend', this.onConTransitionEnd.bind(this), false);
-    this.setAnimState('spawn');
+    if (stationary) {
+      this.spawnStationary();
+    } else {
+      const newPos = pos.copy();
+      newPos.y -= 100;
+      this.spawnTo(newPos);
+    }
   }
 
   componentDidUpdate() {
@@ -155,6 +167,15 @@ class PlayerChar extends SpriteApplier {
 
   onConTransitionEnd() {
     this.processActionQueue();
+  }
+
+  isSpawnStationary() {
+    const animSetState = getAnimSetState('spawn');
+    const anim = this.character[animSetState];
+    if (!anim) {
+      throw new Error('PlayerChar.isSpawnStationary: no anim found for spawn');
+    }
+    return anim.stationary;
   }
 
   startRandomMove() {
@@ -252,6 +273,13 @@ class PlayerChar extends SpriteApplier {
         this.setAnimState(this.animState);
         this.processActionQueue();
         break;
+      case actions.spawn:
+        if (action.stationary) {
+          this.setAnimState('spawn');
+        } else {
+          this.cssTransitionMoveTo(action.position, this.spawnSpeed, 'spawn');
+        }
+        break;
       default:
         console.error(`processActionQueue: Unknown action type: "${action.type}"`);
     }
@@ -262,6 +290,16 @@ class PlayerChar extends SpriteApplier {
     if (!this.executingQueue) {
       this.processActionQueue();
     }
+    return this;
+  }
+
+  spawnTo(position) {
+    this.addAction({ type: actions.spawn, position, stationary: false });
+    return this;
+  }
+
+  spawnStationary() {
+    this.addAction({ type: actions.spawn, stationary: true });
     return this;
   }
 

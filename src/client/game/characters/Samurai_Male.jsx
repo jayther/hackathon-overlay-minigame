@@ -49,7 +49,8 @@ export default {
       'Samurai_Male/graveBurst_5.png',
       'Samurai_Male/graveBurst_6.png'
     ],
-    frameDelay: 100
+    frameDelay: 100,
+    stationary: false
   },
   hit: {
     sprites: [

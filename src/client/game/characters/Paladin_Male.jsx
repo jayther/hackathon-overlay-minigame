@@ -44,7 +44,8 @@ export default {
     sprites: [
       'Paladin_Male/graveBurst_1.png'
     ],
-    frameDelay: 600
+    frameDelay: 600,
+    stationary: false
   },
   hit: {
     sprites: [

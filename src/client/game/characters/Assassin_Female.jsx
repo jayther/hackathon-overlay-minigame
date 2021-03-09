@@ -44,7 +44,8 @@ export default {
     sprites: [
       'Assassin_Female/graveBurst_1.png'
     ],
-    frameDelay: 600
+    frameDelay: 600,
+    stationary: false
   },
   hit: {
     sprites: [

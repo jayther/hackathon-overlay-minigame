@@ -49,7 +49,8 @@ export default {
       'Archdemon_Female/graveBurst_5.png',
       'Archdemon_Female/graveBurst_6.png'
     ],
-    frameDelay: 100
+    frameDelay: 100,
+    stationary: true
   },
   hit: {
     sprites: [

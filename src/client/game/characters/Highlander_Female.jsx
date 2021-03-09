@@ -49,7 +49,8 @@ export default {
       'Highlander_Female/graveBurst_5.png',
       'Highlander_Female/graveBurst_6.png'
     ],
-    frameDelay: 100
+    frameDelay: 100,
+    stationary: false
   },
   hit: {
     sprites: [

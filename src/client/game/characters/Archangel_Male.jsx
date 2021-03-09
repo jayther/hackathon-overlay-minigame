@@ -49,7 +49,8 @@ export default {
       'Archangel_Male/graveBurst_5.png',
       'Archangel_Male/graveBurst_6.png'
     ],
-    frameDelay: 100
+    frameDelay: 100,
+    stationary: true
   },
   hit: {
     sprites: [
