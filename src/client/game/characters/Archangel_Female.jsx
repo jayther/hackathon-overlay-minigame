@@ -26,6 +26,14 @@ export default {
     ],
     frameDelay: 75
   },
+  runWeapon: {
+    sprites: [
+      'Archangel_Female/idle_sword_1.png',
+      'Archangel_Female/idle_sword_2.png',
+      'Archangel_Female/idle_sword_3.png'
+    ],
+    frameDelay: 150
+  },
   dash: {
     sprites: [
       'Archangel_Female/dash_1.png',

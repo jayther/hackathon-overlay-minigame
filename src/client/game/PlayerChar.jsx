@@ -22,7 +22,7 @@ const animSetStates = {
   },
   weapon: {
     idle: 'idleWeapon',
-    run: 'run',
+    run: ['runWeapon', 'run'],
     dead: 'dead',
     attacks: 'attacksWeapon',
     dash: 'dashWeapon',
@@ -412,9 +412,18 @@ class PlayerChar extends SpriteApplier {
 
   setAnimState(animState) {
     this.animState = animState;
-    const animSetState = getAnimSetState(animState, this.weapon);
-    if (!this.character[animSetState]) {
-      throw new Error(`PlayerChar.setAnimState: character does not have "${animSetState}" anim state`);
+    const animSetStateOrArr = getAnimSetState(animState, this.weapon);
+    let animSetState = null;
+    if (Array.isArray(animSetStateOrArr)) {
+      animSetState = animSetStateOrArr.find(s => this.character[s]);
+      if (!animSetState) {
+        throw new Error(`PlayerChar.setAnimState: character does not have any of these anim states: ${animSetStateOrArr.join(', ')}`);
+      }
+    } else {
+      animSetState = animSetStateOrArr;
+      if (!this.character[animSetState]) {
+        throw new Error(`PlayerChar.setAnimState: character does not have "${animSetState}" anim state`);
+      }
     }
     const animOrAnims = this.character[animSetState];
     const anim = Array.isArray(animOrAnims) ? RandUtils.pick(animOrAnims) : animOrAnims;
