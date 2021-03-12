@@ -156,6 +156,14 @@ class RewardManager {
     return null;
   }
 
+  getRewardFromAction(actionKey) {
+    const rewardId = this.getRewardIdFromAction(actionKey);
+    if (!rewardId) {
+      return null;
+    }
+    return this.rewards.find(reward => reward.id === rewardId);
+  }
+
   async onSocketCreateReward(data) {
     await this.twitchManager.userClient
       .helix.channelPoints

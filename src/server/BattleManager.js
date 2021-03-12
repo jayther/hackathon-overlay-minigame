@@ -5,7 +5,7 @@ const logger = require('./utils/logger');
 const globalEmitter = require('./utils/GlobalEmitter');
 const { socketEvents } = require('./consts');
 const { bindAndLog } = require('./utils/LogUtils');
-const { ExpectedError } = require('./errors');
+const { ChattableError, ExpectedError } = require('./errors');
 const requiredRewards = require('../shared/RequiredRewards');
 
 function filterAlivePlayers(player) {
@@ -15,7 +15,7 @@ function filterAlivePlayers(player) {
 class BattleManager {
   constructor(
     settings, files, socketManager, twitchManager,
-    rewardManager, playerManager
+    rewardManager, playerManager, chatBotManager
   ) {
     this.settings = settings;
     this.files = files;
@@ -23,6 +23,7 @@ class BattleManager {
     this.twitchManager = twitchManager;
     this.rewardManager = rewardManager;
     this.playerManager = playerManager;
+    this.chatBotManager = chatBotManager;
 
     this.currentBattle = null;
     this.battleQueue = [];
@@ -50,17 +51,30 @@ class BattleManager {
     return this.currentBattle ? this.currentBattle.includes(userId) : false;
   }
 
+  getRewardName(action) {
+    const reward = this.rewardManager.getRewardFromAction(action.key);
+    return reward ? reward.title : action.title;
+  }
+
   async requestBattle(event) {
     const player = this.playerManager.getPlayer(event.userId);
     if (!player) {
       this.rewardManager.rejectRedeem(event);
-      // TODO send error in chat
-      throw new ExpectedError(`requestBattle: "${event.userId}" not in player data`);
+      const rewardName = this.getRewardName(requiredRewards.add);
+      throw new ChattableError(
+        `@${event.userDisplayName} , please redeem "${rewardName}" first before requesting a random duel. ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `requestBattle: "${event.userDisplayName}" (id: ${event.userId}) not in player data`
+      ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
     }
     if (!player.alive) {
       this.rewardManager.rejectRedeem(event);
-      // TODO send error in chat
-      throw new ExpectedError(`requestBattle: "${player.userDisplayName}" is not alive`);
+      const rewardName = this.getRewardName(requiredRewards.add);
+      throw new ChattableError(
+        `@${player.userDisplayName} , please redeem "${rewardName}" first before requesting a random duel. ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `requestBattle: "${player.userDisplayName}" is not alive`
+      ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
     }
     await this.addBattle({
       id: event.id,
@@ -78,18 +92,29 @@ class BattleManager {
     const player = this.playerManager.getPlayer(event.userId);
     if (!player) {
       this.rewardManager.rejectRedeem(event);
-      // TODO send error in chat
-      throw new ExpectedError(`requestSpecificBattle: "${event.userId}" not in player data`);
+      const rewardName = this.getRewardName(requiredRewards.add);
+      throw new ChattableError(
+        `@${event.userDisplayName} , please redeem "${rewardName}" first before requesting a duel. ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `requestSpecificBattle: "${event.userDisplayName}" (id: ${event.userId}) not in player data`
+      ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
     }
     if (!player.alive) {
       this.rewardManager.rejectRedeem(event);
-      // TODO send error in chat
-      throw new ExpectedError(`requestSpecificBattle: "${player.userDisplayName}" is not alive`);
+      const rewardName = this.getRewardName(requiredRewards.add);
+      throw new ChattableError(
+        `@${player.userDisplayName} , please redeem "${rewardName}" first before requesting a duel. ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `requestSpecificBattle: "${player.userDisplayName}" is not alive`
+      ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
     }
     if (!event.input || event.input.length === 0) {
       this.rewardManager.rejectRedeem(event);
-      // TODO send error in chat
-      throw new ExpectedError(`requestSpecificBattle: no userName specified`);
+      throw new ChattableError(
+        `@${player.userDisplayName} , please specify an alive player's username in the redeem. ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `requestSpecificBattle: ${player.userDisplayName} did not specify a userName`
+      ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
     }
 
     let targetUserName = event.input.trim().toLowerCase();
@@ -99,13 +124,19 @@ class BattleManager {
     const target = this.playerManager.getPlayerFromUserName(targetUserName);
     if (!target) {
       this.rewardManager.rejectRedeem(event);
-      // TODO send error chat
-      throw new ExpectedError(`requestSpecificBattle: target "${targetUserName}" not in player data`);
+      throw new ChattableError(
+        `@${player.userDisplayName} , please specify an alive player's username in the redeem. ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `requestSpecificBattle: target "${targetUserName}" not in player data`
+      ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
     }
     if (!target.alive) {
       this.rewardManager.rejectRedeem(event);
-      // TODO send error in chat
-      throw new ExpectedError(`requestSpecificBattle: target "${target.userDisplayName}" is not alive`);
+      throw new ChattableError(
+        `@${player.userDisplayName} , please specify an alive player's username in the redeem. ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `requestSpecificBattle: target "${target.userDisplayName}" is not alive`
+      ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
     }
 
     await this.addBattle({
@@ -128,23 +159,37 @@ class BattleManager {
     const player = this.playerManager.getPlayer(event.userId);
     if (!player) {
       this.rewardManager.rejectRedeem(event);
-      // TODO send "error" to chat
-      throw new ExpectedError(`weaponize: "${event.userDisplayName}" not in player data`);
+      const rewardName = this.getRewardName(requiredRewards.add);
+      throw new ChattableError(
+        `@${event.userDisplayName} , please redeem "${rewardName}" first before adding a weapon. ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `weaponize: "${event.userDisplayName}" (id: ${event.userId}) not in player data`
+      ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
     }
     if (!player.alive) {
       this.rewardManager.rejectRedeem(event);
-      // TODO send "error" to chat
-      throw new ExpectedError(`weaponize: "${player.userDisplayName}" not alive`);
+      const rewardName = this.getRewardName(requiredRewards.add);
+      throw new ChattableError(
+        `@${player.userDisplayName} , please redeem "${rewardName}" first before adding a weapon. ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `weaponize: "${player.userDisplayName}" not alive`
+      ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
     }
     if (player.weapon) {
       this.rewardManager.rejectRedeem(event);
-      // TODO send "error" to chat
-      throw new ExpectedError(`weaponize: "${player.userDisplayName}" already has a weapon`);
+      throw new ChattableError(
+        `@${player.userDisplayName} , you already have a weapon. ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `weaponize: "${player.userDisplayName}" already has a weapon`
+      ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
     }
     if (this.isInBattle(player.userId)) {
       this.rewardManager.rejectRedeem(event);
-      // TODO send "error" to chat
-      throw new ExpectedError(`weaponize: "${player.userDisplayName}" cannot equip weapon during battle`);
+      throw new ChattableError(
+        `@${player.userDisplayName} , you cannot add a weapon mid-duel. ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `weaponize: "${player.userDisplayName}" cannot equip weapon during battle`
+      ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
     }
 
     player.weapon = true;
@@ -162,7 +207,6 @@ class BattleManager {
 
   async startBattle(eventId) {
     if (this.currentBattle) {
-      // TODO send error chat
       throw new ExpectedError(`startBattle: Cannot start battle for "${player.userDisplayName}", battle in progress`);
     }
 
@@ -173,34 +217,32 @@ class BattleManager {
     const event = this.battleQueue[eventIndex];
     const player = this.playerManager.getPlayer(event.userId);
     if (!player) {
-      // TODO send error chat
       throw new ExpectedError(`startBattle: "${event.userId}" not found in player data`);
     }
     if (!player.alive) {
-      // TODO send error chat
       throw new ExpectedError(`startBattle: "${player.userDisplayName}" is not alive`);
     }
     let otherPlayer;
     if (event.target) {
       otherPlayer = this.playerManager.getPlayer(event.target.userId);
       if (!otherPlayer) {
-        // TODO send error chat
         throw new ExpectedError(`startBattle: target "${event.target.userDisplayName}" not found in player data`);
       }
       if (!otherPlayer.alive) {
-        // TODO send error chat
         throw new ExpectedError(`startBattle: target "${otherPlayer.userDisplayName}" is not alive`);
       }
     } else {
       const alivePlayers = this.files.playerData.data.players.filter(filterAlivePlayers);
       if (alivePlayers.length < 2) {
-        // TODO send error chat
         throw new ExpectedError(`startBattle: "${player.userDisplayName}" is the only one alive`);
       }
       otherPlayer = pickExcept(alivePlayers, player);
     }
 
     this.rewardManager.approveRedeem(event);
+    if (this.settings.sendChatForDebugEvents || !event.debug) {
+      this.chatBotManager.say(`Duel between ${player.userDisplayName} and ${otherPlayer.userDisplayName} is about to start!`);
+    }
 
     this.battleQueue.splice(eventIndex, 1);
     this.socketManager.controlEmit(appActions.updateBattleQueue, this.battleQueue);
@@ -214,9 +256,12 @@ class BattleManager {
     if (eventIndex === -1) {
       throw new Error(`cancelBattle: "${eventId}" not in queue`);
     }
-    const event = this.battleQueue[eventIndex];
+    const event = this.battleQueue[eventIndex];    
     this.battleQueue.splice(eventIndex, 1);
     this.rewardManager.rejectRedeem(event);
+    if (this.settings.sendChatForDebugEvents || !event.debug) {
+      this.chatBotManager.say(`Cancelling duel request from ${event.userDisplayName}. Refunding ${this.settings.channelPointsName}.`);
+    }
     this.socketManager.controlEmit(appActions.updateBattleQueue, this.battleQueue);
     logger(`cancelBattle: Cancelled a duel request from "${event.userDisplayName}"`)
   }

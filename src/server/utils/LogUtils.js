@@ -1,6 +1,14 @@
 const logger = require('./logger');
 
+let chattableLogger = () => {};
+function setChattableLogger(chLogger) {
+  chattableLogger = chLogger;
+}
+
 function maybeExpectedError(e) {
+  if (e.sendToChat && e.chatMessage) {
+    chattableLogger(e.chatMessage);
+  }
   if (e.expected || !e.stack) {
     logger(e.message);
   } else {
@@ -21,5 +29,6 @@ function logOnCatch(promisable) {
 module.exports = {
   bindAndLog,
   logOnCatch,
-  maybeExpectedError
+  maybeExpectedError,
+  setChattableLogger
 };

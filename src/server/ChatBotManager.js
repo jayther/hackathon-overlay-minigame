@@ -110,8 +110,18 @@ class ChatBotManager {
     );
   }
 
-  send(message) {
-    this.chatClient.say(`#${this.twitchManager.user.name}`, message);
+  async say(message) {
+    if (!this.isChatBotReady()) {
+      throw new ExpectedError(`ChatBotManager.say: chatbot not ready (attempted to send "${message}")`);
+    }
+    await this.chatClient.say(`#${this.twitchManager.user.name}`, message);
+  }
+
+  async action(message) {
+    if (!this.isChatBotReady()) {
+      throw new ExpectedError(`ChatBotManager.action: chatbot not ready (attempted to send "${message}")`);
+    }
+    await this.chatClient.action(`#${this.twitchManager.user.name}`, message);
   }
 
   waitForJoin() {

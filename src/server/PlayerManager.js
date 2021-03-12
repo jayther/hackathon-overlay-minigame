@@ -11,8 +11,8 @@ const requiredRewards = require('../shared/RequiredRewards');
 const globalEmitter = require('./utils/GlobalEmitter');
 const { socketEvents } = require('./consts');
 const { bindAndLog } = require('./utils/LogUtils');
-const { has, applyKnownProps } = require('../shared/ObjectUtils');
-const { ExpectedError } = require('./errors');
+const { applyKnownProps } = require('../shared/ObjectUtils');
+const { ChattableError, ExpectedError } = require('./errors');
 
 const defaultPlayer = {
   userId: null,
@@ -145,8 +145,11 @@ class PlayerManager {
     if (player && player.userId === event.userId && player.alive) {
       // delayed refund
       this.rewardManager.rejectRedeem(event);
-      // TODO send "error" to chat
-      throw new ExpectedError(`addPlayer: "${player.userName}" already alive in game`);
+      throw new ChattableError(
+        `@${player.userDisplayName} , you are already in the game. ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `addPlayer: "${player.userName}" already alive in game`
+      );
     }
     if (player) {
       player.userName = event.userName;

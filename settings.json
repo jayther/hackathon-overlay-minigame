@@ -1,5 +1,7 @@
 {
   "socketPort": 3000,
   "webPort": 8080,
-  "staticDir": "dist"
+  "staticDir": "dist",
+  "channelPointsName": "channel points",
+  "sendChatForDebugEvents": false
 }

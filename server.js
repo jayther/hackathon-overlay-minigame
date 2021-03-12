@@ -1,6 +1,10 @@
 const fs = require('fs-extra');
 const logger = require('./src/server/utils/logger');
-const { bindAndLog, maybeExpectedError } = require('./src/server/utils/LogUtils');
+const {
+  bindAndLog,
+  maybeExpectedError,
+  setChattableLogger
+} = require('./src/server/utils/LogUtils');
 const JsonDataFile = require('./src/server/JsonDataFile');
 const SocketManager = require('./src/server/SocketManager');
 const SetupManager = require('./src/server/SetupManager');
@@ -49,8 +53,10 @@ class ServerApp {
     );
     this.battleManager = new BattleManager(
       settings, this.files, this.socketManager, this.twitchManager,
-      this.rewardManager, this.playerManager
+      this.rewardManager, this.playerManager, this.chatBotManager
     );
+
+    setChattableLogger(this.chatBotManager.say.bind(this.chatBotManager));
   }
   async init() {
     logger('Starting ServerApp');

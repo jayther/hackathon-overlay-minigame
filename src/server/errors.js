@@ -18,7 +18,22 @@ class SetupError extends Error {
   }
 }
 
+class ChattableError extends Error {
+  constructor(chatMessage, ...params) {
+    super(...params);
+    this.name = 'ChattableError';
+    this.expected = true;
+    this.chatMessage = chatMessage;
+    this.sendToChat = true;
+  }
+  setSetSendToChat(sendToChat) {
+    this.sendToChat = sendToChat;
+    return this;
+  }
+}
+
 module.exports = {
   ExpectedError,
-  SetupError
+  SetupError,
+  ChattableError
 };
