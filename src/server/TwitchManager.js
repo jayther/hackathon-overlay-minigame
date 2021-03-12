@@ -12,6 +12,7 @@ const logger = require('./utils/logger');
 const globalEmitter = require('./utils/GlobalEmitter');
 const appActions = require('../shared/AppActions');
 const { socketEvents } = require('./consts');
+const { ExpectedError } = require('./errors');
 
 class TwitchManager {
   constructor(settings, files, socketManager) {
@@ -65,13 +66,14 @@ class TwitchManager {
 
   async startUserClient() {
     if (!this.isAppReady()) {
-      throw new Error('Cannot start twitch: no app secrets');
+      throw new ExpectedError('Cannot start twitch: no app secrets');
     }
     if (!this.areUserTokensReady()) {
-      throw new Error('Cannot start twitch: no user tokens');
+      throw new ExpectedError('Cannot start twitch: no user tokens');
     }
     if (this.userClient) {
-      throw new Error('userClient already started');
+      logger('userClient already started');
+      return;
     }
     logger('Starting twitch user...');
     const authProvider = new RefreshableAuthProvider(
@@ -105,10 +107,10 @@ class TwitchManager {
   
   async startAppClient() {
     if (!this.isAppReady()) {
-      throw new Error('Cannot start twitch: no app secrets');
+      throw new ExpectedError('Cannot start twitch: no app secrets');
     }
     if (this.appClient) {
-      throw new Error('appClient already started');
+      throw new ExpectedError('appClient already started');
     }
     logger('Starting twitch app...');
     const authProvider = new ClientCredentialsAuthProvider(this.files.appSecrets.data.clientId, this.files.appSecrets.data.clientSecret);
@@ -125,7 +127,8 @@ class TwitchManager {
       throw new Error(`Cannot start eventSub: missing user (userClient started but did not get user details)`);
     }
     if (this.eventSub) {
-      throw new Error('eventSub already started');
+      logger('eventSub already started');
+      return;
     }
     logger('Starting eventSub...');
     this.eventSub = new EventSubListener(this.appClient, new NgrokAdapter());

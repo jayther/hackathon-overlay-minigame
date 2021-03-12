@@ -20,5 +20,6 @@ function logOnCatch(promisable) {
 
 module.exports = {
   bindAndLog,
-  logOnCatch
+  logOnCatch,
+  maybeExpectedError
 };

@@ -9,6 +9,16 @@ class ExpectedError extends Error {
   }
 }
 
+class SetupError extends Error {
+  constructor(statusCode, ...params) {
+    super(...params);
+    this.name = 'SetupError';
+    this.expected = true;
+    this.statusCode = statusCode;
+  }
+}
+
 module.exports = {
-  ExpectedError
+  ExpectedError,
+  SetupError
 };

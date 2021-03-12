@@ -2,6 +2,7 @@
 module.exports = {
   appSecretsPath: './.appsecrets.json',
   userTokensPath: './.usertokens.json',
+  chatBotTokensPath: './.chatbottokens.json',
   rewardMapPath: './.rewardmap.json',
   playerDataPath: './.playerdata.json',
   twitchApiScopes: [

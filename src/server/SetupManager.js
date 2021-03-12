@@ -11,6 +11,8 @@ const { twitchApiScopes, socketEvents } = require('./consts');
 const globalEmitter = require('./utils/GlobalEmitter');
 const appActions = require('../shared/AppActions');
 
+const { SetupError } = require('./errors');
+
 function httpsRequest(params, body = null) {
   return new Promise((resolve, reject) => {
     const req = https.request(params, resp => {
@@ -51,6 +53,7 @@ class SetupManager {
     logger('Loading files...');
     await this.files.appSecrets.load();
     await this.files.userTokens.load();
+    await this.files.chatBotTokens.load();
     await this.files.rewardMap.load();
     await this.files.playerData.load();
 
@@ -70,8 +73,11 @@ class SetupManager {
     this.app = express();
     this.app.use(express.static(this.settings.staticDir));
     this.app.head('/authorize', (req, resp) => resp.status(200));
+    this.app.head('/authorize-chatbot', (req, resp) => resp.status(200));
     this.app.get('/authorize', this.onGetAuthorize.bind(this));
+    this.app.get('/authorize-chatbot', this.onGetAuthorizeChatBot.bind(this));
     this.app.get('/callback', this.onGetCallback.bind(this));
+    this.app.get('/chatbot', this.onGetChatbot.bind(this));
     this.server = createServer(this.app);
 
     this.server.listen(this.settings.webPort);
@@ -104,12 +110,75 @@ class SetupManager {
     resp.redirect(`https://id.twitch.tv/oauth2/authorize?${query}`);
   }
 
+  onGetAuthorizeChatBot(req, resp) {
+    const redirectUri = `http://localhost:${this.settings.webPort}/chatbot`;
+    const query = objToParams({
+      client_id: this.files.appSecrets.data.clientId,
+      redirect_uri: encodeURIComponent(redirectUri),
+      response_type: 'code',
+      scope: twitchApiScopes.join('+')
+    });
+    resp.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    resp.redirect(`https://id.twitch.tv/oauth2/authorize?${query}`);
+  }
+
   async onGetCallback(req, resp) {
+    try {
+      const tokens = await this.fetchTokens(req, resp);
+      this.files.userTokens.data = tokens;
+      await this.files.userTokens.save();
+      resp.send('User Authorized!').end();
+      this.maybeEmitSetupAuthorized();
+    } catch (e) {
+      if (e.expected) {
+        const msg = `callback error: ${e.message}`;
+        resp.status(e.statusCode || 500).send(msg);
+        logger(msg);
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  async onGetChatbot(req, resp) {
+    try {
+      const tokens = await this.fetchTokens(req, resp);
+      this.files.chatBotTokens.data = tokens;
+      await this.files.chatBotTokens.save();
+      resp.send('ChatBot Authorized!').end();
+      this.maybeEmitSetupAuthorized();
+    } catch (e) {
+      if (e.expected) {
+        const msg = `callback error: ${e.message}`;
+        resp.status(e.statusCode || 500).send(msg);
+        logger(msg);
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  areTokensReady() {
+    return !!(
+      this.files.userTokens &&
+      this.files.userTokens.data &&
+      this.files.userTokens.data.accessToken &&
+      this.files.chatBotTokens &&
+      this.files.chatBotTokens.data &&
+      this.files.chatBotTokens.data.accessToken
+    );
+  }
+
+  maybeEmitSetupAuthorized() {
+    if (this.areTokensReady()) {
+      globalEmitter.emit(socketEvents.setupAuthorized);
+    }
+  }
+
+  async fetchTokens(req, resp) {
     resp.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     if (!req.query.code) {
-      logger('Token callback: Missing code parameter');
-      resp.send('Missing code parameter').status(400);
-      return;
+      throw new SetupError(400, 'Missing code parameter');
     }
     const code = req.query.code;
     const query = objToParams({
@@ -128,23 +197,20 @@ class SetupManager {
     });
     
     if (tokensResponse.status && tokensResponse.status !== 200) {
-      throw new Error(`${tokensResponse.status} error: ${tokensResponse.message}`);
+      throw new SetupError(tokensResponse.status, `${tokensResponse.status} error: ${tokensResponse.message}`);
     }
     if (!tokensResponse.access_token) {
-      throw new Error('Missing access_token');
+      throw new SetupError(400, 'Missing access_token');
     }
     if (!tokensResponse.refresh_token) {
-      throw new Error('Missing refresh_token');
+      throw new SetupError(400, 'Missing refresh_token');
     }
     const tokensData = {
       accessToken: tokensResponse.access_token,
       refreshToken: tokensResponse.refresh_token,
       expiryTimestamp: tokensResponse.expires_in ? (new Date()).getTime() + (tokensResponse.expires_in * 1000) : null
     };
-    this.files.userTokens.data = tokensData;
-    await this.files.userTokens.save();
-    resp.send('Authorized!').end();
-    globalEmitter.emit(socketEvents.setupAuthorized);
+    return tokensData;
   }
 
   async onAppSetup(clientId, clientSecret) {

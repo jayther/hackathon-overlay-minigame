@@ -117,6 +117,7 @@ dist
 
 .appsecrets.json
 .usertokens.json
+.chatbottokens.json
 .rewardmap.json
 .playerdata.json
 

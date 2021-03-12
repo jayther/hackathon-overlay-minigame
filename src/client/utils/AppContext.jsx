@@ -14,6 +14,7 @@ const pageStates = {
 const initialState = {
   pageState: pageStates.idle,
   user: null,
+  botReady: false,
   appReady: false,
   eventSubReady: false,
   redeems: [],
@@ -172,6 +173,11 @@ function reducer(state, action) {
       return {
         ...state,
         battleResults: action.value || null
+      };
+    case appActions.updateBotReady:
+      return {
+        ...state,
+        botReady: action.value || false
       };
     default:
       throw new Error(`Unknown app action type: ${action.type}`);

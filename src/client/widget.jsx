@@ -44,9 +44,9 @@ const SetupApp = () => {
   );
 };
 
-const SetupUser = () => {
+const SetupUser = (props) => {
   return (
-    <p>Waiting for user login...</p>
+    <p>Waiting for {props.bot ? 'chat bot' : 'user'} login...</p>
   );
 };
 
@@ -142,6 +142,7 @@ class Website extends React.Component {
       this.props.appState.pageState === pageStates.loading ? <LoadingPage text="server" /> :
       !this.props.appState.appReady ? <SetupApp /> :
       !this.props.appState.user ? <SetupUser /> :
+      !this.props.appState.botReady ? <SetupUser bot={true} /> :
       !this.props.appState.eventSubReady ? <LoadingPage text="eventSub" /> :
       !this.state.preloaded ? <LoadingPage text="preloading images" /> :
       <WidgetPage />

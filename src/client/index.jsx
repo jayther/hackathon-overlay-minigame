@@ -74,6 +74,7 @@ class Website extends React.Component {
       this.props.appState.pageState === pageStates.loading ? <LoadingPage text="server" /> :
       !this.props.appState.appReady ? <SetupApp /> :
       !this.props.appState.user ? <SetupUser /> :
+      !this.props.appState.botReady ? <SetupUser bot={true} /> :
       !this.props.appState.eventSubReady ? <LoadingPage text="eventSub" /> :
       <ControlPage />
     );

@@ -27,5 +27,6 @@ module.exports = {
   updateBattle: 'updatebattle',
   updateBattleQueue: 'updatebattlequeue',
   finishBattle: 'finishBattle',
-  updateBattleResults: 'updateBattleResults'
+  updateBattleResults: 'updateBattleResults',
+  updateBotReady: 'updatebotready'
 };
