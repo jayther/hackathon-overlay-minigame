@@ -28,5 +28,7 @@ module.exports = {
   updateBattleQueue: 'updatebattlequeue',
   finishBattle: 'finishBattle',
   updateBattleResults: 'updateBattleResults',
-  updateBotReady: 'updatebotready'
+  updateBotReady: 'updatebotready',
+  updateGenderMethod: 'updategendermethod',
+  updateCharTypeMethod: 'updatechartypemethod'
 };

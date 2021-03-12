@@ -1,6 +1,7 @@
 /* eslint-disable react/display-name */
 import React from 'react';
 import appActions from '../../shared/AppActions';
+import changeMethods from '../../shared/ChangeMethods';
 
 const StateContext = React.createContext();
 const DispatchContext = React.createContext();
@@ -24,7 +25,9 @@ const initialState = {
   debugAutoRefund: false,
   battleQueue: [],
   currentBattle: null,
-  winner: null
+  winner: null,
+  genderMethod: changeMethods.chat,
+  charTypeMethod: changeMethods.chat
 };
 
 function reducer(state, action) {
@@ -178,6 +181,28 @@ function reducer(state, action) {
       return {
         ...state,
         botReady: action.value || false
+      };
+    case appActions.updateGenderMethod:
+      if (!action.value) {
+        throw new Error(`App action "${action.type}" requires a value`);
+      }
+      if (!Object.values(changeMethods).includes(action.value)) {
+        throw new Error(`"${action.value}" is an invalid value for App action "${action.type}"`)
+      }
+      return {
+        ...state,
+        genderMethod: action.value
+      };
+    case appActions.updateCharTypeMethod:
+      if (!action.value) {
+        throw new Error(`App action "${action.type}" requires a value`);
+      }
+      if (!Object.values(changeMethods).includes(action.value)) {
+        throw new Error(`"${action.value}" is an invalid value for App action "${action.type}"`)
+      }
+      return {
+        ...state,
+        charTypeMethod: action.value
       };
     default:
       throw new Error(`Unknown app action type: ${action.type}`);

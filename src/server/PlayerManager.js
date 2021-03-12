@@ -14,6 +14,7 @@ const { bindAndLog } = require('./utils/LogUtils');
 const { applyKnownProps } = require('../shared/ObjectUtils');
 const { ChattableError, ExpectedError } = require('./errors');
 const { createCommandEvent } = require('./utils/ChatUtils');
+const ChangeMethods = require('../shared/ChangeMethods');
 
 const defaultPlayer = {
   userId: null,
@@ -124,7 +125,11 @@ class PlayerManager {
     socket.on(appActions.updatePlayer, bindAndLog(this.onSocketUpdatePlayer, this));
     socket.on(appActions.addDebugPlayer, bindAndLog(this.onSocketAddDebugPlayer, this));
     socket.on(appActions.clearDebugPlayers, bindAndLog(this.onSocketClearDebugPlayers, this));
+    socket.on(appActions.updateGenderMethod, bindAndLog(this.onSocketUpdateGenderMethod, this));
+    socket.on(appActions.updateCharTypeMethod, bindAndLog(this.onSocketUpdateCharTypeMethod, this));
     socket.emit(appActions.allPlayers, this.files.playerData.data.players.filter(filterAlivePlayers));
+    socket.emit(appActions.updateGenderMethod, this.files.playerData.data.genderMethod);
+    socket.emit(appActions.updateCharTypeMethod, this.files.playerData.data.charTypeMethod);
   }
 
   async onCommandGender(chatBotManager, channel, user, message, parts) {
@@ -146,6 +151,10 @@ class PlayerManager {
 
     if (parts.length === 1) {
       chatBotManager.say(`@${user} Your character's gender is ${player.characterGender}.`);
+      return;
+    }
+
+    if (!this.isGenderMethod(ChangeMethods.chat)) {
       return;
     }
 
@@ -172,6 +181,10 @@ class PlayerManager {
   }
 
   async onRedeemGender(event) {
+    if (!this.isGenderMethod(ChangeMethods.reward)) {
+      this.rewardManager.rejectRedeem(event);
+      return;
+    }
     const player = this.getPlayer(event.userId);
     if (!player) {
       this.rewardManager.rejectRedeem(event);
@@ -232,6 +245,9 @@ class PlayerManager {
       chatBotManager.say(`@${user} Your character is ${player.characterType}, ${player.characterGender}.`);
       return;
     }
+    if (!this.isCharTypeMethod(ChangeMethods.chat)) {
+      return;
+    }
 
     if (parts.length === 2 || parts.length === 3) {
       const reqType = parts.length === 3 ? `${parts[1]}_${parts[2]}` : parts[1];
@@ -258,6 +274,10 @@ class PlayerManager {
   }
 
   async onRedeemCharacter(event) {
+    if (!this.isCharTypeMethod(ChangeMethods.reward)) {
+      this.rewardManager.rejectRedeem(event);
+      return;
+    }
     const player = this.getPlayer(event.userId);
     if (!player) {
       this.rewardManager.rejectRedeem(event);
@@ -301,6 +321,19 @@ class PlayerManager {
 
   async onCommandAllCharacters(chatBotManager, channel, user, message, parts) {
     chatBotManager.say(`@${user} Characters: ${characterTypes.join(', ')}`);
+  }
+
+  getGenderMethod() {
+    return this.files.playerData.data.genderMethod;
+  }
+  isGenderMethod(method) {
+    return this.files.playerData.data.genderMethod === method;
+  }
+  getCharTypeMethod() {
+    return this.files.playerData.data.charTypeMethod;
+  }
+  isCharTypeMethod(method) {
+    return this.files.playerData.data.charTypeMethod === method;
   }
 
   getRewardName(action) {
@@ -462,6 +495,37 @@ class PlayerManager {
     player.alive = false;
     await this.files.playerData.save();
     this.socketManager.allEmit(appActions.removePlayer, player);
+  }
+
+  async onSocketUpdateGenderMethod(genderMethod) {
+    if (!Object.values(ChangeMethods).includes(genderMethod)) {
+      throw new Error(`PlayerManager.onSocketUpdateCharTypeMethod: "${genderMethod}" not a valid value`);
+    }
+    const enableReward = genderMethod === ChangeMethods.reward;
+    const rewardId = this.rewardManager.getRewardIdFromAction(requiredRewards.changeCharacterGender.key);
+    if (rewardId) {
+      await this.rewardManager.setEnabledRewardById(rewardId, enableReward);
+      logger(`${enableReward ? 'Enabled' : 'Disabled'} change gender reward.`);
+    }
+    this.files.playerData.data.genderMethod = genderMethod;
+    await this.save();
+    this.socketManager.controlEmit(appActions.updateGenderMethod, genderMethod);
+    logger(`Changed genderMethod to ${genderMethod}`);
+  }
+  async onSocketUpdateCharTypeMethod(charTypeMethod) {
+    if (!Object.values(ChangeMethods).includes(charTypeMethod)) {
+      throw new Error(`PlayerManager.onSocketUpdateCharTypeMethod: "${charTypeMethod}" not a valid value`);
+    }
+    const enableReward = charTypeMethod === ChangeMethods.reward;
+    const rewardId = this.rewardManager.getRewardIdFromAction(requiredRewards.changeCharacterType.key);
+    if (rewardId) {
+      await this.rewardManager.setEnabledRewardById(rewardId, enableReward);
+      logger(`${enableReward ? 'Enabled' : 'Disabled'} change character type reward.`);
+    }
+    this.files.playerData.data.charTypeMethod = charTypeMethod;
+    await this.save();
+    this.socketManager.controlEmit(appActions.updateCharTypeMethod, charTypeMethod);
+    logger(`Changed charTypeMethod to ${charTypeMethod}`);
   }
 }
 

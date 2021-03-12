@@ -252,6 +252,16 @@ class RewardManager {
   getRedeemObjs() {
     return this.redeems.map(redeemToObj);
   }
+
+  async updateRewardById(rewardId, data) {
+    return await this.twitchManager.userClient
+      .helix.channelPoints
+      .updateCustomReward(this.twitchManager.user.id, rewardId, data);
+  }
+
+  async setEnabledRewardById(rewardId, isEnabled) {
+    return await this.updateRewardById(rewardId, { isEnabled });
+  }
 }
 
 module.exports = RewardManager;

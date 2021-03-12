@@ -12,6 +12,7 @@ const globalEmitter = require('./utils/GlobalEmitter');
 const appActions = require('../shared/AppActions');
 
 const { SetupError } = require('./errors');
+const changeMethods = require('../shared/ChangeMethods');
 
 function httpsRequest(params, body = null) {
   return new Promise((resolve, reject) => {
@@ -59,6 +60,12 @@ class SetupManager {
 
     if (!this.files.playerData.data.players) {
       this.files.playerData.data.players = [];
+    }
+    if (!this.files.playerData.data.changeGenderMethod) {
+      this.files.playerData.data.genderMethod = changeMethods.chat;
+    }
+    if (!this.files.playerData.data.changeCharTypeMethod) {
+      this.files.playerData.data.charTypeMethod = changeMethods.chat;
     }
     // populate missing props
     const players = this.files.playerData.data.players;

@@ -6,6 +6,7 @@ import { PlayersSection } from './control/PlayersSection';
 import { BattleSection } from './control/BattleSection';
 import { MissingRewardsSection } from './control/MissingRewardsSection';
 import { EditRewardMap } from './control/EditRewardMap';
+import { SettingsSection } from './control/SettingsSection';
 
 function ControlPage(props) {
   const mappedActions = Object.values(props.appState.rewardMap);
@@ -30,6 +31,7 @@ function ControlPage(props) {
       <PlayersSection players={props.appState.players} />
       <BattleSection battle={battle} battleQueue={props.appState.battleQueue} battleResults={props.appState.battleResults} />
       <MissingRewardsSection rewards={props.appState.rewards} missingRewards={missingRewards} />
+      <SettingsSection appState={props.appState} />
       <EditRewardMap rewards={props.appState.rewards} rewardMap={props.appState.rewardMap} />
       <DebugSection appState={props.appState} />
       <h2>Redemptions</h2>
