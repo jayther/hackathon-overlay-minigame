@@ -7,6 +7,7 @@ const globalEmitter = require('./utils/GlobalEmitter');
 const appActions = require('../shared/AppActions');
 const { socketEvents } = require('./consts');
 const { ExpectedError } = require('./errors');
+const { createCommandEvent } = require('./utils/ChatUtils');
 
 function removeHash(channel) {
   return channel.replace('#', '');
@@ -148,8 +149,11 @@ class ChatBotManager {
   onMessage(channel, user, message) {
     if (message === '!ping') {
       this.chatClient.say(channel, 'Pong!');
+    } else if (message.startsWith(this.settings.commandPrefix)) {
+      const parts = message.split(' ');
+      parts[0] = parts[0].substring(this.settings.commandPrefix.length);
+      globalEmitter.emit(createCommandEvent(parts[0]), this, channel, user, message, parts);
     }
-    // do anything here?
   }
 }
 

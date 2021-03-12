@@ -13,6 +13,7 @@ const { socketEvents } = require('./consts');
 const { bindAndLog } = require('./utils/LogUtils');
 const { applyKnownProps } = require('../shared/ObjectUtils');
 const { ChattableError, ExpectedError } = require('./errors');
+const { createCommandEvent } = require('./utils/ChatUtils');
 
 const defaultPlayer = {
   userId: null,
@@ -76,6 +77,24 @@ function randDisplayUserName() {
   }
 }
 
+function pickGender(reqGender) {
+  switch (reqGender.toLowerCase()) {
+    case 'male':
+    case 'guy':
+    case 'boy':
+      return 'Male';
+    case 'female':
+    case 'gal':
+    case 'girl':
+      return 'Female';
+  }
+  return null;
+}
+
+function pickCharType(reqType) {
+  return characterTypes.find(t => t.toLowerCase() === reqType.toLowerCase());
+}
+
 class PlayerManager {
   constructor(settings, files, socketManager, twitchManager, rewardManager) {
     this.settings = settings;
@@ -86,6 +105,14 @@ class PlayerManager {
     globalEmitter.on(socketEvents.overlayAdded, this.onOverlayAdded, this);
     globalEmitter.on(socketEvents.controlAdded, this.onControlAdded, this);
     globalEmitter.on(requiredRewards.add.eventName, bindAndLog(this.addPlayer, this));
+    globalEmitter.on(requiredRewards.changeCharacterGender.eventName, bindAndLog(this.onRedeemGender, this));
+    globalEmitter.on(requiredRewards.changeCharacterType.eventName, bindAndLog(this.onRedeemCharacter, this));
+    globalEmitter.on(createCommandEvent('gender'), bindAndLog(this.onCommandGender, this));
+    globalEmitter.on(createCommandEvent('char'), bindAndLog(this.onCommandCharacter, this));
+    globalEmitter.on(createCommandEvent('character'), bindAndLog(this.onCommandCharacter, this));
+    globalEmitter.on(createCommandEvent('chars'), bindAndLog(this.onCommandAllCharacters, this));
+    globalEmitter.on(createCommandEvent('allchars'), bindAndLog(this.onCommandAllCharacters, this));
+    globalEmitter.on(createCommandEvent('allcharacters'), bindAndLog(this.onCommandAllCharacters, this));
   }
 
   onOverlayAdded(socket) {
@@ -98,6 +125,187 @@ class PlayerManager {
     socket.on(appActions.addDebugPlayer, bindAndLog(this.onSocketAddDebugPlayer, this));
     socket.on(appActions.clearDebugPlayers, bindAndLog(this.onSocketClearDebugPlayers, this));
     socket.emit(appActions.allPlayers, this.files.playerData.data.players.filter(filterAlivePlayers));
+  }
+
+  async onCommandGender(chatBotManager, channel, user, message, parts) {
+    const player = this.getPlayerFromUserName(user.toLowerCase());
+    if (!player) {
+      const rewardName = this.getRewardName(requiredRewards.changeCharacterGender);
+      throw new ChattableError(
+        `@${user} Please redeem "${rewardName}" first before doing the gender command.`,
+        `PlayerManager.onCommandGender: ${user} is not in player data.`
+      );
+    }
+    if (!player.alive) {
+      const rewardName = this.getRewardName(requiredRewards.changeCharacterGender);
+      throw new ChattableError(
+        `@${user} Please redeem "${rewardName}" first before doing the gender command.`,
+        `PlayerManager.onCommandGender: ${user} is not in player data.`
+      );
+    }
+
+    if (parts.length === 1) {
+      chatBotManager.say(`@${user} Your character's gender is ${player.characterGender}.`);
+      return;
+    }
+
+    if (parts.length === 2) {
+      const reqGender = parts[1];
+      const gender = pickGender(reqGender);
+      if (!gender) {
+        throw new ChattableError(
+          `@${user} You can only set your character's gender with these values: ${characterGenders.join(', ')}`,
+          `PlayerManager.onCommandRedeem: ${user} inputted an invalid gender ("${reqGender}")`
+        );
+      }
+
+      player.characterGender = gender;
+      this.update(player);
+      await this.save();
+      this.socketManager.allEmit(appActions.updatePlayer, player);
+      chatBotManager.say(`@${user} Your character is now ${player.characterType}, ${gender}.`);
+      logger(`PlayerManager.onCommandGender: ${player.userDisplayName} changed gender to ${gender}`);
+      return;
+    }
+
+    chatBotManager.say(`@${user} Invalid command.`);
+  }
+
+  async onRedeemGender(event) {
+    const player = this.getPlayer(event.userId);
+    if (!player) {
+      this.rewardManager.rejectRedeem(event);
+      const rewardName = this.getRewardName(requiredRewards.changeCharacterGender);
+      throw new ChattableError(
+        `@${event.userDisplayName} Please redeem "${rewardName}" first before doing the gender command. ` +
+        `Redunding ${this.settings.channelPointsName}.`,
+        `PlayerManager.onRedeemGender: ${event.userDisplayName} (id: ${event.userId}) is not in player data.`
+      );
+    }
+    if (!player.alive) {
+      this.rewardManager.rejectRedeem(event);
+      const rewardName = this.getRewardName(requiredRewards.changeCharacterGender);
+      throw new ChattableError(
+        `@${player.userDisplayName} Please redeem "${rewardName}" first before doing the gender command. ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `PlayerManager.onRedeemGender: ${player.userDisplayName} is not in player data.`
+      );
+    }
+
+    const input = event.input.trim();
+    const reqGender = input.replace(' ', '_');
+    const gender = pickGender(reqGender);
+    if (!gender) {
+      this.rewardManager.rejectRedeem(event);
+      throw new ChattableError(
+        `@${player.userDisplayName} You can only set your character's gender with these values: ${characterGenders.join(', ')}. ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `PlayerManager.onRedeemGender: ${player.userDisplayName} entered an invalid gender ("${input}").`
+      );
+    }
+    player.characterGender = gender;
+    this.update(player);
+    await this.save();
+    this.rewardManager.approveRedeem(event);
+    this.socketManager.allEmit(appActions.updatePlayer, player);
+    logger(`PlayerManager.onRedeemGender: ${player.userDisplayName} changed gender to ${gender}`);
+  }
+
+  async onCommandCharacter(chatBotManager, channel, user, message, parts) {
+    const player = this.getPlayerFromUserName(user.toLowerCase());
+    if (!player) {
+      const rewardName = this.getRewardName(requiredRewards.changeCharacterType);
+      throw new ChattableError(
+        `@${user} Please redeem "${rewardName}" first before doing the character command.`,
+        `PlayerManager.onCommandCharacter: ${user} is not in player data.`
+      );
+    }
+    if (!player.alive) {
+      const rewardName = this.getRewardName(requiredRewards.changeCharacterType);
+      throw new ChattableError(
+        `@${user} Please redeem "${rewardName}" first before doing the character command.`,
+        `PlayerManager.onCommandCharacter: ${user} is not in player data.`
+      );
+    }
+
+    if (parts.length === 1) {
+      chatBotManager.say(`@${user} Your character is ${player.characterType}, ${player.characterGender}.`);
+      return;
+    }
+
+    if (parts.length === 2 || parts.length === 3) {
+      const reqType = parts.length === 3 ? `${parts[1]}_${parts[2]}` : parts[1];
+      const characterType = pickCharType(reqType);
+      
+      if (!characterType) {
+        throw new ChattableError(
+          `@${user} Not a valid character type. Please refer to ${this.settings.commandPrefix}allchars`,
+          `PlayerManager.onCommandCharacter: ${user} entered an invalid character type ("${reqType}")`
+        );
+      }
+
+      player.characterType = characterType;
+      this.update(player);
+      await this.save();
+      this.socketManager.allEmit(appActions.updatePlayer, player);
+      chatBotManager.say(`@${user} Your character is now ${characterType}, ${player.characterGender}.`);
+      logger(`PlayerManager.onCommandCharacter: ${player.userDisplayName} changed character to ${characterType}`);
+
+      return;
+    }
+
+    chatBotManager.say(`@${user} Invalid command.`);
+  }
+
+  async onRedeemCharacter(event) {
+    const player = this.getPlayer(event.userId);
+    if (!player) {
+      this.rewardManager.rejectRedeem(event);
+      const rewardName = this.getRewardName(requiredRewards.changeCharacterType);
+      throw new ChattableError(
+        `@${event.userDisplayName} Please redeem "${rewardName}" first before doing the character command. ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `PlayerManager.onRedeemCharacter: ${event.userDisplayName} (id: ${event.userId}) is not in player data.`
+      );
+    }
+    if (!player.alive) {
+      this.rewardManager.rejectRedeem(event);
+      const rewardName = this.getRewardName(requiredRewards.changeCharacterType);
+      throw new ChattableError(
+        `@${player.userDisplayName} Please redeem "${rewardName}" first before doing the character command. ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `PlayerManager.onRedeemCharacter: ${player.userDisplayName} is not in player data.`
+      );
+    }
+
+    const input = event.input.trim();
+    const reqType = input.replace(' ', '_');
+    const characterType = pickCharType(reqType);
+
+    if (!characterType) {
+      this.rewardManager.rejectRedeem(event);
+      throw new ChattableError(
+        `@${player.userDisplayName} Not a valid character type. Please refer to ${this.settings.commandPrefix}allchars. ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `PlayerManager.onRedeemCharacter: ${player.userDisplayName} entered an invalid character type ("${input}")`
+      );
+    }
+
+    player.characterType = characterType;
+    this.update(player);
+    await this.save();
+    this.rewardManager.approveRedeem(event);
+    this.socketManager.allEmit(appActions.updatePlayer, player);
+    logger(`PlayerManager.onRedeemCharacter: ${player.userDisplayName} changed character to ${characterType}`);
+  }
+
+  async onCommandAllCharacters(chatBotManager, channel, user, message, parts) {
+    chatBotManager.say(`@${user} Characters: ${characterTypes.join(', ')}`);
+  }
+
+  getRewardName(action) {
+    const reward = this.rewardManager.getRewardFromAction(action.key);
+    return reward ? reward.title : action.title;
   }
 
   getPlayer(userId) {
@@ -146,7 +354,7 @@ class PlayerManager {
       // delayed refund
       this.rewardManager.rejectRedeem(event);
       throw new ChattableError(
-        `@${player.userDisplayName} , you are already in the game. ` +
+        `@${player.userDisplayName} You are already in the game. ` +
         `Refunding ${this.settings.channelPointsName}.`,
         `addPlayer: "${player.userName}" already alive in game`
       );

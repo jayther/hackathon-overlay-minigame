@@ -31,5 +31,21 @@ module.exports = {
     cost: 100,
     prompt: 'Equip special weapon on your character for a damage boost!',
     userInputRequired: false
+  },
+  changeCharacterType: {
+    key: 'changeCharacterType',
+    eventName: 'redeem:changeCharacterType',
+    title: 'Change character',
+    cost: 10,
+    prompt: 'Change your character! Refer to !allchars for a list of available characters',
+    userInputRequired: true
+  },
+  changeCharacterGender: {
+    key: 'changeCharacterGender',
+    eventName: 'redeem:changeCharacterGender',
+    title: 'Change char gender',
+    cost: 10,
+    prompt: 'Change your character gender! Must be "Male" or "Female"',
+    userInputRequired: true
   }
 };

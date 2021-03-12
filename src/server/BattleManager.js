@@ -62,7 +62,7 @@ class BattleManager {
       this.rewardManager.rejectRedeem(event);
       const rewardName = this.getRewardName(requiredRewards.add);
       throw new ChattableError(
-        `@${event.userDisplayName} , please redeem "${rewardName}" first before requesting a random duel. ` +
+        `@${event.userDisplayName} Please redeem "${rewardName}" first before requesting a random duel. ` +
         `Refunding ${this.settings.channelPointsName}.`,
         `requestBattle: "${event.userDisplayName}" (id: ${event.userId}) not in player data`
       ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
@@ -71,7 +71,7 @@ class BattleManager {
       this.rewardManager.rejectRedeem(event);
       const rewardName = this.getRewardName(requiredRewards.add);
       throw new ChattableError(
-        `@${player.userDisplayName} , please redeem "${rewardName}" first before requesting a random duel. ` +
+        `@${player.userDisplayName} Please redeem "${rewardName}" first before requesting a random duel. ` +
         `Refunding ${this.settings.channelPointsName}.`,
         `requestBattle: "${player.userDisplayName}" is not alive`
       ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
@@ -94,7 +94,7 @@ class BattleManager {
       this.rewardManager.rejectRedeem(event);
       const rewardName = this.getRewardName(requiredRewards.add);
       throw new ChattableError(
-        `@${event.userDisplayName} , please redeem "${rewardName}" first before requesting a duel. ` +
+        `@${event.userDisplayName} Please redeem "${rewardName}" first before requesting a duel. ` +
         `Refunding ${this.settings.channelPointsName}.`,
         `requestSpecificBattle: "${event.userDisplayName}" (id: ${event.userId}) not in player data`
       ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
@@ -103,7 +103,7 @@ class BattleManager {
       this.rewardManager.rejectRedeem(event);
       const rewardName = this.getRewardName(requiredRewards.add);
       throw new ChattableError(
-        `@${player.userDisplayName} , please redeem "${rewardName}" first before requesting a duel. ` +
+        `@${player.userDisplayName} Please redeem "${rewardName}" first before requesting a duel. ` +
         `Refunding ${this.settings.channelPointsName}.`,
         `requestSpecificBattle: "${player.userDisplayName}" is not alive`
       ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
@@ -111,7 +111,7 @@ class BattleManager {
     if (!event.input || event.input.length === 0) {
       this.rewardManager.rejectRedeem(event);
       throw new ChattableError(
-        `@${player.userDisplayName} , please specify an alive player's username in the redeem. ` +
+        `@${player.userDisplayName} Please specify an alive player's username in the redeem. ` +
         `Refunding ${this.settings.channelPointsName}.`,
         `requestSpecificBattle: ${player.userDisplayName} did not specify a userName`
       ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
@@ -133,7 +133,7 @@ class BattleManager {
     if (!target.alive) {
       this.rewardManager.rejectRedeem(event);
       throw new ChattableError(
-        `@${player.userDisplayName} , please specify an alive player's username in the redeem. ` +
+        `@${player.userDisplayName} Please specify an alive player's username in the redeem. ` +
         `Refunding ${this.settings.channelPointsName}.`,
         `requestSpecificBattle: target "${target.userDisplayName}" is not alive`
       ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
@@ -161,7 +161,7 @@ class BattleManager {
       this.rewardManager.rejectRedeem(event);
       const rewardName = this.getRewardName(requiredRewards.add);
       throw new ChattableError(
-        `@${event.userDisplayName} , please redeem "${rewardName}" first before adding a weapon. ` +
+        `@${event.userDisplayName} Please redeem "${rewardName}" first before adding a weapon. ` +
         `Refunding ${this.settings.channelPointsName}.`,
         `weaponize: "${event.userDisplayName}" (id: ${event.userId}) not in player data`
       ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
@@ -170,7 +170,7 @@ class BattleManager {
       this.rewardManager.rejectRedeem(event);
       const rewardName = this.getRewardName(requiredRewards.add);
       throw new ChattableError(
-        `@${player.userDisplayName} , please redeem "${rewardName}" first before adding a weapon. ` +
+        `@${player.userDisplayName} Please redeem "${rewardName}" first before adding a weapon. ` +
         `Refunding ${this.settings.channelPointsName}.`,
         `weaponize: "${player.userDisplayName}" not alive`
       ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
@@ -178,7 +178,7 @@ class BattleManager {
     if (player.weapon) {
       this.rewardManager.rejectRedeem(event);
       throw new ChattableError(
-        `@${player.userDisplayName} , you already have a weapon. ` +
+        `@${player.userDisplayName} You already have a weapon. ` +
         `Refunding ${this.settings.channelPointsName}.`,
         `weaponize: "${player.userDisplayName}" already has a weapon`
       ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);
@@ -186,7 +186,7 @@ class BattleManager {
     if (this.isInBattle(player.userId)) {
       this.rewardManager.rejectRedeem(event);
       throw new ChattableError(
-        `@${player.userDisplayName} , you cannot add a weapon mid-duel. ` +
+        `@${player.userDisplayName} You cannot add a weapon mid-duel. ` +
         `Refunding ${this.settings.channelPointsName}.`,
         `weaponize: "${player.userDisplayName}" cannot equip weapon during battle`
       ).setSetSendToChat(this.settings.sendChatForDebugEvents || !event.debug);

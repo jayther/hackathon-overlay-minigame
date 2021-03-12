@@ -18,5 +18,8 @@ module.exports = {
     overlayRemoved: 'overlayremoved',
     setupAuthorized: 'setupauthorized'
   },
+  chatEvents: {
+    chatCommand: 'chatcommand'
+  },
   updateRedeemDelay: 1000 //ms
 };

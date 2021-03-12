@@ -3,5 +3,6 @@
   "webPort": 8080,
   "staticDir": "dist",
   "channelPointsName": "channel points",
-  "sendChatForDebugEvents": false
+  "sendChatForDebugEvents": false,
+  "commandPrefix": "!"
 }
