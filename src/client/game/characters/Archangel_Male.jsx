@@ -58,7 +58,8 @@ export default {
       'Archangel_Male/graveBurst_6.png'
     ],
     frameDelay: 100,
-    stationary: true
+    stationary: true,
+    sound: 'magicSpawn'
   },
   hit: {
     sprites: [
@@ -122,6 +123,7 @@ export default {
         'Archangel_Male/attackUnarmed3_3.png'
       ],
       frameDelay: 100,
+      sound: 'magic',
       fx: {
         sprites: [
           'Archangel_Male/attackUnarmed3_FX_1.png',

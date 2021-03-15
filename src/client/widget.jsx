@@ -20,6 +20,9 @@ import spritesheet0 from './assets/spritesheets-0.json';
 import spritesheet1 from './assets/spritesheets-1.json';
 import hpBar from './assets/hp-bar.png';
 
+import * as sounds from './game/SoundAssets';
+import soundSets, { resolveAllSets } from './game/SoundSets';
+
 const IdlePage = () => {
   return (
     <p>Starting...</p>
@@ -55,14 +58,22 @@ class Website extends React.Component {
     super(props);
 
     this.state = {
-      preloaded: false
+      preloaded: false,
+      loadedRatio: 0
     };
+    this.howlLoaderMap = {};
 
     this.preloader = new Preloader();
     this.preloader.addImgLoader(spritesheet0img);
     this.preloader.addImgLoader(spritesheet1img);
     this.preloader.addImgLoader(arenaimg);
     this.preloader.addImgLoader(hpBar);
+    for (const [key, src] of Object.entries(sounds)) {
+      const loader = this.preloader.addHowlLoader(src, {
+        loop: src === sounds.bossCastleHassle
+      });
+      this.howlLoaderMap[key] = loader;
+    }
   }
   componentDidMount() {
     this.init();
@@ -93,6 +104,11 @@ class Website extends React.Component {
       }
       deferred.resolve();
     };
+    this.preloader.onProgress = (loader, loaded, total) => {
+      this.setState({
+        loadedRatio: loaded / total
+      });
+    };
     this.preloader.load();
 
     console.log('rawr');
@@ -103,6 +119,11 @@ class Website extends React.Component {
 
     spritesheet0.frames.forEach(frame => R.frames[frame.filename] = {...frame, src: spritesheet0img });
     spritesheet1.frames.forEach(frame => R.frames[frame.filename] = {...frame, src: spritesheet1img });
+    for (const [key, src] of Object.entries(sounds)) {
+      R.sounds[src] = this.howlLoaderMap[key].howl;
+    }
+
+    resolveAllSets(soundSets);
 
     this.setState({
       preloaded: true
@@ -144,7 +165,7 @@ class Website extends React.Component {
       !this.props.appState.user ? <SetupUser /> :
       !this.props.appState.botReady ? <SetupUser bot={true} /> :
       !this.props.appState.eventSubReady ? <LoadingPage text="eventSub" /> :
-      !this.state.preloaded ? <LoadingPage text="preloading images" /> :
+      !this.state.preloaded ? <LoadingPage text={`Preloading (${Math.floor(this.state.loadedRatio * 100)}%)`} /> :
       <WidgetPage />
     );
   }

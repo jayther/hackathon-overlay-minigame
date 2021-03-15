@@ -1,4 +1,5 @@
 
 export default {
-  frames: {}
+  frames: {},
+  sounds: {}
 };

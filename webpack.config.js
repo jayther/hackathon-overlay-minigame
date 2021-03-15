@@ -7,7 +7,8 @@ module.exports = [
     entry: path.join(__dirname, '/src/client/index.jsx'),
     output: {
       filename: 'control.js',
-      path: path.join(__dirname, '/dist/')
+      path: path.join(__dirname, '/dist/'),
+      assetModuleFilename: 'assets/[hash][ext][query]'
     },
     module: {
       rules:[
@@ -47,7 +48,8 @@ module.exports = [
     entry: path.join(__dirname, '/src/client/widget.jsx'),
     output: {
       filename: 'widget.js',
-      path: path.join(__dirname, '/dist/')
+      path: path.join(__dirname, '/dist/'),
+      assetModuleFilename: 'assets/[hash][ext][query]'
     },
     module: {
       rules:[
@@ -57,7 +59,7 @@ module.exports = [
           loader: 'babel-loader'
         },
         {
-          test: /\.(png|svg|jpg|jpeg|gif)$/i,
+          test: /\.(png|svg|jpg|jpeg|gif|m4a)$/i,
           type: 'asset/resource'
         },
         {

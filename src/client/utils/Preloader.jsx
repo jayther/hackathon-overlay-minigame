@@ -1,3 +1,4 @@
+import { Howl } from 'howler';
 
 const loadStates = {
   idle: 'idle',
@@ -10,6 +11,7 @@ class Loader {
   constructor() {
     this.state = loadStates.idle;
     this.error = null;
+    this.onProgress = () => {};
     this.callback = null;
   }
   load() {}
@@ -36,6 +38,33 @@ class ImgLoader extends Loader {
   load() {
     this.img.src = this.src;
     this.state = loadStates.loading;
+  }
+}
+
+class HowlLoader extends Loader {
+  constructor(src, options, callback) {
+    super();
+    this.options = options;
+    this.callback = callback || null;
+    this.howl = new Howl({
+      src: [src],
+      preload: false,
+      ...options
+    });
+    this.howl.once('load', e => {
+      this.state = loadStates.loaded;
+      if (!this.callback) return;
+      this.callback(this, null);
+    });
+    this.howl.once('loaderror', e => {
+      this.state = loadStates.errored;
+      if (!this.callback) return;
+      this.callback(this, e);
+    })
+  }
+  load() {
+    this.state = loadStates.loading;
+    this.howl.load();
   }
 }
 
@@ -66,6 +95,7 @@ class Preloader extends Loader {
       }
     });
     if (done < this.loaders.length) {
+      this.onProgress(this, done, this.loaders.length);
       return;
     }
     if (erroredLoaders.length > 0) {
@@ -79,6 +109,7 @@ class Preloader extends Loader {
     }
     if (loaded >= this.loaders.length) {
       this.state = loadStates.loaded;
+      this.onProgress(this, done, this.loaders.length);
       if (this.callback) {
         this.callback(this, null);
       }
@@ -94,9 +125,13 @@ class Preloader extends Loader {
   addLoader(loader) {
     loader.callback = this.loaderCallback;
     this.loaders.push(loader);
+    return loader;
   }
   addImgLoader(src) {
-    this.addLoader(new ImgLoader(src));
+    return this.addLoader(new ImgLoader(src));
+  }
+  addHowlLoader(src, options = {}) {
+    return this.addLoader(new HowlLoader(src, options));
   }
   load() {
     this.state = loadStates.loading;
@@ -105,4 +140,4 @@ class Preloader extends Loader {
 }
 
 export default Preloader;
-export { loadStates };
+export { loadStates, HowlLoader, ImgLoader };

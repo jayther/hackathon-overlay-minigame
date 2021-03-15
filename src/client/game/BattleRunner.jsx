@@ -1,5 +1,6 @@
-import { shuffleNew, pickArgs, betweenInt } from '../../shared/RandUtils';
+import { shuffleNew, pickArgs, betweenInt, pick } from '../../shared/RandUtils';
 import { sign } from '../../shared/math/JMath';
+import sounds from './SoundSets';
 
 const defaultOptions = {
   players: null,
@@ -51,6 +52,10 @@ class BattleRunner {
     this.setShowArena = opts.setShowArena;
     this.startHitMarker = opts.startHitMarker;
 
+    this.music = pick(sounds.music);
+    this.music.loop(true);
+    this.music.volume(1);
+
     this.state = 0;
     this.stateMap = [
       this.idle.bind(this),
@@ -75,10 +80,16 @@ class BattleRunner {
   }
 
   async showArena() {
+    const arenaSound = pick(sounds.arena);
+    arenaSound.loop(true);
+    arenaSound.play();
     await this.setShowArena(true);
+    arenaSound.stop();
   }
 
   async setupPlayers() {
+    this.music.seek(0);
+    this.music.play();
     this.leftPlayer.playerChar.moveTo(this.arena.leftStairBottom)
       .moveTo(this.arena.leftStairTop)
       .moveTo(this.arena.leftPoint);
@@ -134,22 +145,26 @@ class BattleRunner {
       attackPos.x += attackPosDelta;
       attacker.playerChar.moveTo(attackPos);
       await attacker.playerChar.waitForIdle();
-      let hitMarkerDelay;
+      let hitMarkerDelay, attackSound;
       if (damage === 0) { // miss
         attacker.playerChar.delay(missDelay).attack().moveTo(attackPoint).face(defendPoint);
         const missPos = defender.playerChar.position.copy();
         missPos.x += -deltaSign * missDistance;
         defender.playerChar.moveTo(missPos);
         hitMarkerDelay = missDelay + hitDelay;
+        attackSound = pick(sounds.miss);
       } else { // hit
         attacker.playerChar.attack().moveTo(attackPoint).face(defendPoint);
         defender.playerChar.delay(hitDelay).hitToDelta(-deltaSign * hitDistance, damage);
         hitMarkerDelay = hitDelay;
+        attackSound = pick(attacker.playerChar.weapon ? sounds.sword : sounds.punch);
       }
       const hitMarkerPos = defender.playerChar.position.copy();
       hitMarkerPos.y += hitMarkerOffset;
       setTimeout(() => {
-        this.startHitMarker(hitMarkerPos, hitMarkerText)
+        this.startHitMarker(hitMarkerPos, hitMarkerText);
+        attackSound.seek(0);
+        attackSound.play();
       }, hitMarkerDelay);
       const waitForAll = [
         attacker.playerChar.waitForIdle()
@@ -174,6 +189,9 @@ class BattleRunner {
     }
   }
   async leavingArena() {
+    const winSound = pick(sounds.win);
+    winSound.seek(0);
+    winSound.play();
     if (this.winner === this.leftPlayer) {
       this.winner.playerChar.moveTo(this.arena.leftStairTop)
         .moveTo(this.arena.leftStairBottom);
@@ -187,7 +205,15 @@ class BattleRunner {
     await this.winner.playerChar.waitForIdle();
   }
   async hidingArena() {
+    this.music.fade(1, 0, 2000); // 1 to 0 in 2 seconds
+    this.music.once('fade', () => {
+      this.music.stop();
+    });
+    const arenaSound = pick(sounds.arena);
+    arenaSound.loop(true);
+    arenaSound.play();
     await this.setShowArena(false);
+    arenaSound.stop();
   }
   async end() {
     // do nothing

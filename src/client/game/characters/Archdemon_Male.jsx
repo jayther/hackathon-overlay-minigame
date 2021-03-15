@@ -58,7 +58,8 @@ export default {
       'Archdemon_Male/graveBurst_6.png'
     ],
     frameDelay: 100,
-    stationary: true
+    stationary: true,
+    sound: 'magicSpawn'
   },
   hit: {
     sprites: [
@@ -74,7 +75,8 @@ export default {
       'Archdemon_Male/dead_4.png',
       'Archdemon_Male/dead_5.png'
     ],
-    frameDelay: 100
+    frameDelay: 100,
+    sound: 'magicDead'
   },
   attacks: [
     {
