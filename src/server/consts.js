@@ -5,6 +5,7 @@ module.exports = {
   chatBotTokensPath: './.chatbottokens.json',
   rewardMapPath: './.rewardmap.json',
   playerDataPath: './.playerdata.json',
+  soundSettingsPath: './.soundsettings.json',
   twitchApiScopes: [
     'channel:read:redemptions',
     'channel:manage:redemptions',

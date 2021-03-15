@@ -31,6 +31,12 @@ export function resolveAllSets(all) {
   return all;
 }
 
+export function changeVolume(set, volume) {
+  for (const sound of set) {
+    sound.volume(volume);
+  }
+}
+
 export default {
   music: [sounds.bossCastleHassle],
   finalHit: [sounds.explosion10],

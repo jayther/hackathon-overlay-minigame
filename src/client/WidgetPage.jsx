@@ -13,6 +13,9 @@ import arenaImg from './assets/arena.png';
 import EventEmitter from 'eventemitter3';
 import BattleRunner from './game/BattleRunner';
 import JRect from '../shared/math/JRect';
+import { has } from '../shared/ObjectUtils';
+import sounds, { changeVolume } from './game/SoundSets';
+import { Howler } from 'howler';
 
 let fxIdPool = 0;
 let hitMarkerIdPool = 0;
@@ -53,6 +56,7 @@ class WidgetPage extends React.Component {
 
     this.runningBattle = false;
     this.events = new EventEmitter();
+    this.prevSoundVolumes = {};
 
     this.startFX = this.startFX.bind(this);
     this.onFXEnd = this.onFXEnd.bind(this);
@@ -77,6 +81,7 @@ class WidgetPage extends React.Component {
 
   componentDidUpdate() {
     this.maybeExecuteBattle();
+    this.setSoundVolumes(this.props.appState.soundVolumes);
   }
 
   async maybeExecuteBattle() {
@@ -116,12 +121,53 @@ class WidgetPage extends React.Component {
       ],
       arena: this.arena,
       setShowArena: this.setShowArena.bind(this),
-      startHitMarker: this.startHitMarker
+      startHitMarker: this.startHitMarker,
+      musicVolume: this.props.appState.soundVolumes.music
     });
-
     await battleRunner.run();
     SocketBridge.socket.emit(appActions.finishBattle, battleRunner.winner.userId, battleRunner.loser.userId);
     this.runningBattle = false;
+  }
+
+  setSoundVolumes(soundVolumes) {
+    const changedKeys = [];
+    for (const [key, volume] of Object.entries(soundVolumes)) {
+      if (!has(this.prevSoundVolumes, key) || this.prevSoundVolumes[key] !== volume) {
+        changedKeys.push(key);
+      }
+    }
+    for (const key of changedKeys) {
+      switch (key) {
+        case 'globalVolume':
+          Howler.volume(soundVolumes[key]);
+          break;
+        case 'music':
+          changeVolume(sounds.music, soundVolumes[key]);
+          break;
+        case 'arena':
+          changeVolume(sounds.arena, soundVolumes[key]);
+          break;
+        case 'win':
+          changeVolume(sounds.win, soundVolumes[key]);
+          break;
+        case 'spawn':
+          changeVolume(sounds.jump, soundVolumes[key]);
+          changeVolume(sounds.magicSpawn, soundVolumes[key]);
+          break;
+        case 'attacks':
+          changeVolume(sounds.finalHit, soundVolumes[key]);
+          changeVolume(sounds.gunShot, soundVolumes[key]);
+          changeVolume(sounds.punch, soundVolumes[key]);
+          changeVolume(sounds.sword, soundVolumes[key]);
+          changeVolume(sounds.thunder, soundVolumes[key]);
+          changeVolume(sounds.magic, soundVolumes[key]);
+          changeVolume(sounds.miss, soundVolumes[key]);
+          break;
+        default:
+          console.error(`WidgetPage.setSoundVolumes: "${key}" is not a valid sound volume key`);
+      }
+    }
+    this.prevSoundVolumes = {...soundVolumes};
   }
 
   onResize() {

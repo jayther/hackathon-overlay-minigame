@@ -30,5 +30,6 @@ module.exports = {
   updateBattleResults: 'updateBattleResults',
   updateBotReady: 'updatebotready',
   updateGenderMethod: 'updategendermethod',
-  updateCharTypeMethod: 'updatechartypemethod'
+  updateCharTypeMethod: 'updatechartypemethod',
+  updateVolumes: 'updatevolumes'
 };

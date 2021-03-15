@@ -13,6 +13,7 @@ const ChatBotManager = require('./src/server/ChatBotManager');
 const RewardManager = require('./src/server/RewardManager');
 const PlayerManager = require('./src/server/PlayerManager');
 const BattleManager = require('./src/server/BattleManager');
+const SoundManager = require('./src/server/SoundManager');
 const globalEmitter = require('./src/server/utils/GlobalEmitter');
 const { socketEvents } = require('./src/server/consts');
 
@@ -21,7 +22,8 @@ const {
   userTokensPath,
   chatBotTokensPath,
   rewardMapPath,
-  playerDataPath
+  playerDataPath,
+  soundSettingsPath
 } = require('./src/server/consts');
 
 class ServerApp {
@@ -32,10 +34,14 @@ class ServerApp {
       userTokens: new JsonDataFile(userTokensPath),
       chatBotTokens: new JsonDataFile(chatBotTokensPath),
       rewardMap: new JsonDataFile(rewardMapPath),
-      playerData: new JsonDataFile(playerDataPath)
+      playerData: new JsonDataFile(playerDataPath),
+      soundSettings: new JsonDataFile(soundSettingsPath)
     };
     this.socketManager = new SocketManager(settings);
     this.setupManager = new SetupManager(
+      settings, this.files, this.socketManager
+    );
+    this.soundManager = new SoundManager(
       settings, this.files, this.socketManager
     );
     this.twitchManager = new TwitchManager(
@@ -69,6 +75,7 @@ class ServerApp {
     try {
       await this.socketManager.init();
       await this.setupManager.init();
+      await this.soundManager.init();
       await this.twitchManager.init();
       await this.chatBotManager.init();
       await this.rewardManager.init();
@@ -80,6 +87,7 @@ class ServerApp {
 
   async onSetupAuthorized() {
     try {
+      await this.soundManager.init();
       await this.twitchManager.init();
       await this.chatBotManager.init();
       await this.rewardManager.init();

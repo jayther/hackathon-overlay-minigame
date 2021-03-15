@@ -27,7 +27,8 @@ const initialState = {
   currentBattle: null,
   winner: null,
   genderMethod: changeMethods.chat,
-  charTypeMethod: changeMethods.chat
+  charTypeMethod: changeMethods.chat,
+  soundVolumes: {}
 };
 
 function reducer(state, action) {
@@ -203,6 +204,14 @@ function reducer(state, action) {
       return {
         ...state,
         charTypeMethod: action.value
+      };
+    case appActions.updateVolumes:
+      if (!action.value) {
+        throw new Error(`App action "${action.type}" requires a value`);
+      }
+      return {
+        ...state,
+        soundVolumes: action.value
       };
     default:
       throw new Error(`Unknown app action type: ${action.type}`);

@@ -57,6 +57,7 @@ class SetupManager {
     await this.files.chatBotTokens.load();
     await this.files.rewardMap.load();
     await this.files.playerData.load();
+    await this.files.soundSettings.load();
 
     if (!this.files.playerData.data.players) {
       this.files.playerData.data.players = [];

@@ -120,6 +120,7 @@ dist
 .chatbottokens.json
 .rewardmap.json
 .playerdata.json
+.soundsettings.json
 
 dist-debug
 src/client/assets/backup

@@ -5,7 +5,8 @@ import sounds from './SoundSets';
 const defaultOptions = {
   players: null,
   arena: null,
-  setShowArena: null
+  setShowArena: null,
+  musicVolume: 1
 };
 
 const attackDistance = 40;
@@ -47,7 +48,6 @@ class BattleRunner {
     if (typeof opts.startHitMarker !== 'function') {
       throw new Error('BattleRunner(): startHitMarker is a required property and must be a function');
     }
-    console.log(opts.players);
     const shuffled = shuffleNew(options.players);
     this.leftPlayer = shuffled[0];
     this.rightPlayer = shuffled[1];
@@ -61,7 +61,7 @@ class BattleRunner {
 
     this.music = pick(sounds.music);
     this.music.loop(true);
-    this.music.volume(1);
+    this.music.volume(opts.musicVolume);
 
     this.state = 0;
     this.stateMap = [
