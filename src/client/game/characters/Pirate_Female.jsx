@@ -108,7 +108,8 @@ export default {
         'Pirate_Female/attackWeapon3_2.png',
         'Pirate_Female/attackWeapon3_3.png'
       ],
-      frameDelay: 100
+      frameDelay: 100,
+      sound: 'gunShot'
     }
   ]
 };

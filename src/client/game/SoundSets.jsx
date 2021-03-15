@@ -55,6 +55,7 @@ export default {
     sounds.hitSword4,
     sounds.hitSword5
   ],
+  thunder: [sounds.explosion3],
   jump: [sounds.jump3],
   magic: [
     sounds.magicSpell1,

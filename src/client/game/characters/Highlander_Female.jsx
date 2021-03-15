@@ -95,6 +95,7 @@ export default {
         'Highlander_Female/attackUnarmed2_3.png'
       ],
       frameDelay: 100,
+      sound: 'thunder',
       fx: {
         sprites: [
           'Highlander_Female/attackUnarmed2_FX_1.png',
@@ -114,6 +115,7 @@ export default {
         'Highlander_Female/attackUnarmed3_3.png'
       ],
       frameDelay: 100,
+      sound: 'thunder',
       fx: {
         sprites: [
           'Highlander_Female/attackUnarmed3_FX_1.png',

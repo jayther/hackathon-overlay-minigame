@@ -105,6 +105,7 @@ export default {
         'Archdemon_Male/attackUnarmed2_3.png'
       ],
       frameDelay: 100,
+      sound: 'magic',
       fx: {
         sprites: [
           'Archdemon_Male/attackUnarmed2_FX_1.png',
@@ -124,6 +125,7 @@ export default {
         'Archdemon_Male/attackUnarmed3_3.png'
       ],
       frameDelay: 100,
+      sound: 'magic',
       fx: {
         sprites: [
           'Archdemon_Male/attackUnarmed3_FX_1.png',

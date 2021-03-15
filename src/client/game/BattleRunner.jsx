@@ -16,6 +16,13 @@ const hitMarkerOffset = -100;
 const missDistance = 100;
 const weaponBoost = 50;
 
+const attackTypes = {
+  normal: 'normal',
+  weapon: 'weapon',
+  miss: 'miss',
+  final: 'final'
+};
+
 class BattleRunner {
   constructor(options) {
     const opts = {
@@ -126,17 +133,25 @@ class BattleRunner {
       // TODO use dice rolls
       // TODO weapon damages
       // 
-      let damage, hitMarkerText, rand = Math.random();
+      let damage, hitMarkerText, attackType, rand = Math.random();
       let damageBoost = attacker.playerChar.weapon ? weaponBoost : 0;
       if (rand < 0.1) {
         damage = betweenInt(300, 325) + damageBoost;
         hitMarkerText = `${damage}!!`;
-      } else if (rand < 0.2) {
+        attackType = attacker.playerChar.weapon ? attackTypes.weapon : attackTypes.normal;
+      } else if (rand < 0.15) {
         damage = 0;
         hitMarkerText = 'Miss';
+        attackType = attackTypes.miss;
       } else {
         damage = betweenInt(150, 250) + damageBoost;
         hitMarkerText = `${damage}`;
+        attackType = attacker.playerChar.weapon ? attackTypes.weapon : attackTypes.normal;
+      }
+
+      const defenderFutureHp = defender.playerChar.hp - damage;
+      if (attackType !== attackTypes.miss && defenderFutureHp <= 0) {
+        attackType = attackTypes.final;
       }
 
       const attackPos = defender.playerChar.position.copy();
@@ -145,31 +160,33 @@ class BattleRunner {
       attackPos.x += attackPosDelta;
       attacker.playerChar.moveTo(attackPos);
       await attacker.playerChar.waitForIdle();
-      let hitMarkerDelay, attackSound;
+      let hitMarkerDelay;
       if (damage === 0) { // miss
-        attacker.playerChar.delay(missDelay).attack().moveTo(attackPoint).face(defendPoint);
+        attacker.playerChar.delay(missDelay).attackMiss().moveTo(attackPoint).face(defendPoint);
         const missPos = defender.playerChar.position.copy();
         missPos.x += -deltaSign * missDistance;
         defender.playerChar.moveTo(missPos);
         hitMarkerDelay = missDelay + hitDelay;
-        attackSound = pick(sounds.miss);
       } else { // hit
-        attacker.playerChar.attack().moveTo(attackPoint).face(defendPoint);
+        if (attackType === attackTypes.normal) {
+          attacker.playerChar.attack();
+        } else if (attackType === attackTypes.weapon) {
+          attacker.playerChar.attackWeapon();
+        } else if (attackType === attackTypes.final) {
+          attacker.playerChar.attackFinal();
+        }
+        attacker.playerChar.moveTo(attackPoint).face(defendPoint);
         defender.playerChar.delay(hitDelay).hitToDelta(-deltaSign * hitDistance, damage);
         hitMarkerDelay = hitDelay;
-        attackSound = pick(attacker.playerChar.weapon ? sounds.sword : sounds.punch);
       }
       const hitMarkerPos = defender.playerChar.position.copy();
       hitMarkerPos.y += hitMarkerOffset;
       setTimeout(() => {
         this.startHitMarker(hitMarkerPos, hitMarkerText);
-        attackSound.seek(0);
-        attackSound.play();
       }, hitMarkerDelay);
       const waitForAll = [
         attacker.playerChar.waitForIdle()
       ];
-      const defenderFutureHp = defender.playerChar.hp - damage;
       if (defenderFutureHp <= 0) { // ded
         defender.playerChar.die();
       } else { // alive still, move back
@@ -177,7 +194,6 @@ class BattleRunner {
         waitForAll.push(defender.playerChar.waitForIdle());
       }
       await Promise.all(waitForAll);
-      console.log(this.leftPlayer.playerChar.hp, this.rightPlayer.playerChar.hp);
       if (this.leftPlayer.playerChar.hp <= 0) {
         this.loser = this.leftPlayer;
         this.winner = this.rightPlayer;

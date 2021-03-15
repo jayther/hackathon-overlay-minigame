@@ -145,6 +145,7 @@ export default {
         'Archangel_Female/attackWeapon1_3.png'
       ],
       frameDelay: 100,
+      sound: 'thunder',
       fx: {
         sprites: [
           'Archangel_Female/attackWeapon1_FX_1.png',

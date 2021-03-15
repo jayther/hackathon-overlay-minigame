@@ -1,5 +1,6 @@
 export { default as bossCastleHassle } from '../assets/sounds/Boss_-_Castle_Hassle.m4a';
-export { default as explosion5 } from '../assets/sounds/SFX_-_explosion_10.m4a'
+export { default as explosion3 } from '../assets/sounds/SFX_-_explosion_03.m4a';
+export { default as explosion5 } from '../assets/sounds/SFX_-_explosion_05.m4a';
 export { default as explosion10 } from '../assets/sounds/SFX_-_explosion_10.m4a';
 export { default as gunShot1 } from '../assets/sounds/SFX_-_gun_shot_01.m4a';
 export { default as gunShot2 } from '../assets/sounds/SFX_-_gun_shot_02.m4a';

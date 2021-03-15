@@ -9,6 +9,9 @@ import Vec2 from '../../shared/math/Vec2';
 import { distance } from '../../shared/math/JMath';
 import { waitForMS } from '../../shared/PromiseUtils';
 import HPBar from './HPBar';
+import { pick } from '../../shared/RandUtils';
+
+import sounds from './SoundSets';
 
 const animSetStates = {
   unarmed: {
@@ -35,11 +38,22 @@ const actions = {
   move: 'move',
   dash: 'dash',
   attack: 'attack',
+  attackWeapon: 'attackWeapon',
+  attackMiss: 'attackMiss',
+  attackFinal: 'attackFinal',
   hit: 'hit',
   delay: 'delay',
   die: 'die',
   face: 'face',
   spawn: 'spawn'
+};
+
+const actionSoundMap = {
+  attack: 'punch',
+  attackWeapon: 'sword',
+  attackMiss: 'miss',
+  attackFinal: 'finalHit',
+  spawn: 'jump'
 };
 
 const maxHp = 1000;
@@ -206,7 +220,7 @@ class PlayerChar extends SpriteApplier {
     }
   }
 
-  async cssTransitionMoveTo(position, speed, animState, moveBackwards = false) {
+  async cssTransitionMoveTo(position, speed, animState, moveBackwards = false, action = undefined) {
     const oldPos = this.position.copy();
     const delta = distance(oldPos, position);
     let travelTime = Math.floor(delta / speed * 1000); // ms
@@ -222,7 +236,7 @@ class PlayerChar extends SpriteApplier {
     this.containerStyle.left = `${position.x}px`;
     this.containerStyle.top = `${position.y}px`;
     this.position.set(position);
-    this.setAnimState(animState);
+    this.setAnimState(animState, action);
     await waitForMS(travelTime);
     this.processActionQueue();
   }
@@ -253,7 +267,10 @@ class PlayerChar extends SpriteApplier {
         this.cssTransitionMoveTo(action.position, this.dashSpeed, 'dash');
         break;
       case actions.attack:
-        this.setAnimState('attacks');
+      case actions.attackWeapon:
+      case actions.attackMiss:
+      case actions.attackFinal:
+        this.setAnimState('attacks', action.type);
         break;
       case actions.hit:
         this.hit(action.damage);
@@ -266,7 +283,7 @@ class PlayerChar extends SpriteApplier {
         }, action.duration);
         break;
       case actions.die:
-        this.setAnimState('dead');
+        this.setAnimState('dead', action.type);
         break;
       case actions.face:
         this.flipped = action.position.x > this.position.x;
@@ -275,9 +292,12 @@ class PlayerChar extends SpriteApplier {
         break;
       case actions.spawn:
         if (action.stationary) {
-          this.setAnimState('spawn');
+          this.setAnimState('spawn', action.type);
         } else {
-          this.cssTransitionMoveTo(action.position, this.spawnSpeed, 'spawn');
+          this.cssTransitionMoveTo(
+            action.position, this.spawnSpeed, 'spawn',
+            false, action.type
+          );
         }
         break;
       default:
@@ -326,6 +346,21 @@ class PlayerChar extends SpriteApplier {
 
   attack() {
     this.addAction({ type: actions.attack });
+    return this;
+  }
+
+  attackMiss() {
+    this.addAction({ type: actions.attackMiss });
+    return this;
+  }
+
+  attackWeapon() {
+    this.addAction({ type: actions.attackWeapon });
+    return this;
+  }
+
+  attackFinal() {
+    this.addAction({ type: actions.attackFinal });
     return this;
   }
 
@@ -410,7 +445,7 @@ class PlayerChar extends SpriteApplier {
     this.setAnimState(this.animState);
   }
 
-  setAnimState(animState) {
+  setAnimState(animState, action = undefined) {
     this.animState = animState;
     const animSetStateOrArr = getAnimSetState(animState, this.weapon);
     let animSetState = null;
@@ -436,6 +471,18 @@ class PlayerChar extends SpriteApplier {
     if (anim.fx) {
       this.startFX(anim.fx, this.position, this.flipped, true);
     }
+    const soundKey = anim.sound || actionSoundMap[action] || null;
+    if (!soundKey) {
+      return;
+    }
+    const soundSet = sounds[soundKey];
+    if (!soundSet) {
+      console.error(`PlayerChar.setAnimState: "${soundKey}" is not a valid sound key.`);
+      return;
+    }
+    const sound = pick(soundSet);
+    sound.seek(0);
+    sound.play();
   }
 
   hit(damage) {
