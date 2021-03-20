@@ -98,6 +98,10 @@ class SocketManager {
   controlEmit(eventName, ...data) {
     this.io.to(socketTypes.control).emit(eventName, ...data);
   }
+
+  close() {
+    this.io.close();
+  }
 }
 
 module.exports = SocketManager;

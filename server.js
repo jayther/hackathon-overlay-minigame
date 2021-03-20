@@ -74,7 +74,14 @@ class ServerApp {
 
     try {
       await this.socketManager.init();
-      await this.setupManager.init();
+    } catch(e) {
+      maybeExpectedError(e);
+    }
+
+    // let errors from here close the server
+    await this.setupManager.init();
+
+    try {
       await this.soundManager.init();
       await this.twitchManager.init();
       await this.chatBotManager.init();
@@ -105,6 +112,7 @@ class ServerApp {
   try {
     await serverApp.init();
   } catch(e) {
+    serverApp.socketManager.close();
     logger(`server init error occurred: ${e.message}`);
     logger(e.stack);
   }

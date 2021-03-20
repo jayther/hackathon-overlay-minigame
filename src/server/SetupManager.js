@@ -1,6 +1,7 @@
 const { createServer } = require('http');
 const https = require('https');
 const express = require('express');
+const fs = require('fs-extra');
 
 const { bindAndLog } = require('./utils/LogUtils');
 const logger = require('./utils/logger');
@@ -77,6 +78,17 @@ class SetupManager {
       };
     }
     // don't need to save, next save will include new props
+
+    // check if project was even built
+    try {
+      await fs.access(this.settings.staticDir);
+    } catch (e) {
+      throw new Error(
+        `SetupManager.init: Cannot access output directory ` +
+        `(maybe npm run build was not run yet?)\n` +
+        e.stack || e.message
+      );
+    }
 
     this.app = express();
     this.app.use(express.static(this.settings.staticDir));
