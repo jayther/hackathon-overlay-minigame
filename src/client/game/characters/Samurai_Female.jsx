@@ -40,6 +40,20 @@ export default {
     ],
     frameDelay: 75
   },
+  bannerIdle: {
+    sprites: [
+      'Samurai_Female/bannerIdle_1.png',
+      'Samurai_Female/bannerIdle_2.png',
+      'Samurai_Female/bannerIdle_3.png'
+    ],
+    frameDelay: 150
+  },
+  bannerRaise: {
+    sprites: [
+      'Samurai_Female/bannerRaise_1.png'
+    ],
+    frameDelay: 600
+  },
   spawn: {
     sprites: [
       'Samurai_Female/graveBurst_1.png',

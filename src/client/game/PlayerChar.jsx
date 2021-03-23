@@ -21,7 +21,9 @@ const animSetStates = {
     attacks: 'attacks',
     dash: 'dash',
     spawn: 'spawn',
-    hit: 'hit'
+    hit: 'hit',
+    bannerIdle: 'bannerIdle',
+    bannerRaise: 'bannerRaise'
   },
   weapon: {
     idle: 'idleWeapon',
@@ -30,7 +32,9 @@ const animSetStates = {
     attacks: 'attacksWeapon',
     dash: 'dashWeapon',
     spawn: 'spawn',
-    hit: 'hit'
+    hit: 'hit',
+    bannerIdle: 'bannerIdle',
+    bannerRaise: 'bannerRaise'
   }
 };
 
@@ -45,7 +49,8 @@ const actions = {
   delay: 'delay',
   die: 'die',
   face: 'face',
-  spawn: 'spawn'
+  spawn: 'spawn',
+  pose: 'pose'
 };
 
 const actionSoundMap = {
@@ -116,6 +121,7 @@ class PlayerChar extends SpriteApplier {
       max: 6000
     };
     this.delayActionId = -1;
+    this.poseActionId = -1;
 
     this.events = new EventEmitter();
     this.animStep = this.animStep.bind(this);
@@ -176,6 +182,9 @@ class PlayerChar extends SpriteApplier {
     this.stopCurrentAnim();
     if (this.delayActionId !== -1) {
       clearTimeout(this.delayActionId);
+    }
+    if (this.poseActionId !== -1) {
+      clearTimeout(this.poseActionId);
     }
   }
 
@@ -300,6 +309,18 @@ class PlayerChar extends SpriteApplier {
           );
         }
         break;
+      case actions.pose:
+        // face
+        if (action.position) {
+          this.flipped = action.position.x > this.position.x;
+        } else if (action.delta) {
+          this.flipped = action.delta >= 0;
+        }
+        this.setAnimState('bannerRaise', action.type);
+        this.poseActionId = setTimeout(() => {
+          this.processActionQueue();
+        }, action.duration || 1000);
+        break;
       default:
         console.error(`processActionQueue: Unknown action type: "${action.type}"`);
     }
@@ -376,6 +397,12 @@ class PlayerChar extends SpriteApplier {
 
   face(position) {
     this.addAction({ type: actions.face, position });
+    return this;
+  }
+
+  pose(delta, duration) {
+    this.addAction({ type: actions.pose, delta, duration });
+    return this;
   }
 
   resetHp() {
@@ -418,6 +445,8 @@ class PlayerChar extends SpriteApplier {
         case 'run':
         case 'dash':
         case 'hit':
+        case 'bannerIdle':
+        case 'bannerRaise':
           this.spriteIndex = 0;
           break;
         default:

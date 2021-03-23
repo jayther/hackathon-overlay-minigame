@@ -40,6 +40,20 @@ export default {
     ],
     frameDelay: 75
   },
+  bannerIdle: {
+    sprites: [
+      'Mayan_Female/bannerIdle_1.png',
+      'Mayan_Female/bannerIdle_2.png',
+      'Mayan_Female/bannerIdle_3.png'
+    ],
+    frameDelay: 150
+  },
+  bannerRaise: {
+    sprites: [
+      'Mayan_Female/bannerRaise_1.png'
+    ],
+    frameDelay: 600
+  },
   spawn: {
     sprites: [
       'Mayan_Female/graveBurst_1.png'

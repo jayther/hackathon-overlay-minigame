@@ -40,6 +40,20 @@ export default {
     ],
     frameDelay: 75
   },
+  bannerIdle: {
+    sprites: [
+      'Ninja_Male/bannerIdle_1.png',
+      'Ninja_Male/bannerIdle_2.png',
+      'Ninja_Male/bannerIdle_3.png'
+    ],
+    frameDelay: 150
+  },
+  bannerRaise: {
+    sprites: [
+      'Ninja_Male/bannerRaise_1.png'
+    ],
+    frameDelay: 600
+  },
   spawn: {
     sprites: [
       'Ninja_Male/graveBurst_1.png'

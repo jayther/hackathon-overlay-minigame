@@ -40,6 +40,20 @@ export default {
     ],
     frameDelay: 75
   },
+  bannerIdle: {
+    sprites: [
+      'Executioner_Female/bannerIdle_1.png',
+      'Executioner_Female/bannerIdle_2.png',
+      'Executioner_Female/bannerIdle_3.png'
+    ],
+    frameDelay: 150
+  },
+  bannerRaise: {
+    sprites: [
+      'Executioner_Female/bannerRaise_1.png'
+    ],
+    frameDelay: 600
+  },
   spawn: {
     sprites: [
       'Executioner_Female/graveBurst_1.png'

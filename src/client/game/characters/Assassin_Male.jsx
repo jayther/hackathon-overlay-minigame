@@ -40,6 +40,20 @@ export default {
     ],
     frameDelay: 75
   },
+  bannerIdle: {
+    sprites: [
+      'Assassin_Male/bannerIdle_1.png',
+      'Assassin_Male/bannerIdle_2.png',
+      'Assassin_Male/bannerIdle_3.png'
+    ],
+    frameDelay: 150
+  },
+  bannerRaise: {
+    sprites: [
+      'Assassin_Male/bannerRaise_1.png'
+    ],
+    frameDelay: 600
+  },
   spawn: {
     sprites: [
       'Assassin_Male/graveBurst_1.png'

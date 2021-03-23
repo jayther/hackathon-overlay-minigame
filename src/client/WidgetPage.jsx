@@ -47,7 +47,8 @@ class WidgetPage extends React.Component {
       rightStairBottom: new Vec2(),
       rightStairTop: new Vec2(),
       leftPoint: new Vec2(),
-      rightPoint: new Vec2()
+      rightPoint: new Vec2(),
+      midPoint: new Vec2()
     };
     this.arenaRef = React.createRef();
     this.arenaRect = new JRect();
@@ -205,6 +206,10 @@ class WidgetPage extends React.Component {
     this.arena.rightPoint.set(
       Math.floor(this.arenaRect.right - 120 * arenaScale),
       Math.floor(this.arenaRect.top + 38 * arenaScale)
+    );
+    this.arena.midPoint.set(
+      Math.floor((this.arena.leftPoint.x + this.arena.rightPoint.x) / 2),
+      Math.floor((this.arena.leftPoint.y + this.arena.rightPoint.y) / 2)
     );
   }
 

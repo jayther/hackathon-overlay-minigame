@@ -40,6 +40,20 @@ export default {
     ],
     frameDelay: 75
   },
+  bannerIdle: {
+    sprites: [
+      'Royal_Guard_Male/bannerIdle_1.png',
+      'Royal_Guard_Male/bannerIdle_2.png',
+      'Royal_Guard_Male/bannerIdle_3.png'
+    ],
+    frameDelay: 150
+  },
+  bannerRaise: {
+    sprites: [
+      'Royal_Guard_Male/bannerRaise_1.png'
+    ],
+    frameDelay: 600
+  },
   spawn: {
     sprites: [
       'Royal_Guard_Male/graveBurst_1.png'

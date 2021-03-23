@@ -48,6 +48,20 @@ export default {
     ],
     frameDelay: 75
   },
+  bannerIdle: {
+    sprites: [
+      'Archdemon_Female/bannerIdle_1.png',
+      'Archdemon_Female/bannerIdle_2.png',
+      'Archdemon_Female/bannerIdle_3.png'
+    ],
+    frameDelay: 150
+  },
+  bannerRaise: {
+    sprites: [
+      'Archdemon_Female/bannerRaise_1.png'
+    ],
+    frameDelay: 600
+  },
   spawn: {
     sprites: [
       'Archdemon_Female/graveBurst_1.png',

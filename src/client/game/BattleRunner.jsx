@@ -205,9 +205,17 @@ class BattleRunner {
     }
   }
   async leavingArena() {
+    this.music.fade(1, 0, 2000); // 1 to 0 in 2 seconds
+    this.music.once('fade', () => {
+      this.music.stop();
+    });
+    this.winner.playerChar.moveTo(this.arena.midPoint);
+    await this.winner.playerChar.waitForIdle();
     const winSound = pick(sounds.win);
     winSound.seek(0);
     winSound.play();
+    this.winner.playerChar.pose(-1, 500).pose(1, 500).pose(-1, 500);
+    
     if (this.winner === this.leftPlayer) {
       this.winner.playerChar.moveTo(this.arena.leftStairTop)
         .moveTo(this.arena.leftStairBottom);
@@ -221,10 +229,6 @@ class BattleRunner {
     await this.winner.playerChar.waitForIdle();
   }
   async hidingArena() {
-    this.music.fade(1, 0, 2000); // 1 to 0 in 2 seconds
-    this.music.once('fade', () => {
-      this.music.stop();
-    });
     const arenaSound = pick(sounds.arena);
     arenaSound.loop(true);
     arenaSound.play();
