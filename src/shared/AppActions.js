@@ -33,5 +33,6 @@ module.exports = {
   updateCharTypeMethod: 'updatechartypemethod',
   updateVolumes: 'updatevolumes',
   runPlayer: 'runplayer',
-  dancePlayer: 'danceplayer'
+  dancePlayer: 'danceplayer',
+  updateBattleSettings: 'updatebattlesettings'
 };

@@ -6,6 +6,7 @@ const fs = require('fs-extra');
 const { bindAndLog } = require('./utils/LogUtils');
 const logger = require('./utils/logger');
 const { defaultPlayer } = require('./PlayerManager');
+const { defaultBattleSettings } = require('./BattleManager');
 const { objToParams } = require('../shared/ObjectUtils');
 
 const { twitchApiScopes, socketEvents } = require('./consts');
@@ -53,12 +54,9 @@ class SetupManager {
 
   async init() {
     logger('Loading files...');
-    await this.files.appSecrets.load();
-    await this.files.userTokens.load();
-    await this.files.chatBotTokens.load();
-    await this.files.rewardMap.load();
-    await this.files.playerData.load();
-    await this.files.soundSettings.load();
+    for (const file of Object.values(this.files)) {
+      await file.load();
+    }
 
     if (!this.files.playerData.data.players) {
       this.files.playerData.data.players = [];
@@ -70,6 +68,10 @@ class SetupManager {
       this.files.playerData.data.charTypeMethod = changeMethods.chat;
     }
     // populate missing props
+    this.files.battleSettings.data = {
+      ...defaultBattleSettings,
+      ...this.files.battleSettings.data
+    };
     const players = this.files.playerData.data.players;
     for (let i = 0; i < players.length; i += 1) {
       players[i] = {

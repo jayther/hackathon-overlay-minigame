@@ -6,6 +6,7 @@ module.exports = {
   rewardMapPath: './.rewardmap.json',
   playerDataPath: './.playerdata.json',
   soundSettingsPath: './.soundsettings.json',
+  battleSettingsPath: './.battlesettings.json',
   twitchApiScopes: [
     'channel:read:redemptions',
     'channel:manage:redemptions',

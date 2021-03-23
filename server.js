@@ -23,7 +23,8 @@ const {
   chatBotTokensPath,
   rewardMapPath,
   playerDataPath,
-  soundSettingsPath
+  soundSettingsPath,
+  battleSettingsPath
 } = require('./src/server/consts');
 
 class ServerApp {
@@ -35,7 +36,8 @@ class ServerApp {
       chatBotTokens: new JsonDataFile(chatBotTokensPath),
       rewardMap: new JsonDataFile(rewardMapPath),
       playerData: new JsonDataFile(playerDataPath),
-      soundSettings: new JsonDataFile(soundSettingsPath)
+      soundSettings: new JsonDataFile(soundSettingsPath),
+      battleSettings: new JsonDataFile(battleSettingsPath)
     };
     this.socketManager = new SocketManager(settings);
     this.setupManager = new SetupManager(

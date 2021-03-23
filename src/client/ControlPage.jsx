@@ -30,7 +30,12 @@ function ControlPage(props) {
       <h1>Control</h1>
       <h2>Players</h2>
       <PlayersSection players={props.appState.players} />
-      <BattleSection battle={battle} battleQueue={props.appState.battleQueue} battleResults={props.appState.battleResults} />
+      <BattleSection
+        battle={battle}
+        battleQueue={props.appState.battleQueue}
+        battleResults={props.appState.battleResults}
+        battleSettings={props.appState.battleSettings}
+      />
       <MissingRewardsSection rewards={props.appState.rewards} missingRewards={missingRewards} />
       <SettingsSection appState={props.appState} />
       <SoundSection appState={props.appState} appDispatch={props.appDispatch} />

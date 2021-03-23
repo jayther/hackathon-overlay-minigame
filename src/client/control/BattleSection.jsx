@@ -46,6 +46,25 @@ export function BattleSection(props) {
             )}
         </tbody>
       </table>
+      <h3>Battle Settings</h3>
+      <table>
+        <tbody>
+          <tr>
+            <td>Delay between attacks</td>
+            <td><input
+              type="number"
+              min="0"
+              step="1"
+              pattern="[0-9]+"
+              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+                ...props.battleSettings,
+                delayBetweenAttacks: parseInt(e.target.value, 10)
+              })}
+              value={props.battleSettings.delayBetweenAttacks}
+            />ms</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 }

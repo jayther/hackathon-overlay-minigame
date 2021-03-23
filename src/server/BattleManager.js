@@ -7,6 +7,13 @@ const { socketEvents } = require('./consts');
 const { bindAndLog } = require('./utils/LogUtils');
 const { ChattableError, ExpectedError } = require('./errors');
 const requiredRewards = require('../shared/RequiredRewards');
+const { applyKnownProps } = require('../shared/ObjectUtils');
+
+const defaultBattleSettings = {
+  delayBetweenAttacks: 0
+};
+
+const deferredSaveDelay = 3000; // ms
 
 function filterAlivePlayers(player) {
   return player.alive;
@@ -25,6 +32,8 @@ class BattleManager {
     this.playerManager = playerManager;
     this.chatBotManager = chatBotManager;
 
+    this.deferredSaveId = -1;
+
     this.currentBattle = null;
     this.battleQueue = [];
     globalEmitter.on(socketEvents.overlayAdded, this.onOverlayAdded, this);
@@ -37,14 +46,17 @@ class BattleManager {
   onOverlayAdded(socket) {
     socket.on(appActions.finishBattle, bindAndLog(this.finishBattle, this));
     socket.emit(appActions.updateBattle, this.currentBattle);
+    socket.emit(appActions.updateBattleSettings, this.files.battleSettings.data);
   }
 
   onControlAdded(socket) {
     socket.on(appActions.startBattle, bindAndLog(this.startBattle, this));
     socket.on(appActions.cancelBattle, bindAndLog(this.cancelBattle, this));
     socket.on(appActions.requestBattle, bindAndLog(this.onSocketRequestBattle, this));
+    socket.on(appActions.updateBattleSettings, bindAndLog(this.onSocketUpdateBattleSettings, this));
     socket.emit(appActions.updateBattle, this.currentBattle);
     socket.emit(appActions.updateBattleQueue, this.battleQueue);
+    socket.emit(appActions.updateBattleSettings, this.files.battleSettings.data);
   }
   
   isInBattle(userId) {
@@ -338,6 +350,23 @@ class BattleManager {
       logger(`onSocketRequestBattle: Error occurred: ${e.message}`);
     }
   }
+
+  async onSocketUpdateBattleSettings(battleSettings) {
+    applyKnownProps(this.files.battleSettings.data, battleSettings);
+    this.deferredSave();
+    this.socketManager.allEmit(appActions.updateBattleSettings, this.files.battleSettings.data);
+  }
+
+  deferredSave() {
+    if (this.deferredSaveId !== -1) {
+      clearTimeout(this.deferredSaveId);
+    }
+    this.deferredSaveId = setTimeout(() => {
+      this.files.battleSettings.save();
+      this.deferredSaveId = -1;
+    }, deferredSaveDelay);
+  }
 }
 
 module.exports = BattleManager;
+module.exports.defaultBattleSettings = defaultBattleSettings;

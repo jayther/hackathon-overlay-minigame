@@ -1,12 +1,14 @@
 import { shuffleNew, pickArgs, betweenInt, pick } from '../../shared/RandUtils';
 import { sign } from '../../shared/math/JMath';
 import sounds from './SoundSets';
+import { waitForMS } from '../../shared/PromiseUtils';
 
 const defaultOptions = {
   players: null,
   arena: null,
   setShowArena: null,
-  musicVolume: 1
+  musicVolume: 1,
+  battleSettings: null
 };
 
 const attackDistance = 40;
@@ -48,6 +50,9 @@ class BattleRunner {
     if (typeof opts.startHitMarker !== 'function') {
       throw new Error('BattleRunner(): startHitMarker is a required property and must be a function');
     }
+    if (!opts.battleSettings) {
+      throw new Error('BattleRunner(): battleSettings property required');
+    }
     const shuffled = shuffleNew(options.players);
     this.leftPlayer = shuffled[0];
     this.rightPlayer = shuffled[1];
@@ -58,6 +63,7 @@ class BattleRunner {
     this.arena = opts.arena;
     this.setShowArena = opts.setShowArena;
     this.startHitMarker = opts.startHitMarker;
+    this.battleSettings = opts.battleSettings;
 
     this.music = pick(sounds.music);
     this.music.loop(true);
@@ -210,6 +216,9 @@ class BattleRunner {
         waitForAll.push(defender.playerChar.waitForIdle());
       }
       await Promise.all(waitForAll);
+      if (defenderFutureHp > 0 && this.battleSettings.delayBetweenAttacks > 0) {
+        await waitForMS(this.battleSettings.delayBetweenAttacks);
+      }
       if (this.leftPlayer.playerChar.hp <= 0) {
         this.loser = this.leftPlayer;
         this.winner = this.rightPlayer;

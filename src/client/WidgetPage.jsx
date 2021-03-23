@@ -55,6 +55,7 @@ class WidgetPage extends React.Component {
     this.arenaRect.setWidth(arenaDimensions.width * arenaScale);
     this.arenaRect.setHeight(arenaDimensions.height * arenaScale);
 
+    this.battleRunner = null;
     this.runningBattle = false;
     this.events = new EventEmitter();
     this.prevSoundVolumes = {};
@@ -85,6 +86,9 @@ class WidgetPage extends React.Component {
   componentDidUpdate() {
     this.maybeExecuteBattle();
     this.setSoundVolumes(this.props.appState.soundVolumes);
+    if (this.battleRunner) {
+      this.battleRunner.battleSettings = this.props.appState.battleSettings;
+    }
   }
 
   async maybeExecuteBattle() {
@@ -125,11 +129,14 @@ class WidgetPage extends React.Component {
       arena: this.arena,
       setShowArena: this.setShowArena.bind(this),
       startHitMarker: this.startHitMarker,
-      musicVolume: this.props.appState.soundVolumes.music
+      musicVolume: this.props.appState.soundVolumes.music,
+      battleSettings: this.props.appState.battleSettings
     });
+    this.battleRunner = battleRunner;
     await battleRunner.run();
     SocketBridge.socket.emit(appActions.finishBattle, battleRunner.winner.userId, battleRunner.loser.userId);
     this.runningBattle = false;
+    this.battleRunner = null;
   }
 
   setSoundVolumes(soundVolumes) {

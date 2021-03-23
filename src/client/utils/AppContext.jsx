@@ -28,7 +28,10 @@ const initialState = {
   winner: null,
   genderMethod: changeMethods.chat,
   charTypeMethod: changeMethods.chat,
-  soundVolumes: {}
+  soundVolumes: {},
+  battleSettings: {
+    delayBetweenAttacks: 0
+  }
 };
 
 function reducer(state, action) {
@@ -212,6 +215,14 @@ function reducer(state, action) {
       return {
         ...state,
         soundVolumes: action.value
+      };
+    case appActions.updateBattleSettings:
+      if (!action.value) {
+        throw new Error(`App action "${action.type}" requires a value`);
+      }
+      return {
+        ...state,
+        battleSettings: action.value
       };
     case appActions.runPlayer:
     case appActions.dancePlayer:
