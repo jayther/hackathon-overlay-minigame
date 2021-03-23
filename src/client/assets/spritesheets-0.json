@@ -6434,7 +6434,7 @@
       "trimmed": true,
       "spriteSourceSize": {
         "x": 21,
-        "y": 20,
+        "y": 27,
         "w": 30,
         "h": 55
       },
@@ -6460,7 +6460,7 @@
       "trimmed": true,
       "spriteSourceSize": {
         "x": 4,
-        "y": 32,
+        "y": 39,
         "w": 47,
         "h": 43
       },
@@ -6486,7 +6486,7 @@
       "trimmed": true,
       "spriteSourceSize": {
         "x": 4,
-        "y": 41,
+        "y": 48,
         "w": 47,
         "h": 34
       },
@@ -6512,7 +6512,7 @@
       "trimmed": true,
       "spriteSourceSize": {
         "x": 13,
-        "y": 27,
+        "y": 34,
         "w": 34,
         "h": 48
       },
@@ -6538,7 +6538,7 @@
       "trimmed": true,
       "spriteSourceSize": {
         "x": 7,
-        "y": 27,
+        "y": 34,
         "w": 52,
         "h": 48
       },
@@ -6590,7 +6590,7 @@
       "trimmed": true,
       "spriteSourceSize": {
         "x": 23,
-        "y": 1,
+        "y": 8,
         "w": 57,
         "h": 63
       },
@@ -6616,7 +6616,7 @@
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
-        "y": 7,
+        "y": 14,
         "w": 59,
         "h": 57
       },
