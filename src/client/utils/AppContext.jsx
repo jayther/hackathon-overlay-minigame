@@ -213,6 +213,10 @@ function reducer(state, action) {
         ...state,
         soundVolumes: action.value
       };
+    case appActions.runPlayer:
+    case appActions.dancePlayer:
+      // do nothing
+      return state;
     default:
       throw new Error(`Unknown app action type: ${action.type}`);
   }

@@ -47,5 +47,21 @@ module.exports = {
     cost: 10,
     prompt: 'Change your character gender! Must be "Male" or "Female"',
     userInputRequired: true
+  },
+  runAround: {
+    key: 'runAround',
+    eventName: 'redeem:runAround',
+    title: 'Run Around',
+    cost: 10,
+    prompt: 'Make your fighter run around the screen!',
+    userInputRequired: false
+  },
+  dance: {
+    key: 'dance',
+    eventName: 'redeem:dance',
+    title: 'Dance',
+    cost: 10,
+    prompt: 'Make your fighter dance on screen!',
+    userInputRequired: false
   }
 };

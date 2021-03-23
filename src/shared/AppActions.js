@@ -31,5 +31,7 @@ module.exports = {
   updateBotReady: 'updatebotready',
   updateGenderMethod: 'updategendermethod',
   updateCharTypeMethod: 'updatechartypemethod',
-  updateVolumes: 'updatevolumes'
+  updateVolumes: 'updatevolumes',
+  runPlayer: 'runplayer',
+  dancePlayer: 'danceplayer'
 };

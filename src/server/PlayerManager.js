@@ -103,11 +103,14 @@ class PlayerManager {
     this.socketManager = socketManager;
     this.twitchManager = twitchManager;
     this.rewardManager = rewardManager;
+    this.isInBattle = () => { return false };
     globalEmitter.on(socketEvents.overlayAdded, this.onOverlayAdded, this);
     globalEmitter.on(socketEvents.controlAdded, this.onControlAdded, this);
     globalEmitter.on(requiredRewards.add.eventName, bindAndLog(this.addPlayer, this));
     globalEmitter.on(requiredRewards.changeCharacterGender.eventName, bindAndLog(this.onRedeemGender, this));
     globalEmitter.on(requiredRewards.changeCharacterType.eventName, bindAndLog(this.onRedeemCharacter, this));
+    globalEmitter.on(requiredRewards.runAround.eventName, bindAndLog(this.onRedeemRunAround, this));
+    globalEmitter.on(requiredRewards.dance.eventName, bindAndLog(this.onRedeemDance, this));
     globalEmitter.on(createCommandEvent('gender'), bindAndLog(this.onCommandGender, this));
     globalEmitter.on(createCommandEvent('char'), bindAndLog(this.onCommandCharacter, this));
     globalEmitter.on(createCommandEvent('character'), bindAndLog(this.onCommandCharacter, this));
@@ -127,6 +130,8 @@ class PlayerManager {
     socket.on(appActions.clearDebugPlayers, bindAndLog(this.onSocketClearDebugPlayers, this));
     socket.on(appActions.updateGenderMethod, bindAndLog(this.onSocketUpdateGenderMethod, this));
     socket.on(appActions.updateCharTypeMethod, bindAndLog(this.onSocketUpdateCharTypeMethod, this));
+    socket.on(appActions.runPlayer, bindAndLog(this.onSocketRunAround, this));
+    socket.on(appActions.dancePlayer, bindAndLog(this.onSocketDance, this));
     socket.emit(appActions.allPlayers, this.files.playerData.data.players.filter(filterAlivePlayers));
     socket.emit(appActions.updateGenderMethod, this.files.playerData.data.genderMethod);
     socket.emit(appActions.updateCharTypeMethod, this.files.playerData.data.charTypeMethod);
@@ -135,16 +140,16 @@ class PlayerManager {
   async onCommandGender(chatBotManager, channel, user, message, parts) {
     const player = this.getPlayerFromUserName(user.toLowerCase());
     if (!player) {
-      const rewardName = this.getRewardName(requiredRewards.changeCharacterGender);
+      const addRewardName = this.getRewardName(requiredRewards.add);
       throw new ChattableError(
-        `@${user} Please redeem "${rewardName}" first before doing the gender command.`,
+        `@${user} Please redeem "${addRewardName}" first before doing the gender command.`,
         `PlayerManager.onCommandGender: ${user} is not in player data.`
       );
     }
     if (!player.alive) {
-      const rewardName = this.getRewardName(requiredRewards.changeCharacterGender);
+      const addRewardName = this.getRewardName(requiredRewards.add);
       throw new ChattableError(
-        `@${user} Please redeem "${rewardName}" first before doing the gender command.`,
+        `@${user} Please redeem "${addRewardName}" first before doing the gender command.`,
         `PlayerManager.onCommandGender: ${user} is not in player data.`
       );
     }
@@ -188,18 +193,20 @@ class PlayerManager {
     const player = this.getPlayer(event.userId);
     if (!player) {
       this.rewardManager.rejectRedeem(event);
-      const rewardName = this.getRewardName(requiredRewards.changeCharacterGender);
+      const addRewardName = this.getRewardName(requiredRewards.add);
+      const genderRewardName = this.getRewardName(requiredRewards.changeCharacterGender);
       throw new ChattableError(
-        `@${event.userDisplayName} Please redeem "${rewardName}" first before doing the gender command. ` +
-        `Redunding ${this.settings.channelPointsName}.`,
+        `@${event.userDisplayName} Please redeem "${addRewardName}" first before redeeming "${genderRewardName}". ` +
+        `Refunding ${this.settings.channelPointsName}.`,
         `PlayerManager.onRedeemGender: ${event.userDisplayName} (id: ${event.userId}) is not in player data.`
       );
     }
     if (!player.alive) {
       this.rewardManager.rejectRedeem(event);
-      const rewardName = this.getRewardName(requiredRewards.changeCharacterGender);
+      const addRewardName = this.getRewardName(requiredRewards.add);
+      const genderRewardName = this.getRewardName(requiredRewards.changeCharacterGender);
       throw new ChattableError(
-        `@${player.userDisplayName} Please redeem "${rewardName}" first before doing the gender command. ` +
+        `@${player.userDisplayName} Please redeem "${addRewardName}" first before redeeming "${genderRewardName}". ` +
         `Refunding ${this.settings.channelPointsName}.`,
         `PlayerManager.onRedeemGender: ${player.userDisplayName} is not in player data.`
       );
@@ -227,16 +234,16 @@ class PlayerManager {
   async onCommandCharacter(chatBotManager, channel, user, message, parts) {
     const player = this.getPlayerFromUserName(user.toLowerCase());
     if (!player) {
-      const rewardName = this.getRewardName(requiredRewards.changeCharacterType);
+      const addRewardName = this.getRewardName(requiredRewards.add);
       throw new ChattableError(
-        `@${user} Please redeem "${rewardName}" first before doing the character command.`,
+        `@${user} Please redeem "${addRewardName}" first before doing the character command.`,
         `PlayerManager.onCommandCharacter: ${user} is not in player data.`
       );
     }
     if (!player.alive) {
-      const rewardName = this.getRewardName(requiredRewards.changeCharacterType);
+      const addRewardName = this.getRewardName(requiredRewards.add);
       throw new ChattableError(
-        `@${user} Please redeem "${rewardName}" first before doing the character command.`,
+        `@${user} Please redeem "${addRewardName}" first before doing the character command.`,
         `PlayerManager.onCommandCharacter: ${user} is not in player data.`
       );
     }
@@ -281,18 +288,20 @@ class PlayerManager {
     const player = this.getPlayer(event.userId);
     if (!player) {
       this.rewardManager.rejectRedeem(event);
-      const rewardName = this.getRewardName(requiredRewards.changeCharacterType);
+      const addRewardName = this.getRewardName(requiredRewards.add);
+      const typeRewardName = this.getRewardName(requiredRewards.changeCharacterType);
       throw new ChattableError(
-        `@${event.userDisplayName} Please redeem "${rewardName}" first before doing the character command. ` +
+        `@${event.userDisplayName} Please redeem "${addRewardName}" first before redeeming "${typeRewardName}". ` +
         `Refunding ${this.settings.channelPointsName}.`,
         `PlayerManager.onRedeemCharacter: ${event.userDisplayName} (id: ${event.userId}) is not in player data.`
       );
     }
     if (!player.alive) {
       this.rewardManager.rejectRedeem(event);
-      const rewardName = this.getRewardName(requiredRewards.changeCharacterType);
+      const typeRewardName = this.getRewardName(requiredRewards.changeCharacterType);
+      const addRewardName = this.getRewardName(requiredRewards.add);
       throw new ChattableError(
-        `@${player.userDisplayName} Please redeem "${rewardName}" first before doing the character command. ` +
+        `@${player.userDisplayName} Please redeem "${addRewardName}" first before redeeming "${typeRewardName}". ` +
         `Refunding ${this.settings.channelPointsName}.`,
         `PlayerManager.onRedeemCharacter: ${player.userDisplayName} is not in player data.`
       );
@@ -321,6 +330,80 @@ class PlayerManager {
 
   async onCommandAllCharacters(chatBotManager, channel, user, message, parts) {
     chatBotManager.say(`@${user} Characters: ${characterTypes.join(', ')}`);
+  }
+
+  async onRedeemRunAround(event) {
+    const player = this.getPlayer(event.userId);
+    if (!player) {
+      this.rewardManager.rejectRedeem(event);
+      const addRewardName = this.getRewardName(requiredRewards.add);
+      const runRewardName = this.getRewardName(requiredRewards.runAround);
+      throw new ChattableError(
+        `@${event.userDisplayName} Please redeem "${addRewardName}" first before redeeming "${runRewardName}". ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `PlayerManager.onRedeemRunAround: ${event.userDisplayName} (id: ${event.userId}) is not in player data.`
+      );
+    }
+    if (!player.alive) {
+      this.rewardManager.rejectRedeem(event);
+      const addRewardName = this.getRewardName(requiredRewards.add);
+      const runRewardName = this.getRewardName(requiredRewards.runAround);
+      throw new ChattableError(
+        `@${player.userDisplayName} Please redeem "${addRewardName}" first before redeeming "${runRewardName}". ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `PlayerManager.onRedeemRunAround: ${player.userDisplayName} is not in player data.`
+      );
+    }
+    if (this.isInBattle(player.userId)) {
+      this.rewardManager.rejectRedeem(event);
+      const runRewardName = this.getRewardName(requiredRewards.runAround);
+      throw new ChattableError(
+        `@${player.userDisplayName} You are currently in a battle. Please wait until after the battle to redeem "${runRewardName}" ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `PlayerManager.onRedeemRunAround: ${player.userDisplayName} is currently in battle.`
+      );
+    }
+
+    this.rewardManager.approveRedeem(event);
+    this.socketManager.overlayEmit(appActions.runPlayer, player.userId);
+    logger(`PlayerManager.onRedeemRunAround: ${player.userDisplayName} redeemed to run around.`);
+  }
+
+  async onRedeemDance(event) {
+    const player = this.getPlayer(event.userId);
+    if (!player) {
+      this.rewardManager.rejectRedeem(event);
+      const addRewardName = this.getRewardName(requiredRewards.add);
+      const danceRewardName = this.getRewardName(requiredRewards.dance);
+      throw new ChattableError(
+        `@${event.userDisplayName} Please redeem "${addRewardName}" first before redeeming "${danceRewardName}". ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `PlayerManager.onRedeemDance: ${event.userDisplayName} (id: ${event.userId}) is not in player data.`
+      );
+    }
+    if (!player.alive) {
+      this.rewardManager.rejectRedeem(event);
+      const addRewardName = this.getRewardName(requiredRewards.add);
+      const danceRewardName = this.getRewardName(requiredRewards.dance);
+      throw new ChattableError(
+        `@${player.userDisplayName} Please redeem "${addRewardName}" first before redeeming "${danceRewardName}". ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `PlayerManager.onRedeemDance: ${player.userDisplayName} is not in player data.`
+      );
+    }
+    if (this.isInBattle(player.userId)) {
+      this.rewardManager.rejectRedeem(event);
+      const danceRewardName = this.getRewardName(requiredRewards.dance);
+      throw new ChattableError(
+        `@${player.userDisplayName} You are currently in a battle. Please wait until after the battle to redeem "${danceRewardName}". ` +
+        `Refunding ${this.settings.channelPointsName}.`,
+        `PlayerManager.onRedeemDance: ${player.userDisplayName} is currently in battle.`
+      );
+    }
+
+    this.rewardManager.approveRedeem(event);
+    this.socketManager.overlayEmit(appActions.dancePlayer, player.userId);
+    logger(`PlayerManager.onRedeemDance: ${player.userDisplayName} redeemed to dance.`);
   }
 
   getGenderMethod() {
@@ -526,6 +609,44 @@ class PlayerManager {
     await this.save();
     this.socketManager.controlEmit(appActions.updateCharTypeMethod, charTypeMethod);
     logger(`Changed charTypeMethod to ${charTypeMethod}`);
+  }
+  async onSocketRunAround(userId) {
+    const player = this.getPlayer(userId);
+    if (!player) {
+      throw new ExpectedError(`onSocketRunAround: "${userId}" not in player data`);
+    }
+    if (!player.alive) {
+      throw new ExpectedError(`onSocketRunAround: "${player.userDisplayName}" not in arena`);
+    }
+    const date = new Date();
+    this.onRedeemRunAround({
+      id: `debug-${userId}-${date.getTime()}`,
+      rewardId: this.rewardManager.getRewardIdFromAction(requiredRewards.runAround.key),
+      userId,
+      userName: player.userName,
+      userDisplayName: player.userDisplayName,
+      input: null,
+      debug: true
+    });
+  }
+  async onSocketDance(userId) {
+    const player = this.getPlayer(userId);
+    if (!player) {
+      throw new ExpectedError(`onSocketDance: "${userId}" not in player data`);
+    }
+    if (!player.alive) {
+      throw new ExpectedError(`onSocketDance: "${player.userDisplayName}" not in arena`);
+    }
+    const date = new Date();
+    this.onRedeemDance({
+      id: `debug-${userId}-${date.getTime()}`,
+      rewardId: this.rewardManager.getRewardIdFromAction(requiredRewards.dance.key),
+      userId,
+      userName: player.userName,
+      userDisplayName: player.userDisplayName,
+      input: null,
+      debug: true
+    });
   }
 }
 

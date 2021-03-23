@@ -62,6 +62,8 @@ class ServerApp {
       this.rewardManager, this.playerManager, this.chatBotManager
     );
 
+    this.playerManager.isInBattle = this.battleManager.isInBattle.bind(this.battleManager);
+
     setChattableLogger(this.chatBotManager.say.bind(this.chatBotManager));
   }
   async init() {

@@ -106,7 +106,7 @@ class PlayerChar extends SpriteApplier {
     this.anim = null;
     this.position = new Vec2(200, 200);
     this.speed = 200; // px per second
-    this.dashSpeed = 300; // px per second
+    this.dashSpeed = 600; // px per second
     this.hitSpeed = 150; // px per second
     this.spawnSpeed = 300; // px per second
     this.weapon = false;
@@ -402,6 +402,20 @@ class PlayerChar extends SpriteApplier {
 
   pose(delta, duration) {
     this.addAction({ type: actions.pose, delta, duration });
+    return this;
+  }
+  runAround(startPoint, endPoint) {
+    for (let i = 0; i < 10; i += 1) {
+      this.dashTo(randPos(startPoint, endPoint));
+    }
+    return this;
+  }
+  dance(startPoint, endPoint) {
+    this.pose(-1, 500).pose(1, 500).pose(-1, 500)
+      .dashTo(randPos(startPoint, endPoint))
+      .pose(-1, 500).pose(1, 500).pose(-1, 500)
+      .dashTo(randPos(startPoint, endPoint))
+      .pose(-1, 500).pose(1, 500).pose(-1, 500);
     return this;
   }
 

@@ -67,6 +67,8 @@ class WidgetPage extends React.Component {
     SocketBridge.socket.on(appActions.addPlayer, this.onAddPlayer.bind(this));
     SocketBridge.socket.on(appActions.updatePlayer, this.onUpdatePlayer.bind(this));
     SocketBridge.socket.on(appActions.removePlayer, this.onRemovePlayer.bind(this));
+    SocketBridge.socket.on(appActions.runPlayer, this.onRunAround.bind(this));
+    SocketBridge.socket.on(appActions.dancePlayer, this.onDance.bind(this));
     window.addEventListener('resize', this.onResize.bind(this), false);
   }
 
@@ -261,6 +263,30 @@ class WidgetPage extends React.Component {
       delete this.userIdRefMap[player.userId]; // is this ok to do this here?
       return { playerChars };
     });
+  }
+
+  onRunAround(userId) {
+    if (!this.userIdRefMap[userId]) {
+      console.error(`WidgetPage.onRunAround: ${userId} not in userIdRefMap`);
+      return;
+    }
+    if (!this.userIdRefMap[userId].current) {
+      console.error(`WidgetPage.onRunAround: ${userId} is not mapped to a PlayerChar`);
+      return;
+    }
+    this.userIdRefMap[userId].current.runAround(this.state.randSegStart, this.state.randSegEnd);
+  }
+
+  onDance(userId) {
+    if (!this.userIdRefMap[userId]) {
+      console.error(`WidgetPage.onDance: ${userId} not in userIdRefMap`);
+      return;
+    }
+    if (!this.userIdRefMap[userId].current) {
+      console.error(`WidgetPage.onDance: ${userId} is not mapped to a PlayerChar`);
+      return;
+    }
+    this.userIdRefMap[userId].current.dance(this.state.randSegStart, this.state.randSegEnd);
   }
 
   startFX(fx, position, flipped = false, autoplay = true) {

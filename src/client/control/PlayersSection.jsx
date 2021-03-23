@@ -61,6 +61,12 @@ export function PlayersSection(props) {
               })}>
                 Change Gender
               </button>
+              <button onClick={() => SocketBridge.socket.emit(appActions.runPlayer, player.userId)}>
+                Run Around
+              </button>
+              <button onClick={() => SocketBridge.socket.emit(appActions.dancePlayer, player.userId)}>
+                Dance
+              </button>
               <button onClick={() => SocketBridge.socket.emit(appActions.updatePlayer, player.userId, {
                 weapon: !player.weapon
               })}>
