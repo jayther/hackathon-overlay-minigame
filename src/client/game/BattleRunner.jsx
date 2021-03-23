@@ -135,9 +135,11 @@ class BattleRunner {
       // 
       let damage, hitMarkerText, attackType, rand = Math.random();
       let damageBoost = attacker.playerChar.weapon ? weaponBoost : 0;
+      let crit = false;
       if (rand < 0.1) {
         damage = betweenInt(300, 325) + damageBoost;
         hitMarkerText = `${damage}!!`;
+        crit = true;
         attackType = attacker.playerChar.weapon ? attackTypes.weapon : attackTypes.normal;
       } else if (rand < 0.15) {
         damage = 0;
@@ -169,9 +171,23 @@ class BattleRunner {
         hitMarkerDelay = missDelay + hitDelay;
       } else { // hit
         if (attackType === attackTypes.normal) {
-          attacker.playerChar.attack();
+          if (crit) {
+            const dashTo = defender.playerChar.position.copy();
+            dashTo.x -= attackPosDelta; // behind defender
+            attacker.playerChar.attackCritTo(dashTo);
+            attacker.playerChar.dashTo(attackPos);
+          } else {
+            attacker.playerChar.attack();
+          }
         } else if (attackType === attackTypes.weapon) {
-          attacker.playerChar.attackWeapon();
+          if (crit) {
+            const dashTo = defender.playerChar.position.copy();
+            dashTo.x -= attackPosDelta; // behind defender
+            attacker.playerChar.attackWeaponCritTo(dashTo);
+            attacker.playerChar.dashTo(attackPos);
+          } else {
+            attacker.playerChar.attackWeapon();
+          }
         } else if (attackType === attackTypes.final) {
           attacker.playerChar.attackFinal();
         }

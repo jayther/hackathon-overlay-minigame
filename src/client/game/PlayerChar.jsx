@@ -43,6 +43,8 @@ const actions = {
   dash: 'dash',
   attack: 'attack',
   attackWeapon: 'attackWeapon',
+  attackCrit: 'attackCrit',
+  attackWeaponCrit: 'attackWeaponCrit',
   attackMiss: 'attackMiss',
   attackFinal: 'attackFinal',
   hit: 'hit',
@@ -56,6 +58,8 @@ const actions = {
 const actionSoundMap = {
   attack: 'punch',
   attackWeapon: 'sword',
+  attackCrit: 'punch',
+  attackWeaponCrit: 'sword',
   attackMiss: 'miss',
   attackFinal: 'finalHit',
   spawn: 'jump'
@@ -281,6 +285,13 @@ class PlayerChar extends SpriteApplier {
       case actions.attackFinal:
         this.setAnimState('attacks', action.type);
         break;
+      case actions.attackCrit:
+      case actions.attackWeaponCrit:
+        this.cssTransitionMoveTo(
+          action.position, this.dashSpeed, 'dash',
+          false, action.type
+        );
+        break;
       case actions.hit:
         this.hit(action.damage);
         this.cssTransitionMoveTo(action.position, this.hitSpeed, 'hit', true);
@@ -383,6 +394,15 @@ class PlayerChar extends SpriteApplier {
   attackFinal() {
     this.addAction({ type: actions.attackFinal });
     return this;
+  }
+
+  attackCritTo(position) {
+    this.addAction({ type: actions.attackCrit, position });
+    return this;
+  }
+
+  attackWeaponCritTo(position) {
+    this.addAction({ type: actions.attackWeaponCrit, position });
   }
 
   delay(duration) {
