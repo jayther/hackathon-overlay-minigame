@@ -212,7 +212,7 @@ class DebugCharPage extends React.Component {
 
   adjustAnim(dx, dy) {
     this.setState(state => {
-      if (state.anim.animSpriteIndex === -1) {
+      if (state.animSpriteIndex === -1) {
         state.anim.sprites.forEach(sprite => {
           sprite.spriteSourceSize.x += dx;
           sprite.spriteSourceSize.y += dy;
