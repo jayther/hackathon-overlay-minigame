@@ -574,6 +574,17 @@ class PlayerChar extends SpriteApplier {
   }
 
   render() {
+    let playerLabel = this.props.userDisplayName;
+    let playerSeparator = '';
+    let playerStats = '';
+    if (this.weapon) {
+      playerSeparator = <br />;
+      playerStats += ' (W)';
+    }
+    if (this.props.winStreak > 0) {
+      playerSeparator = <br />;
+      playerStats += ` (${this.props.winStreak})`;
+    }
     return (
       <div ref={this.containerRef} className="playerchar-con">
         { this.state.showHp ? (
@@ -586,12 +597,15 @@ class PlayerChar extends SpriteApplier {
         }
         <div className="playerchar-label-con">
           <OutlinedText className="playerchar-label"
-            text={this.props.userDisplayName}
             style={{
               zIndex: this.props.index,
               top: `${this.state.labelY}px`
             }}
-          />
+          >
+            {playerLabel}
+            {playerSeparator}
+            {playerStats}
+          </OutlinedText>
         </div>
         <div ref={this.spriteRef} className="playerchar"></div>
       </div>
