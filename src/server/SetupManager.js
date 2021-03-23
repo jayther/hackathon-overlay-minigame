@@ -180,21 +180,28 @@ class SetupManager {
     }
   }
 
-  areTokensReady() {
+  areUserTokensReady() {
     return !!(
       this.files.userTokens &&
       this.files.userTokens.data &&
-      this.files.userTokens.data.accessToken &&
+      this.files.userTokens.data.accessToken
+    );
+  }
+
+  areChatBotTokensReady() {
+    return !!(
       this.files.chatBotTokens &&
       this.files.chatBotTokens.data &&
       this.files.chatBotTokens.data.accessToken
     );
   }
 
+  areTokensReady() {
+    return this.areUserTokensReady() && this.areChatBotTokensReady();
+  }
+
   maybeEmitSetupAuthorized() {
-    if (this.areTokensReady()) {
-      globalEmitter.emit(socketEvents.setupAuthorized);
-    }
+    globalEmitter.emit(socketEvents.setupAuthorized);
   }
 
   async fetchTokens(req, resp) {

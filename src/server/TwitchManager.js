@@ -66,10 +66,10 @@ class TwitchManager {
 
   async startUserClient() {
     if (!this.isAppReady()) {
-      throw new ExpectedError('Cannot start twitch: no app secrets');
+      throw new ExpectedError(`Cannot start twitch: no app secrets (open http://localhost:${this.settings.webPort}/ in browser)`);
     }
     if (!this.areUserTokensReady()) {
-      throw new ExpectedError('Cannot start twitch: no user tokens');
+      throw new ExpectedError(`Cannot start twitch: no user tokens (open http://localhost:${this.settings.webPort}/ in browser)`);
     }
     if (this.userClient) {
       logger('userClient already started');
@@ -107,10 +107,11 @@ class TwitchManager {
   
   async startAppClient() {
     if (!this.isAppReady()) {
-      throw new ExpectedError('Cannot start twitch: no app secrets');
+      throw new ExpectedError(`Cannot start twitch: no app secrets (open http://localhost:${this.settings.webPort}/ in browser)`);
     }
     if (this.appClient) {
-      throw new ExpectedError('appClient already started');
+      logger('appClient already started');
+      return;
     }
     logger('Starting twitch app...');
     const authProvider = new ClientCredentialsAuthProvider(this.files.appSecrets.data.clientId, this.files.appSecrets.data.clientSecret);

@@ -43,10 +43,10 @@ class ChatBotManager {
 
   async startChatBot() {
     if (!this.isAppReady()) {
-      throw new ExpectedError('Cannot start twitch: no app secrets');
+      throw new ExpectedError(`Cannot start twitch: no app secrets (open http://localhost:${this.settings.webPort}/ in browser)`);
     }
     if (!this.areChatBotTokensReady()) {
-      throw new ExpectedError('Cannot start twitch: no chatbot tokens');
+      throw new ExpectedError(`Cannot start twitch: no chatbot tokens (open http://localhost:${this.settings.webPort}/ in browser)`);
     }
     if (this.chatClient) {
       logger('chatClient already started');
