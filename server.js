@@ -90,6 +90,7 @@ class ServerApp {
       await this.twitchManager.init();
       await this.chatBotManager.init();
       await this.rewardManager.init();
+      await this.battleManager.init();
       logger('ServerApp ready');
     } catch (e) {
       maybeExpectedError(e);
@@ -102,6 +103,7 @@ class ServerApp {
       await this.twitchManager.init();
       await this.chatBotManager.init();
       await this.rewardManager.init();
+      await this.battleManager.init();
       logger('ServerApp ready');
     } catch (e) {
       maybeExpectedError(e);

@@ -8,6 +8,7 @@ const { bindAndLog } = require('./utils/LogUtils');
 const { ChattableError, ExpectedError } = require('./errors');
 const requiredRewards = require('../shared/RequiredRewards');
 const { applyKnownProps } = require('../shared/ObjectUtils');
+const { createUpdateEvent } = require('./utils/RewardUtils');
 
 const defaultBattleSettings = {
   delayBetweenAttacks: 0
@@ -17,6 +18,11 @@ const deferredSaveDelay = 3000; // ms
 
 function filterAlivePlayers(player) {
   return player.alive;
+}
+
+function sortByRedemptionDate(a, b) {
+  
+  return a.redemptionDate.getTime() - b.redemptionDate.getTime();
 }
 
 class BattleManager {
@@ -40,7 +46,79 @@ class BattleManager {
     globalEmitter.on(socketEvents.controlAdded, this.onControlAdded, this);
     globalEmitter.on(requiredRewards.duel.eventName, bindAndLog(this.requestBattle, this));
     globalEmitter.on(requiredRewards.duelSomeone.eventName, bindAndLog(this.requestSpecificBattle, this));
+    globalEmitter.on(
+      createUpdateEvent(requiredRewards.duel.eventName),
+      bindAndLog(this.updateBattle, this)
+    );
+    globalEmitter.on(
+      createUpdateEvent(requiredRewards.duelSomeone.eventName),
+      bindAndLog(this.updateSpecificBattle, this)
+    );
     globalEmitter.on(requiredRewards.weaponize.eventName, bindAndLog(this.weaponize, this));
+  }
+
+  async init() {
+    // revive battle queue from redeems
+    logger('Reviving battle queue from redeems...');
+    let redeems = [];
+    const duelRewardId = this.rewardManager.getRewardIdFromAction(requiredRewards.duel.key);
+    if (duelRewardId) {
+      const duelRedeems = await this.rewardManager.getRedeemsFromRewardId(duelRewardId);
+      redeems = redeems.concat(duelRedeems);
+    }
+    const duelSpecificRewardId = this.rewardManager.getRewardIdFromAction(requiredRewards.duelSomeone.key);
+    if (duelSpecificRewardId) {
+      const duelSpecificRedeems = await this.rewardManager.getRedeemsFromRewardId(duelSpecificRewardId);
+      redeems = redeems.concat(duelSpecificRedeems);
+    }
+    // adding in order of redemption date
+    redeems.sort(sortByRedemptionDate);
+
+    // add each redeem
+    let revived = 0;
+    for (const redeem of redeems) {
+      let target = null;
+      // duel specific. If target is not alive, we'll skip
+      if (duelSpecificRewardId && redeem.rewardId === duelSpecificRewardId) {
+        let input = redeem.input || redeem.userInput || null;
+        if (!input || input.length === 0) {
+          logger(`${redeem.id} missing input`);
+          continue;
+        }
+        let targetUserName = input.trim().toLowerCase();
+        if (targetUserName.charAt(0) === '@') {
+          targetUserName = targetUserName.substring(1);
+        }
+        const targetPlayer = this.playerManager.getPlayerFromUserName(targetUserName);
+        if (!targetPlayer) {
+          logger(`${targetUserName} not in player data`);
+          continue;
+        }
+        if (!targetPlayer.alive) {
+          logger(`${targetUserName} not alive`);
+          continue;
+        }
+        target = {
+          userId: targetPlayer.userId,
+          userName: targetPlayer.userName,
+          userDisplayName: targetPlayer.userDisplayName
+        };
+      }
+
+      await this.addBattle({
+        id: redeem.id,
+        rewardId: redeem.rewardId,
+        userId: redeem.userId,
+        userName: redeem.userName,
+        userDisplayName: redeem.userDisplayName,
+        target,
+        debug: redeem.debug || false
+      });
+      revived += 1;
+    }
+    this.socketManager.allEmit(appActions.updateBattleQueue, this.battleQueue);
+    logger(`Revived ${revived} battles`);
+    logger('BattleManager ready');
   }
 
   onOverlayAdded(socket) {
@@ -165,6 +243,14 @@ class BattleManager {
       debug: event.debug || false
     });
     logger(`requestSpecificBattle: "${player.userDisplayName}" requested a specific duel with "${target.userDisplayName}"`);
+  }
+
+  async updateBattle(event) {
+    // TODO?
+  }
+
+  async updateSpecificBattle(event) {
+    // TODO?
   }
 
   async weaponize(event) {

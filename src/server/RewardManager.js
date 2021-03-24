@@ -1,6 +1,7 @@
 const requiredRewards = require('../shared/RequiredRewards');
 const appActions = require('../shared/AppActions');
 const { bindAndLog } = require('./utils/LogUtils');
+const { createUpdateEvent } = require('./utils/RewardUtils');
 const { waitForMS } = require('../shared/PromiseUtils');
 
 const { updateRedeemDelay } = require('./consts');
@@ -126,11 +127,16 @@ class RewardManager {
     if (!immediate) {
       await waitForMS(updateRedeemDelay);
     }
-    return await this.twitchManager.userClient
-      .helix.channelPoints
-      .updateRedemptionStatusByIds(
-        this.twitchManager.user.id, rewardId, ids, useStatus
-      );
+    try {
+      return await this.twitchManager.userClient
+        .helix.channelPoints
+        .updateRedemptionStatusByIds(
+          this.twitchManager.user.id, rewardId, ids, useStatus
+        );
+    } catch (e) {
+      logger(`RewardManager.updateRedeem:`, e.message);
+      return null;
+    }
   }
 
   async approveRedeem(event, immediate = false) {
@@ -212,6 +218,13 @@ class RewardManager {
         break;
       }
     }
+    const rewardKey = this.files.rewardMap.data[event.rewardId];
+    if (rewardKey && requiredRewards[rewardKey]) {
+      globalEmitter.emit(
+        createUpdateEvent(requiredRewards[rewardKey].eventName),
+        event
+      );
+    }
     this.socketManager.allEmit(appActions.updateRedeem, payload);
   }
 
@@ -253,10 +266,22 @@ class RewardManager {
     return this.redeems.map(redeemToObj);
   }
 
+  async getRedeemsFromRewardId(rewardId) {
+    const redeems = await this.twitchManager.userClient
+    .helix.channelPoints
+    .getRedemptionsForBroadcaster(this.twitchManager.user.id, rewardId, 'UNFULFILLED', {});
+    return redeems.data;
+  }
+
   async updateRewardById(rewardId, data) {
-    return await this.twitchManager.userClient
-      .helix.channelPoints
-      .updateCustomReward(this.twitchManager.user.id, rewardId, data);
+    try {
+      return await this.twitchManager.userClient
+        .helix.channelPoints
+        .updateCustomReward(this.twitchManager.user.id, rewardId, data);
+    } catch (e) {
+      logger('RewardManager.updateRewardById:', e);
+      return null;
+    }
   }
 
   async setEnabledRewardById(rewardId, isEnabled) {
