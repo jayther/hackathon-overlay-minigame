@@ -22,7 +22,6 @@ const initialState = {
   rewards: [],
   rewardMap: {},
   players: [],
-  debugAutoRefund: false,
   battleQueue: [],
   currentBattle: null,
   winner: null,
@@ -34,6 +33,9 @@ const initialState = {
     pruneAfterBattle: true,
     autoBattle: false,
     autoBattleDelay: 3000
+  },
+  rewardSettings: {
+    autoRefund: false
   }
 };
 
@@ -161,11 +163,6 @@ function reducer(state, action) {
         ...state,
         players: action.value
       };
-    case appActions.updateDebugAutoRefund:
-      return {
-        ...state,
-        debugAutoRefund: !!action.value
-      };
     case appActions.updateBattleQueue:
       if (!action.value) {
         throw new Error('App action "updatebattlequeue" requires a value');
@@ -226,6 +223,14 @@ function reducer(state, action) {
       return {
         ...state,
         battleSettings: action.value
+      };
+    case appActions.updateRewardSettings:
+      if (!action.value) {
+        throw new Error(`App action "${action.type}" requires a value`);
+      }
+      return {
+        ...state,
+        rewardSettings: action.value
       };
     case appActions.runPlayer:
     case appActions.dancePlayer:

@@ -24,7 +24,8 @@ const {
   rewardMapPath,
   playerDataPath,
   soundSettingsPath,
-  battleSettingsPath
+  battleSettingsPath,
+  rewardSettingsPath
 } = require('./src/server/consts');
 
 class ServerApp {
@@ -37,7 +38,8 @@ class ServerApp {
       rewardMap: new JsonDataFile(rewardMapPath),
       playerData: new JsonDataFile(playerDataPath),
       soundSettings: new JsonDataFile(soundSettingsPath),
-      battleSettings: new JsonDataFile(battleSettingsPath)
+      battleSettings: new JsonDataFile(battleSettingsPath),
+      rewardSettings: new JsonDataFile(rewardSettingsPath)
     };
     this.socketManager = new SocketManager(settings);
     this.setupManager = new SetupManager(

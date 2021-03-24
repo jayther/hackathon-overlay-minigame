@@ -122,6 +122,7 @@ dist
 .playerdata.json
 .soundsettings.json
 .battlesettings.json
+.rewardsettings.json
 
 dist-debug
 src/client/assets/backup

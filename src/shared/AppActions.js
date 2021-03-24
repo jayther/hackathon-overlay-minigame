@@ -18,7 +18,6 @@ module.exports = {
   updatePlayer: 'updateplayer',
   removePlayer: 'removeplayer',
   allPlayers: 'allplayers',
-  updateDebugAutoRefund: 'updatedebugautorefund',
   addDebugPlayer: 'adddebugplayer',
   clearDebugPlayers: 'cleardebugplayers',
   requestBattle: 'requestbattle',
@@ -35,5 +34,6 @@ module.exports = {
   runPlayer: 'runplayer',
   dancePlayer: 'danceplayer',
   updateBattleSettings: 'updatebattlesettings',
-  pruneBattles: 'prunebattles'
+  pruneBattles: 'prunebattles',
+  updateRewardSettings: 'updaterewardsettings'
 };

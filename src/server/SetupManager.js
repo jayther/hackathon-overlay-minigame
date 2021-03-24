@@ -7,6 +7,7 @@ const { bindAndLog } = require('./utils/LogUtils');
 const logger = require('./utils/logger');
 const { defaultPlayer } = require('./PlayerManager');
 const { defaultBattleSettings } = require('./BattleManager');
+const { defaultRewardSettings } = require('./RewardManager');
 const { objToParams } = require('../shared/ObjectUtils');
 
 const { twitchApiScopes, socketEvents } = require('./consts');
@@ -71,6 +72,10 @@ class SetupManager {
     this.files.battleSettings.data = {
       ...defaultBattleSettings,
       ...this.files.battleSettings.data
+    };
+    this.files.rewardSettings.data = {
+      ...defaultRewardSettings,
+      ...this.files.rewardSettings.data
     };
     const players = this.files.playerData.data.players;
     for (let i = 0; i < players.length; i += 1) {

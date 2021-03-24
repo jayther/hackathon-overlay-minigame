@@ -8,6 +8,11 @@ const { updateRedeemDelay } = require('./consts');
 const logger = require('./utils/logger');
 const globalEmitter = require('./utils/GlobalEmitter');
 const { socketEvents } = require('./consts');
+const { applyKnownProps } = require('../shared/ObjectUtils');
+
+const defaultRewardSettings = {
+  autoRefund: false
+};
 
 function rewardToObj(reward) {
   return {
@@ -53,7 +58,6 @@ class RewardManager {
 
     this.rewards = [];
     this.redeems = [];
-    this.debugAutoRefund = false;
     
     globalEmitter.on(socketEvents.overlayAdded, this.onOverlayAdded, this);
     globalEmitter.on(socketEvents.controlAdded, this.onControlAdded, this);
@@ -96,12 +100,12 @@ class RewardManager {
     socket.on(appActions.createReward, bindAndLog(this.onSocketCreateReward, this));
     socket.on(appActions.setRewardToAction, bindAndLog(this.onSocketSetRewardToAction, this));
     socket.on(appActions.createRewardForAction, bindAndLog(this.onSocketCreateRewardForAction, this));
-    socket.on(appActions.updateDebugAutoRefund, bindAndLog(this.onSocketUpdateDebugAutoRefund, this));
+    socket.on(appActions.updateRewardSettings, bindAndLog(this.onSocketUpdateRewardSettings, this));
     socket.emit(appActions.updateEventSubReady, !!this.twitchManager.eventSub);
     socket.emit(appActions.updateRewards, this.getRewardObjs());
     socket.emit(appActions.allRedeems, this.getRedeemObjs());
     socket.emit(appActions.updateRewardMap, this.files.rewardMap.data);
-    socket.emit(appActions.updateDebugAutoRefund, this.debugAutoRefund);
+    socket.emit(appActions.updateRewardSettings, this.files.rewardSettings.data);
   }
 
   /**
@@ -123,7 +127,7 @@ class RewardManager {
       throw new Error('updateRedeem: redeemIds must be string or array of strings');
     }
     const ids = redeemIdsType === 'string' ? [redeemIds] : redeemIds;
-    const useStatus = this.debugAutoRefund ? 'CANCELED' : status;
+    const useStatus = this.files.rewardSettings.data.autoRefund ? 'CANCELED' : status;
     if (!immediate) {
       await waitForMS(updateRedeemDelay);
     }
@@ -296,10 +300,10 @@ class RewardManager {
     this.socketManager.controlEmit(appActions.updateRewardMap, this.files.rewardMap.data);
   }
 
-  async onSocketUpdateDebugAutoRefund(value) {
-    this.debugAutoRefund = value;
-    logger(`Set debugAutoRefund to ${value}`);
-    this.socketManager.controlEmit(appActions.updateDebugAutoRefund, this.debugAutoRefund);
+  async onSocketUpdateRewardSettings(rewardSettings) {
+    applyKnownProps(this.files.rewardSettings.data, rewardSettings);
+    await this.files.rewardSettings.save();
+    this.socketManager.controlEmit(appActions.updateRewardSettings, this.files.rewardSettings.data);
   }
 
   getRewardObjs() {
@@ -334,3 +338,4 @@ class RewardManager {
 }
 
 module.exports = RewardManager;
+module.exports.defaultRewardSettings = defaultRewardSettings;

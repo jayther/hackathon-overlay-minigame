@@ -10,8 +10,10 @@ export function DebugSection(props) {
   }
 
   function onAutoRefundChange(e) {
-    console.log('auto refund change', props.appState.debugAutoRefund, e.target.checked);
-    SocketBridge.socket.emit(appActions.updateDebugAutoRefund, e.target.checked);
+    SocketBridge.socket.emit(appActions.updateRewardSettings, {
+      ...props.appState.rewardSettings,
+      autoRefund: e.target.checked
+    });
   }
 
   function onAddDebugPlayer() {
@@ -29,7 +31,7 @@ export function DebugSection(props) {
         <ul>
           <li><label>
             <input type="checkbox"
-              checked={props.appState.debugAutoRefund}
+              checked={props.appState.rewardSettings.autoRefund}
               onChange={onAutoRefundChange} /> Auto refund
           </label></li>
           <li>
