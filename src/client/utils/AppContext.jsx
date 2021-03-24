@@ -30,7 +30,10 @@ const initialState = {
   charTypeMethod: changeMethods.chat,
   soundVolumes: {},
   battleSettings: {
-    delayBetweenAttacks: 0
+    delayBetweenAttacks: 0,
+    pruneAfterBattle: true,
+    autoBattle: false,
+    autoBattleDelay: 3000
   }
 };
 

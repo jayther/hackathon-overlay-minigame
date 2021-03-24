@@ -12,7 +12,9 @@ const { createUpdateEvent } = require('./utils/RewardUtils');
 
 const defaultBattleSettings = {
   delayBetweenAttacks: 0,
-  pruneAfterBattle: true
+  pruneAfterBattle: true,
+  autoBattle: false,
+  autoBattleDelay: 3000 //ms
 };
 
 const deferredSaveDelay = 3000; // ms
@@ -40,6 +42,7 @@ class BattleManager {
     this.chatBotManager = chatBotManager;
 
     this.deferredSaveId = -1;
+    this.autoBattleId = -1;
 
     this.currentBattle = null;
     this.battleQueue = [];
@@ -120,6 +123,7 @@ class BattleManager {
     this.socketManager.allEmit(appActions.updateBattleQueue, this.battleQueue);
     logger(`Revived ${revived} battles`);
     logger('BattleManager ready');
+    this.maybeAutoBattleStart();
   }
 
   onOverlayAdded(socket) {
@@ -303,11 +307,12 @@ class BattleManager {
   async addBattle(battle) {
     this.battleQueue.push(battle);
     this.socketManager.controlEmit(appActions.updateBattleQueue, this.battleQueue);
+    this.maybeAutoBattleStart();
   }
 
   async startBattle(eventId) {
     if (this.currentBattle) {
-      throw new ExpectedError(`startBattle: Cannot start battle for "${player.userDisplayName}", battle in progress`);
+      throw new ExpectedError(`startBattle: Cannot start battle for "${event.userDisplayName}", battle in progress`);
     }
 
     const eventIndex = this.battleQueue.findIndex(e => e.id === eventId);
@@ -399,6 +404,78 @@ class BattleManager {
     if (this.files.battleSettings.data.pruneAfterBattle) {
       await this.pruneBattles();
     }
+    if (this.files.battleSettings.data.autoBattle) {
+      this.autoBattleDelayedCheck();
+    }
+  }
+
+  maybeAutoBattleStart() {
+    if (this.files.battleSettings.data.autoBattle) {
+      this.autoBattleStart();
+    } else {
+      this.autoBattleStop();
+    }
+  }
+
+  autoBattleStart() {
+    this.autoBattleStop();
+    this.autoBattleDelayedCheck();
+  }
+
+  autoBattleStop() {
+    if (this.autoBattleId !== -1) {
+      clearTimeout(this.autoBattleId);
+      this.autoBattleId = -1;
+    }
+  }
+
+  autoBattleCheck() {
+    if (!this.files.battleSettings.data.autoBattle) {
+      return;
+    }
+    if (this.currentBattle) {
+      return;
+    }
+    if (this.playerManager.getPlayerCount() <= 1) {
+      logger('autoBattleCheck: one or no players are alive');
+      return;
+    }
+    // find a viable event
+    let useEvent = null;
+    for (const event of this.battleQueue) {
+      const player = this.playerManager.getPlayer(event.userId);
+      if (!player) {
+        continue;
+      }
+      if (!player.alive) {
+        continue;
+      }
+      if (event.target) { // duelSomeone
+        const targetPlayer = this.playerManager.getPlayer(event.target.userId);
+        if (!targetPlayer) {
+          continue;
+        }
+        if (!targetPlayer.alive) {
+          continue;
+        }
+      }
+      useEvent = event;
+      break;
+    }
+    if (useEvent) {
+      logger('autoBattleCheck: auto starting battle');
+      this.startBattle(useEvent.id);
+    } else {
+      logger('autoBattleCheck: no viable battle');
+    }
+    // no event, do nothing
+  }
+
+  autoBattleDelayedCheck() {
+    this.autoBattleId = setTimeout(() => {
+      this.autoBattleId = -1;
+      this.autoBattleCheck();
+    }, this.files.battleSettings.data.autoBattleDelay);
   }
 
   async pruneBattles() {
@@ -483,6 +560,7 @@ class BattleManager {
     applyKnownProps(this.files.battleSettings.data, battleSettings);
     this.deferredSave();
     this.socketManager.allEmit(appActions.updateBattleSettings, this.files.battleSettings.data);
+    this.maybeAutoBattleStart();
   }
 
   async onSocketPruneBattles() {

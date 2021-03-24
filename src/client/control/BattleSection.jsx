@@ -79,6 +79,31 @@ export function BattleSection(props) {
               checked={props.battleSettings.pruneAfterBattle}
             /></td>
           </tr>
+          <tr>
+            <td>Auto start battles</td>
+            <td><input
+              type="checkbox"
+              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+                ...props.battleSettings,
+                autoBattle: e.target.checked
+              })}
+              checked={props.battleSettings.autoBattle}
+            /></td>
+          </tr>
+          <tr>
+            <td>Auto start battle delay</td>
+            <td><input
+              type="number"
+              min="0"
+              step="1"
+              pattern="[0-9]+"
+              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+                ...props.battleSettings,
+                autoBattleDelay: parseInt(e.target.value, 10)
+              })}
+              value={props.battleSettings.autoBattleDelay}
+            />ms</td>
+          </tr>
         </tbody>
       </table>
     </div>

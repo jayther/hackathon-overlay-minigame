@@ -440,6 +440,10 @@ class PlayerManager {
     return this.files.playerData.data.players.map(player => player.userId);
   }
 
+  getPlayerCount() {
+    return this.files.playerData.data.players.length;
+  }
+
   createPlayerMap() {
     const map = {};
     this.files.playerData.data.players.forEach(player => map[player.userId] = player);
