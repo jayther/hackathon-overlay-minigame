@@ -230,7 +230,7 @@ class BattleRunner {
     }
   }
   async leavingArena() {
-    this.music.fade(1, 0, 2000); // 1 to 0 in 2 seconds
+    this.music.fade(this.music.volume(), 0, 2000); // 1 to 0 in 2 seconds
     this.music.once('fade', () => {
       this.music.stop();
     });
