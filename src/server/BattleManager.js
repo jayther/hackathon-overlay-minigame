@@ -11,7 +11,8 @@ const { applyKnownProps } = require('../shared/ObjectUtils');
 const { createUpdateEvent } = require('./utils/RewardUtils');
 
 const defaultBattleSettings = {
-  delayBetweenAttacks: 0
+  delayBetweenAttacks: 0,
+  pruneAfterBattle: true
 };
 
 const deferredSaveDelay = 3000; // ms
@@ -132,6 +133,7 @@ class BattleManager {
     socket.on(appActions.cancelBattle, bindAndLog(this.cancelBattle, this));
     socket.on(appActions.requestBattle, bindAndLog(this.onSocketRequestBattle, this));
     socket.on(appActions.updateBattleSettings, bindAndLog(this.onSocketUpdateBattleSettings, this));
+    socket.on(appActions.pruneBattles, bindAndLog(this.onSocketPruneBattles, this));
     socket.emit(appActions.updateBattle, this.currentBattle);
     socket.emit(appActions.updateBattleQueue, this.battleQueue);
     socket.emit(appActions.updateBattleSettings, this.files.battleSettings.data);
@@ -361,7 +363,7 @@ class BattleManager {
       this.chatBotManager.say(`Cancelling duel request from ${event.userDisplayName}. Refunding ${this.settings.channelPointsName}.`);
     }
     this.socketManager.controlEmit(appActions.updateBattleQueue, this.battleQueue);
-    logger(`cancelBattle: Cancelled a duel request from "${event.userDisplayName}"`)
+    logger(`cancelBattle: Cancelled a duel request from "${event.userDisplayName}"`);
   }
 
   async finishBattle(winnerUserId, loserUserId) {
@@ -394,6 +396,46 @@ class BattleManager {
     this.socketManager.allEmit(appActions.updateBattle, this.currentBattle);
     this.socketManager.allEmit(appActions.updatePlayer, winner);
     this.socketManager.allEmit(appActions.removePlayer, loser);
+    if (this.files.battleSettings.data.pruneAfterBattle) {
+      await this.pruneBattles();
+    }
+  }
+
+  async pruneBattles() {
+    const playerMap = this.playerManager.createPlayerMap();
+    const indexesToRemove = [];
+    const playersRemovedMap = {};
+    for (let i = 0; i < this.battleQueue.length; i += 1) {
+      const event = this.battleQueue[i];
+      const player = playerMap[event.userId];
+      const targetPlayer = event.target ? playerMap[event.target.userId] : null;
+      // could put all of this in one big if, but this seems neater
+      if (targetPlayer && !targetPlayer.alive) {
+        indexesToRemove.push(i);
+        playersRemovedMap[targetPlayer.userDisplayName] = targetPlayer;
+      } else if (player && !player.alive) {
+        indexesToRemove.push(i);
+        playersRemovedMap[player.userDisplayName] = player;
+      } else if (!player) {
+        indexesToRemove.push(i);
+      }
+    }
+    const eventsToReject = [];
+    for (let i = indexesToRemove.length - 1; i >= 0; i -= 1) {
+      const index = indexesToRemove[i];
+      const event = this.battleQueue[index];
+      eventsToReject.push(event);
+      this.battleQueue.splice(index, 1);
+    }
+    const playersRemoved = Object.keys(playersRemovedMap);
+    if (indexesToRemove.length > 0) {
+      logger(`Pruned ${indexesToRemove.length} battles involving ${playersRemoved.join(', ')}.`);
+      this.chatBotManager.say(`Cancelling duel requests from involving ${playersRemoved.join(', ')}. Refunding ${this.settings.channelPointsName}.`);
+    } else {
+      logger(`Pruned 0 battles.`);
+    }
+    await this.rewardManager.rejectRedeemsMulti(eventsToReject);
+    this.socketManager.allEmit(appActions.updateBattleQueue, this.battleQueue);
   }
 
   async onSocketRequestBattle(userId, targetUserId = null) {
@@ -441,6 +483,10 @@ class BattleManager {
     applyKnownProps(this.files.battleSettings.data, battleSettings);
     this.deferredSave();
     this.socketManager.allEmit(appActions.updateBattleSettings, this.files.battleSettings.data);
+  }
+
+  async onSocketPruneBattles() {
+    await this.pruneBattles();
   }
 
   deferredSave() {

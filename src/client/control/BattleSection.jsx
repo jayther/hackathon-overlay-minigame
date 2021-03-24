@@ -46,6 +46,11 @@ export function BattleSection(props) {
             )}
         </tbody>
       </table>
+      <div>
+        <button onClick={() => SocketBridge.socket.emit(appActions.pruneBattles)}>
+          Prune battles
+        </button> (Remove battles involving players not in game)
+      </div>
       <h3>Battle Settings</h3>
       <table>
         <tbody>
@@ -62,6 +67,17 @@ export function BattleSection(props) {
               })}
               value={props.battleSettings.delayBetweenAttacks}
             />ms</td>
+          </tr>
+          <tr>
+            <td>Auto prune after battle</td>
+            <td><input
+              type="checkbox"
+              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+                ...props.battleSettings,
+                pruneAfterBattle: e.target.checked
+              })}
+              checked={props.battleSettings.pruneAfterBattle}
+            /></td>
           </tr>
         </tbody>
       </table>

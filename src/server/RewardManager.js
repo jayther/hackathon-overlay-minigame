@@ -141,16 +141,60 @@ class RewardManager {
 
   async approveRedeem(event, immediate = false) {
     if (event.debug) {
-      return;
+      return [];
     }
     return this.updateRedeem(event.rewardId, event.id, 'FULFILLED', immediate);
   }
 
+  async approveRedeemsMulti(events, immediate = false) {
+    if (!Array.isArray(events)) {
+      throw new Error('RewardManager.approveRedeemsMulti: events (first arg) must be an array of redeems.');
+    }
+    if (events.length === 0) {
+      return [];
+    }
+    const rewardId = events[0].rewardId;
+    for (const event of events) {
+      if (rewardId !== event.rewardId) {
+        throw new Error('RewardManager.approveRedeemsMulti: all events must have the same rewardId.');
+      }
+    }
+    const actualEvents = events.filter(event => !event.debug);
+    if (actualEvents.length === 0) {
+      return [];
+    }
+    const redeemIds = actualEvents.map(event => event.id);
+
+    return this.updateRedeem(rewardId, redeemIds, 'FULFILLED', immediate);
+  }
+
   async rejectRedeem(event, immediate = false) {
     if (event.debug) {
-      return;
+      return [];
     }
     return this.updateRedeem(event.rewardId, event.id, 'CANCELED', immediate);
+  }
+
+  async rejectRedeemsMulti(events, immediate = false) {
+    if (!Array.isArray(events)) {
+      throw new Error('RewardManager.rejectRedeemsMulti: events (first arg) must be an array of redeems.');
+    }
+    if (events.length === 0) {
+      return [];
+    }
+    const rewardId = events[0].rewardId;
+    for (const event of events) {
+      if (rewardId !== event.rewardId) {
+        throw new Error('RewardManager.rejectRedeemsMulti: all events must have the same rewardId.');
+      }
+    }
+    const actualEvents = events.filter(event => !event.debug);
+    if (actualEvents.length === 0) {
+      return [];
+    }
+    const redeemIds = actualEvents.map(event => event.id);
+
+    return this.updateRedeem(rewardId, redeemIds, 'CANCELED', immediate);
   }
 
   getRewardIdFromAction(actionKey) {

@@ -34,5 +34,6 @@ module.exports = {
   updateVolumes: 'updatevolumes',
   runPlayer: 'runplayer',
   dancePlayer: 'danceplayer',
-  updateBattleSettings: 'updatebattlesettings'
+  updateBattleSettings: 'updatebattlesettings',
+  pruneBattles: 'prunebattles'
 };

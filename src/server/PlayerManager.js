@@ -432,6 +432,20 @@ class PlayerManager {
     return this.files.playerData.data.players.find(player => userName === player.userName);
   }
 
+  getAllPlayers() {
+    return this.files.playerData.data.players;
+  }
+
+  getAllPlayerIds() {
+    return this.files.playerData.data.players.map(player => player.userId);
+  }
+
+  createPlayerMap() {
+    const map = {};
+    this.files.playerData.data.players.forEach(player => map[player.userId] = player);
+    return map;
+  }
+
   update(idOrObj, playerObj = null) {
     const idOrObjType = typeof idOrObj;
     const playerObjType = typeof playerObj;
