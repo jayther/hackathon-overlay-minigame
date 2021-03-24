@@ -32,7 +32,8 @@ const initialState = {
     delayBetweenAttacks: 0,
     pruneAfterBattle: true,
     autoBattle: false,
-    autoBattleDelay: 3000
+    autoBattleDelay: 3000,
+    controlFromTwitch: false
   },
   rewardSettings: {
     autoRefund: false

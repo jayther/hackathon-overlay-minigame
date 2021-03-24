@@ -14,7 +14,8 @@ const defaultBattleSettings = {
   delayBetweenAttacks: 0,
   pruneAfterBattle: true,
   autoBattle: false,
-  autoBattleDelay: 3000 //ms
+  autoBattleDelay: 3000, //ms
+  controlFromTwitch: false
 };
 
 const deferredSaveDelay = 3000; // ms
@@ -24,7 +25,6 @@ function filterAlivePlayers(player) {
 }
 
 function sortByRedemptionDate(a, b) {
-  
   return a.redemptionDate.getTime() - b.redemptionDate.getTime();
 }
 
@@ -116,7 +116,8 @@ class BattleManager {
         userName: redeem.userName,
         userDisplayName: redeem.userDisplayName,
         target,
-        debug: redeem.debug || false
+        debug: redeem.debug || false,
+        status: redeem.status || 'UNFULFILLED'
       });
       revived += 1;
     }
@@ -179,7 +180,8 @@ class BattleManager {
       userName: event.userName,
       userDisplayName: event.userDisplayName,
       target: null,
-      debug: event.debug || false
+      debug: event.debug || false,
+      status: event.status || 'UNFULFILLED'
     });
     logger(`requestBattle: "${player.userDisplayName}" requested a random duel`);
   }
@@ -246,17 +248,50 @@ class BattleManager {
         userName: target.userName,
         userDisplayName: target.userDisplayName
       },
-      debug: event.debug || false
+      debug: event.debug || false,
+      status: event.stasus || 'UNFULFILLED'
     });
     logger(`requestSpecificBattle: "${player.userDisplayName}" requested a specific duel with "${target.userDisplayName}"`);
   }
 
   async updateBattle(event) {
-    // TODO?
+    const battleIndex = this.battleQueue.findIndex(battle => battle.id === event.id);
+    if (battleIndex === -1) {
+      throw new ExpectedError(`BattleManager.updateBattle: cannot find battle with id ${event.id}`);
+    }
+    const battle = this.battleQueue[battleIndex];
+    battle.status = event.status;
+    logger(`updateBattle: updated battle ${battle.id} to ${event.status}`);
+    if (!this.files.battleSettings.data.controlFromTwitch) {
+      return;
+    }
+    if (event.status.toUpperCase() === 'FULFILLED') {
+      logger('updateBattle: starting battle via twitch');
+      await this.startBattle(battle.id);
+    } else {
+      logger('updateBattle: cancelling battle via twitch');
+      await this.cancelBattle(battle.id);
+    }
   }
 
   async updateSpecificBattle(event) {
-    // TODO?
+    const battleIndex = this.battleQueue.findIndex(battle => battle.id === event.id);
+    if (battleIndex === -1) {
+      throw new ExpectedError(`BattleManager.updateSpecificBattle: cannot find battle with id ${event.id}`);
+    }
+    const battle = this.battleQueue[battleIndex];
+    battle.status = event.status;
+    logger(`updateSpecificBattle: updated battle ${battle.id} to ${event.status}`);
+    if (!this.files.battleSettings.data.controlFromTwitch) {
+      return;
+    }
+    if (event.status.toUpperCase() === 'FULFILLED') {
+      logger('updateSpecificBattle: starting battle via twitch');
+      await this.startBattle(battle.id);
+    } else {
+      logger('updateSpecificBattle: cancelling battle via twitch');
+      await this.cancelBattle(battle.id);
+    }
   }
 
   async weaponize(event) {

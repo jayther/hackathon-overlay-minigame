@@ -104,6 +104,17 @@ export function BattleSection(props) {
               value={props.battleSettings.autoBattleDelay}
             />ms</td>
           </tr>
+          <tr>
+            <td>Control battles from<br />Twitch Rewards Requests Queue</td>
+            <td><input
+              type="checkbox"
+              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+                ...props.battleSettings,
+                controlFromTwitch: e.target.checked
+              })}
+              checked={props.battleSettings.controlFromTwitch}
+            /></td>
+          </tr>
         </tbody>
       </table>
     </div>

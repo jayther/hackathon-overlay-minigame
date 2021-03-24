@@ -147,6 +147,10 @@ class RewardManager {
     if (event.debug) {
       return [];
     }
+    const status = event.status.toUpperCase();
+    if (status === 'CANCELED' || status === 'FULFILLED') {
+      return [];
+    }
     return this.updateRedeem(event.rewardId, event.id, 'FULFILLED', immediate);
   }
 
@@ -163,7 +167,9 @@ class RewardManager {
         throw new Error('RewardManager.approveRedeemsMulti: all events must have the same rewardId.');
       }
     }
-    const actualEvents = events.filter(event => !event.debug);
+    const actualEvents = events.filter(event => !event.debug).filter(
+      event => !event.status || event.status.toUpperCase() === 'UNFULFILLED'
+    );
     if (actualEvents.length === 0) {
       return [];
     }
@@ -174,6 +180,10 @@ class RewardManager {
 
   async rejectRedeem(event, immediate = false) {
     if (event.debug) {
+      return [];
+    }
+    const status = event.status.toUpperCase();
+    if (status === 'CANCELED' || status === 'FULFILLED') {
       return [];
     }
     return this.updateRedeem(event.rewardId, event.id, 'CANCELED', immediate);
@@ -192,7 +202,9 @@ class RewardManager {
         throw new Error('RewardManager.rejectRedeemsMulti: all events must have the same rewardId.');
       }
     }
-    const actualEvents = events.filter(event => !event.debug);
+    const actualEvents = events.filter(event => !event.debug).filter(
+      event => !event.status || event.status.toUpperCase() === 'UNFULFILLED'
+    );
     if (actualEvents.length === 0) {
       return [];
     }
