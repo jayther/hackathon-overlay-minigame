@@ -1,6 +1,8 @@
 import React from 'react';
 import SpriteApplier from '../game/SpriteApplier';
 
+import { spriteScale } from '../game/GameConfig';
+
 const debugSpriteOutlineStyle = {
   outline: '1px solid black',
   position: 'relative',
@@ -21,8 +23,6 @@ const spritePivotStyle = {
   width: '0',
   height: '0'
 };
-
-const spriteScale = 2;
 
 class DebugSprite extends SpriteApplier {
   constructor(props) {

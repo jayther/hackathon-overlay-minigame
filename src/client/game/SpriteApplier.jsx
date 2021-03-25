@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { spriteScale } from './GameConfig';
+
 class SpriteApplier extends React.Component {
   constructor(props) {
     super(props);
@@ -14,17 +16,17 @@ class SpriteApplier extends React.Component {
     if (sprite.rotated) {
       this.spriteStyle.width = `${sprite.frame.h}px`;
       this.spriteStyle.height = `${sprite.frame.w}px`;
-      this.spriteStyle.transform = `scale(2) translate(${sprite.spriteSourceSize.x - halfWOffset}px, ${sprite.spriteSourceSize.y + sprite.spriteSourceSize.h - sprite.sourceSize.h}px) rotate(-90deg)`
+      this.spriteStyle.transform = `scale(${spriteScale}) translate(${sprite.spriteSourceSize.x - halfWOffset}px, ${sprite.spriteSourceSize.y + sprite.spriteSourceSize.h - sprite.sourceSize.h}px) rotate(-90deg)`;
     } else {
       this.spriteStyle.width = `${sprite.frame.w}px`;
       this.spriteStyle.height = `${sprite.frame.h}px`;
-      this.spriteStyle.transform = `scale(2) translate(${sprite.spriteSourceSize.x - halfWOffset}px, ${sprite.spriteSourceSize.y - sprite.sourceSize.h}px)`;
+      this.spriteStyle.transform = `scale(${spriteScale}) translate(${sprite.spriteSourceSize.x - halfWOffset}px, ${sprite.spriteSourceSize.y - sprite.sourceSize.h}px)`;
     }
     if (this.flipped) {
       if (sprite.rotated) {
-        this.spriteStyle.transform += ` rotateX(180deg) translate(0px, -${(halfWOffset - sprite.spriteSourceSize.x) * 2}px)`;
+        this.spriteStyle.transform += ` rotateX(180deg) translate(0px, -${(halfWOffset - sprite.spriteSourceSize.x) * spriteScale}px)`;
       } else {
-        this.spriteStyle.transform += ` rotateY(180deg) translate(-${(halfWOffset - sprite.spriteSourceSize.x) * 2}px, 0px)`;
+        this.spriteStyle.transform += ` rotateY(180deg) translate(-${(halfWOffset - sprite.spriteSourceSize.x) * spriteScale}px, 0px)`;
       }
     }
     this.spriteStyle.backgroundImage = `url(${sprite.src})`;

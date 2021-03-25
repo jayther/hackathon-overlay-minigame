@@ -3,6 +3,8 @@ import { has } from '../../shared/ObjectUtils';
 import { clamp01 } from '../../shared/math/JMath';
 import hpBarImg from '../assets/hp-bar.png';
 
+import { hpBarMaxWidth } from './GameConfig';
+
 const hpBarStyle = {
   borderTop: '13px solid transparent',
   borderBottom: '13px solid transparent',
@@ -15,7 +17,6 @@ const hpBarStyle = {
   borderImageOutset: '0'
 };
 
-const hpBarMaxWidth = 200;
 const hpBarSlice = {
   left: 6,
   top: 0,

@@ -17,6 +17,8 @@ import { has } from '../shared/ObjectUtils';
 import sounds, { changeVolume } from './game/SoundSets';
 import { Howler } from 'howler';
 
+import { spriteScale } from './game/GameConfig';
+
 let fxIdPool = 0;
 let hitMarkerIdPool = 0;
 
@@ -24,7 +26,7 @@ const arenaDimensions = {
   width: 336,
   height: 126
 };
-const arenaScale = 2;
+const arenaScale = spriteScale;
 
 class WidgetPage extends React.Component {
   constructor(props) {
@@ -369,7 +371,8 @@ class WidgetPage extends React.Component {
       <div className="widget-page" ref={this.pageRef}>
         <div ref={this.arenaRef} className="arena" style={{
           backgroundImage: `url('${arenaImg}')`,
-          top: this.state.showArena ? '100%' : '150%'
+          top: this.state.showArena ? '100%' : '150%',
+          transform: `scale(${arenaScale})`
         }}></div>
         <div className="widget-playerchar-layer widget-layer">
           { this.state.playerChars.map((playerChar, i) => (

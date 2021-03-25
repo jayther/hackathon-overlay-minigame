@@ -9,6 +9,21 @@ import { sign } from '../../shared/math/JMath';
 import sounds from './SoundSets';
 import { waitForMS } from '../../shared/PromiseUtils';
 
+import {
+  attackDistance,
+  hitDistance,
+  hitDelay,
+  missDelay,
+  hitMarkerOffset,
+  missDistance,
+  weaponBoost,
+  normalDmgMin,
+  normalDmgMax,
+  critDmgMin,
+  critDmgMax,
+  musicFadeDuration
+} from './GameConfig';
+
 const defaultOptions = {
   players: null,
   arena: null,
@@ -16,19 +31,6 @@ const defaultOptions = {
   musicVolume: 1,
   battleSettings: null
 };
-
-const attackDistance = 40;
-const hitDistance = 60;
-const hitDelay = 100; // ms
-const missDelay = 200; // ms
-const hitMarkerOffset = -100;
-const missDistance = 100;
-const weaponBoost = 50;
-const normalDmgMin = 150;
-const normalDmgMax = 250;
-const critDmgMin = 300;
-const critDmgMax = 325;
-const musicFadeDuration = 2000; // ms
 
 const attackTypes = {
   normal: 'normal',

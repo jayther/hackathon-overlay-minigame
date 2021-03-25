@@ -5,7 +5,8 @@ import { resolveCharacter } from '../utils/CharacterUtils';
 import spritesheets0 from '../assets/spritesheets-0.json';
 import spritesheets1 from '../assets/spritesheets-1.json';
 
-const spriteScale = 2;
+import { spriteScale } from '../game/GameConfig';
+
 const animSpeeds = [
   0.1,
   0.25,

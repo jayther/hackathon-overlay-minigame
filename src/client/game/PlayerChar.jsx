@@ -13,6 +13,19 @@ import { pick } from '../../shared/RandUtils';
 
 import sounds from './SoundSets';
 
+import {
+  maxHp,
+  hpBarOffset,
+  walkSpeed,
+  dashSpeed,
+  hitSpeed,
+  spawnSpeed,
+  randomMoveDelayMin,
+  randomMoveDelayMax,
+  spawnHiddenOffset,
+  poseDurationDefault
+} from './GameConfig';
+
 const animSetStates = {
   unarmed: {
     idle: 'idle',
@@ -65,9 +78,6 @@ const actionSoundMap = {
   spawn: 'jump'
 };
 
-const maxHp = 1000;
-const hpBarOffset = 31;
-
 function getAnimSetState(state, weapon = false) {
   return animSetStates[weapon ? 'weapon' : 'unarmed'][state];
 }
@@ -109,10 +119,10 @@ class PlayerChar extends SpriteApplier {
     this.intervalId = -1;
     this.anim = null;
     this.position = new Vec2(200, 200);
-    this.speed = 200; // px per second
-    this.dashSpeed = 600; // px per second
-    this.hitSpeed = 150; // px per second
-    this.spawnSpeed = 300; // px per second
+    this.speed = walkSpeed; // px per second
+    this.dashSpeed = dashSpeed; // px per second
+    this.hitSpeed = hitSpeed; // px per second
+    this.spawnSpeed = spawnSpeed; // px per second
     this.weapon = false;
     this.inBattle = false;
     this.actionQueue = [];
@@ -121,8 +131,8 @@ class PlayerChar extends SpriteApplier {
     this.randomMoveWhenIdle = true;
     this.randomMoveId = -1;
     this.randomMoveDelayBounds = {
-      min: 3000, // ms
-      max: 6000
+      min: randomMoveDelayMin, // ms
+      max: randomMoveDelayMax
     };
     this.delayActionId = -1;
     this.poseActionId = -1;
@@ -137,7 +147,7 @@ class PlayerChar extends SpriteApplier {
     pos.x = Math.floor(pos.x);
     pos.y = Math.floor(pos.y);
     if (!stationary) {
-      pos.y += 100;
+      pos.y += spawnHiddenOffset;
     }
     this.position.set(pos);
     this.container = this.containerRef.current;
@@ -155,7 +165,7 @@ class PlayerChar extends SpriteApplier {
       this.spawnStationary();
     } else {
       const newPos = pos.copy();
-      newPos.y -= 100;
+      newPos.y -= spawnHiddenOffset;
       this.spawnTo(newPos);
     }
   }
@@ -214,7 +224,6 @@ class PlayerChar extends SpriteApplier {
       for (let i = 0; i < 1; i += 1) {
         const pos = randPos(this.props.randSegStart, this.props.randSegEnd);
         // prevent getting stuck due to zero distance
-        //pos.y -= betweenInt(0, 300);
         if (pos.x === this.position.x && pos.y === this.position.y) {
           pos.x += 1;
         }
@@ -330,7 +339,7 @@ class PlayerChar extends SpriteApplier {
         this.setAnimState('bannerRaise', action.type);
         this.poseActionId = setTimeout(() => {
           this.processActionQueue();
-        }, action.duration || 1000);
+        }, action.duration || poseDurationDefault);
         break;
       default:
         console.error(`processActionQueue: Unknown action type: "${action.type}"`);
