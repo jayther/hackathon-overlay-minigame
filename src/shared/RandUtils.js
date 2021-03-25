@@ -59,6 +59,26 @@ function shuffleInPlace(array) {
   }
   return array; // just return the same array for chaining
 }
+
+function weightedPick(...weights) {
+  if (weights.length === 0) {
+    return -1;
+  }
+  const pool = Array.isArray(weights[0]) ? weights[0] : weights;
+  let sum = 0;
+  for (const weight of pool) {
+    sum += weight;
+  }
+  let rnd = Math.random() * sum;
+  for (let i = 0; i < pool.length; i += 1) {
+    if (rnd < pool[i]) {
+      return i;
+    }
+    rnd -= pool[i];
+  }
+  throw new Error('RandUtils.weightedPick: Something went really wrong');
+}
+
 module.exports = {
   pick,
   pickExcept,
@@ -67,5 +87,6 @@ module.exports = {
   betweenInt,
   rollDice,
   shuffleNew,
-  shuffleInPlace
+  shuffleInPlace,
+  weightedPick
 };

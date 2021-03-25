@@ -15,7 +15,10 @@ const defaultBattleSettings = {
   pruneAfterBattle: true,
   autoBattle: false,
   autoBattleDelay: 3000, //ms
-  controlFromTwitch: false
+  controlFromTwitch: false,
+  chanceNormalWeight: 75,
+  chanceCritWeight: 10,
+  chanceMissWeight: 15
 };
 
 const deferredSaveDelay = 3000; // ms
@@ -542,7 +545,7 @@ class BattleManager {
     const playersRemoved = Object.keys(playersRemovedMap);
     if (indexesToRemove.length > 0) {
       logger(`Pruned ${indexesToRemove.length} battles involving ${playersRemoved.join(', ')}.`);
-      this.chatBotManager.say(`Cancelling duel requests from involving ${playersRemoved.join(', ')}. Refunding ${this.settings.channelPointsName}.`);
+      this.chatBotManager.say(`Cancelling duel requests involving ${playersRemoved.join(', ')}. Refunding ${this.settings.channelPointsName}.`);
     } else {
       logger(`Pruned 0 battles.`);
     }

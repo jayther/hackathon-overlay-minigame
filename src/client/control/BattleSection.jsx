@@ -115,6 +115,42 @@ export function BattleSection(props) {
               checked={props.battleSettings.controlFromTwitch}
             /></td>
           </tr>
+          <tr>
+            <td>Chance attack: Normal</td>
+            <td><input
+              type="number"
+              min="0"
+              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+                ...props.battleSettings,
+                chanceNormalWeight: parseFloat(e.target.value, 10)
+              })}
+              value={props.battleSettings.chanceNormalWeight}
+            /></td>
+          </tr>
+          <tr>
+            <td>Chance attack: Crit</td>
+            <td><input
+              type="number"
+              min="0"
+              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+                ...props.battleSettings,
+                chanceCritWeight: parseFloat(e.target.value, 10)
+              })}
+              value={props.battleSettings.chanceCritWeight}
+            /></td>
+          </tr>
+          <tr>
+            <td>Chance attack: Miss</td>
+            <td><input
+              type="number"
+              min="0"
+              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+                ...props.battleSettings,
+                chanceMissWeight: parseFloat(e.target.value, 10)
+              })}
+              value={props.battleSettings.chanceMissWeight}
+            /></td>
+          </tr>
         </tbody>
       </table>
     </div>

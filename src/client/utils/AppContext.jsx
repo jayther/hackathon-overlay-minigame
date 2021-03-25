@@ -33,7 +33,10 @@ const initialState = {
     pruneAfterBattle: true,
     autoBattle: false,
     autoBattleDelay: 3000,
-    controlFromTwitch: false
+    controlFromTwitch: false,
+    chanceNormalWeight: 75,
+    chanceCritWeight: 10,
+    chanceMissWeight: 15
   },
   rewardSettings: {
     autoRefund: false

@@ -1,4 +1,10 @@
-import { shuffleNew, pickArgs, betweenInt, pick } from '../../shared/RandUtils';
+import {
+  shuffleNew,
+  pickArgs,
+  betweenInt,
+  pick,
+  weightedPick
+} from '../../shared/RandUtils';
 import { sign } from '../../shared/math/JMath';
 import sounds from './SoundSets';
 import { waitForMS } from '../../shared/PromiseUtils';
@@ -21,9 +27,12 @@ const weaponBoost = 50;
 
 const attackTypes = {
   normal: 'normal',
+  normalCrit: 'normalCrit',
   weapon: 'weapon',
+  weaponCrit: 'weaponCrit',
   miss: 'miss',
-  final: 'final'
+  final: 'final',
+  finalCrit: 'finalCrit'
 };
 
 class BattleRunner {
@@ -81,6 +90,27 @@ class BattleRunner {
     ];
   }
 
+  generateRandomAttack(weapon = false) {
+    const index = weightedPick(
+      this.battleSettings.chanceNormalWeight, // 0
+      this.battleSettings.chanceCritWeight, // 1
+      this.battleSettings.chanceMissWeight // 2
+    );
+    switch (index) {
+      case 0:
+        return weapon ? attackTypes.weapon : attackTypes.normal;
+      case 1:
+        return weapon ? attackTypes.weaponCrit : attackTypes.normalCrit;
+      case 2:
+        return attackTypes.miss;
+      default:
+        throw new Error(
+          `BattleRunner.generateRandomAttack: `+
+          `Unexpected weight index (${index})`
+        );
+    }
+  }
+
   async run() {
     for (let i = 0; i < this.stateMap.length; i += 1) {
       this.state = i;
@@ -135,31 +165,45 @@ class BattleRunner {
         defendPoint = this.arena.leftPoint;
       }
 
-      // normal attack
-      // TODO use dice rolls
-      // TODO weapon damages
-      // 
-      let damage, hitMarkerText, attackType, rand = Math.random();
-      let damageBoost = attacker.playerChar.weapon ? weaponBoost : 0;
-      let crit = false;
-      if (rand < 0.1) {
-        damage = betweenInt(300, 325) + damageBoost;
-        hitMarkerText = `${damage}!!`;
-        crit = true;
-        attackType = attacker.playerChar.weapon ? attackTypes.weapon : attackTypes.normal;
-      } else if (rand < 0.15) {
-        damage = 0;
-        hitMarkerText = 'Miss';
-        attackType = attackTypes.miss;
-      } else {
-        damage = betweenInt(150, 250) + damageBoost;
-        hitMarkerText = `${damage}`;
-        attackType = attacker.playerChar.weapon ? attackTypes.weapon : attackTypes.normal;
+      let damage, hitMarkerText;
+      let attackType = this.generateRandomAttack(attacker.playerChar.weapon);
+      switch (attackType) {
+        case attackTypes.normal:
+          damage = betweenInt(150, 250);
+          hitMarkerText = `${damage}`;
+          break;
+        case attackTypes.normalCrit:
+          damage = betweenInt(300, 325);
+          hitMarkerText = `${damage}!!`;
+          break;
+        case attackTypes.weapon:
+          damage = betweenInt(150, 250) + weaponBoost;
+          hitMarkerText = `${damage}`;
+          break;
+        case attackTypes.weaponCrit:
+          damage = betweenInt(300, 325); + weaponBoost;
+          hitMarkerText = `${damage}!!`;
+          break;
+        case attackTypes.miss:
+          damage = 0;
+          hitMarkerText = 'Miss';
+          break;
+        default:
+          throw new Error(`BattleRunner.battling: Unexpected attack type at RNG: ${attackType}`);
       }
 
       const defenderFutureHp = defender.playerChar.hp - damage;
       if (attackType !== attackTypes.miss && defenderFutureHp <= 0) {
-        attackType = attackTypes.final;
+        switch (attackType) {
+          case attackTypes.normal:
+          case attackTypes.weapon:
+            attackType = attackTypes.final;
+            break;
+          case attackTypes.normalCrit:
+          case attackTypes.weaponCrit:
+            attackType = attackTypes.finalCrit;
+            break;
+        }
       }
 
       const attackPos = defender.playerChar.position.copy();
@@ -176,26 +220,32 @@ class BattleRunner {
         defender.playerChar.moveTo(missPos);
         hitMarkerDelay = missDelay + hitDelay;
       } else { // hit
-        if (attackType === attackTypes.normal) {
-          if (crit) {
-            const dashTo = defender.playerChar.position.copy();
+        let dashTo;
+        switch (attackType) {
+          case attackTypes.normal:
+            attacker.playerChar.attack();
+            break;
+          case attackTypes.normalCrit:
+            dashTo = defender.playerChar.position.copy();
             dashTo.x -= attackPosDelta; // behind defender
             attacker.playerChar.attackCritTo(dashTo);
             attacker.playerChar.dashTo(attackPos);
-          } else {
-            attacker.playerChar.attack();
-          }
-        } else if (attackType === attackTypes.weapon) {
-          if (crit) {
-            const dashTo = defender.playerChar.position.copy();
+            break;
+          case attackTypes.weapon:
+            attacker.playerChar.attackWeapon();
+            break;
+          case attackTypes.weaponCrit:
+            dashTo = defender.playerChar.position.copy();
             dashTo.x -= attackPosDelta; // behind defender
             attacker.playerChar.attackWeaponCritTo(dashTo);
             attacker.playerChar.dashTo(attackPos);
-          } else {
-            attacker.playerChar.attackWeapon();
-          }
-        } else if (attackType === attackTypes.final) {
-          attacker.playerChar.attackFinal();
+            break;
+          case attackTypes.final:
+          case attackTypes.finalCrit:
+            attacker.playerChar.attackFinal();
+            break;
+          default:
+            throw new Error(`BattleRunner.battling: Unexpected attack type at animation: ${attackType}`)
         }
         attacker.playerChar.moveTo(attackPoint).face(defendPoint);
         defender.playerChar.delay(hitDelay).hitToDelta(-deltaSign * hitDistance, damage);
