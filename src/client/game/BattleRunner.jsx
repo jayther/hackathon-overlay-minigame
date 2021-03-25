@@ -24,6 +24,11 @@ const missDelay = 200; // ms
 const hitMarkerOffset = -100;
 const missDistance = 100;
 const weaponBoost = 50;
+const normalDmgMin = 150;
+const normalDmgMax = 250;
+const critDmgMin = 300;
+const critDmgMax = 325;
+const musicFadeDuration = 2000; // ms
 
 const attackTypes = {
   normal: 'normal',
@@ -169,19 +174,19 @@ class BattleRunner {
       let attackType = this.generateRandomAttack(attacker.playerChar.weapon);
       switch (attackType) {
         case attackTypes.normal:
-          damage = betweenInt(150, 250);
+          damage = betweenInt(normalDmgMin, normalDmgMax);
           hitMarkerText = `${damage}`;
           break;
         case attackTypes.normalCrit:
-          damage = betweenInt(300, 325);
+          damage = betweenInt(critDmgMin, critDmgMax);
           hitMarkerText = `${damage}!!`;
           break;
         case attackTypes.weapon:
-          damage = betweenInt(150, 250) + weaponBoost;
+          damage = betweenInt(normalDmgMin, normalDmgMax) + weaponBoost;
           hitMarkerText = `${damage}`;
           break;
         case attackTypes.weaponCrit:
-          damage = betweenInt(300, 325); + weaponBoost;
+          damage = betweenInt(critDmgMin, critDmgMax); + weaponBoost;
           hitMarkerText = `${damage}!!`;
           break;
         case attackTypes.miss:
@@ -280,7 +285,7 @@ class BattleRunner {
     }
   }
   async leavingArena() {
-    this.music.fade(this.music.volume(), 0, 2000); // 1 to 0 in 2 seconds
+    this.music.fade(this.music.volume(), 0, musicFadeDuration); // 1 to 0 in 2 seconds
     this.music.once('fade', () => {
       this.music.stop();
     });
