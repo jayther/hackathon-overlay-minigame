@@ -36,7 +36,8 @@ const initialState = {
     controlFromTwitch: false,
     chanceNormalWeight: 75,
     chanceCritWeight: 10,
-    chanceMissWeight: 15
+    chanceMissWeight: 15,
+    weaponBoost: 50
   },
   rewardSettings: {
     autoRefund: false

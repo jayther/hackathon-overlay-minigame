@@ -16,7 +16,6 @@ import {
   missDelay,
   hitMarkerOffset,
   missDistance,
-  weaponBoost,
   normalDmgMin,
   normalDmgMax,
   critDmgMin,
@@ -184,11 +183,11 @@ class BattleRunner {
           hitMarkerText = `${damage}!!`;
           break;
         case attackTypes.weapon:
-          damage = betweenInt(normalDmgMin, normalDmgMax) + weaponBoost;
+          damage = betweenInt(normalDmgMin, normalDmgMax) + this.battleSettings.weaponBoost;
           hitMarkerText = `${damage}`;
           break;
         case attackTypes.weaponCrit:
-          damage = betweenInt(critDmgMin, critDmgMax); + weaponBoost;
+          damage = betweenInt(critDmgMin, critDmgMax) + this.battleSettings.weaponBoost;
           hitMarkerText = `${damage}!!`;
           break;
         case attackTypes.miss:

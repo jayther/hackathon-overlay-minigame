@@ -18,7 +18,8 @@ const defaultBattleSettings = {
   controlFromTwitch: false,
   chanceNormalWeight: 75,
   chanceCritWeight: 10,
-  chanceMissWeight: 15
+  chanceMissWeight: 15,
+  weaponBoost: 50
 };
 
 const deferredSaveDelay = 3000; // ms
@@ -407,6 +408,7 @@ class BattleManager {
     }
     this.socketManager.controlEmit(appActions.updateBattleQueue, this.battleQueue);
     logger(`cancelBattle: Cancelled a duel request from "${event.userDisplayName}"`);
+    this.maybeAutoBattleStart();
   }
 
   async finishBattle(winnerUserId, loserUserId) {
@@ -442,9 +444,7 @@ class BattleManager {
     if (this.files.battleSettings.data.pruneAfterBattle) {
       await this.pruneBattles();
     }
-    if (this.files.battleSettings.data.autoBattle) {
-      this.autoBattleDelayedCheck();
-    }
+    this.maybeAutoBattleStart();
   }
 
   maybeAutoBattleStart() {

@@ -151,6 +151,20 @@ export function BattleSection(props) {
               value={props.battleSettings.chanceMissWeight}
             /></td>
           </tr>
+          <tr>
+            <td>Weapon damage boost</td>
+            <td><input
+              type="number"
+              min="0"
+              step="1"
+              pattern="[0-9]+"
+              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+                ...props.battleSettings,
+                weaponBoost: parseInt(e.target.value, 10)
+              })}
+              value={props.battleSettings.weaponBoost}
+            /></td>
+          </tr>
         </tbody>
       </table>
     </div>

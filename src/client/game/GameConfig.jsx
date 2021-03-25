@@ -6,7 +6,6 @@ export const hitDelay = 100; // ms
 export const missDelay = 200; // ms
 export const hitMarkerOffset = -100; // px
 export const missDistance = 100; // px
-export const weaponBoost = 50;
 export const normalDmgMin = 150;
 export const normalDmgMax = 250;
 export const critDmgMin = 300;
