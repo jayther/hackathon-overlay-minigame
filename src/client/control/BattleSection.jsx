@@ -5,7 +5,7 @@ import appActions from '../../shared/AppActions';
 export function BattleSettingsSection(props) {
   return (
     <article className="card bg-dark mt-1" style={{maxWidth: '600px'}}>
-      <header className="card-header">Battle Settings</header>
+      <header className="card-header">Duel Settings</header>
       <div className="card-body">
         <div className="form-group row">
           <label className="col-sm-4 col-form-label">Delay between attacks</label>
@@ -24,29 +24,29 @@ export function BattleSettingsSection(props) {
           <div className="col-sm-2">ms</div>
         </div>
         <div className="form-group row">
-          <label className="col-sm-4 col-form-label">Auto prune after battle</label>
-          <div className="col-sm-8"><input
+          <label className="col-sm-4 col-form-label">Auto prune after duel</label>
+          <div className="col-sm-8"><span className="align-middle"><input
             type="checkbox"
             onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
               ...props.appState.battleSettings,
               pruneAfterBattle: e.target.checked
             })}
             checked={props.appState.battleSettings.pruneAfterBattle}
-          /></div>
+          /></span></div>
         </div>
         <div className="form-group row">
           <label className="col-sm-4 col-form-label">Auto start battles</label>
-          <div className="col-sm-8"><input
+          <div className="col-sm-8"><span className="align-middle"><input
             type="checkbox"
             onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
               ...props.appState.battleSettings,
               autoBattle: e.target.checked
             })}
             checked={props.appState.battleSettings.autoBattle}
-          /></div>
+          /></span></div>
         </div>
         <div className="form-group row">
-          <label className="col-sm-4 col-form-label">Auto start battle delay</label>
+          <label className="col-sm-4 col-form-label">Auto start duel delay</label>
           <div className="col-sm-6"><input
             type="number"
             className="form-control"
@@ -62,15 +62,15 @@ export function BattleSettingsSection(props) {
           <div className="col-sm-2">ms</div>
         </div>
         <div className="form-group row">
-          <label className="col-sm-4 col-form-label">Control battles from<br />Twitch Rewards Requests Queue</label>
-          <div className="col-sm-8"><input
+          <label className="col-sm-4 col-form-label">Control duels from<br />Twitch Rewards Requests Queue</label>
+          <div className="col-sm-8"><span className="align-middle"><input
             type="checkbox"
             onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
               ...props.appState.battleSettings,
               controlFromTwitch: e.target.checked
             })}
             checked={props.appState.battleSettings.controlFromTwitch}
-          /></div>
+          /></span></div>
         </div>
         <div className="form-group row">
           <label className="col-sm-4 col-form-label">Chance attack: Normal</label>
@@ -147,25 +147,25 @@ export function BattleSection(props) {
   return (
     <section className="container-sm">
       <article className="card bg-dark">
-        <header className="card-header">Battles</header>
+        <header className="card-header">Duels</header>
         <div className="card-body">
+          <h4>Current duel</h4>
           <p>
-            Current battle:
             {battle ?
               `${battle.player1.userDisplayName} vs ${battle.player2.userDisplayName}` :
               'none'}
           </p>
+          <h4>Last duel results</h4>
           <p>
-            Last battle results:
             {props.appState.battleResults ? (
               <span>
                 <strong>{props.appState.battleResults.winner.userDisplayName}</strong> vs {props.appState.battleResults.loser.userDisplayName}
               </span>
             ) : (
-                <em>None</em>
-              )}
+              <em>None</em>
+            )}
           </p>
-          <h3>Queue</h3>
+          <h4>Queue</h4>
           <table className="table table-striped table-dark">
             <tbody>
               {props.appState.battleQueue.length ?
@@ -204,8 +204,8 @@ export function BattleSection(props) {
                 () => SocketBridge.socket.emit(appActions.pruneBattles)
               }
             >
-              Prune battles
-            </button> (Remove battles involving players not in game)
+              Prune duel requests
+            </button> (Remove duel requests involving players not in game)
           </div>
         </div>
       </article>

@@ -7,6 +7,7 @@ import { PlayersSection } from './control/PlayersSection';
 import { BattleSection } from './control/BattleSection';
 import { SettingsSection } from './control/SettingsSection';
 import { SoundSection } from './control/SoundSection';
+import { AboutSection } from './control/AboutSection';
 
 const pages = {
   home: 'home',
@@ -14,7 +15,8 @@ const pages = {
   battles: 'battles',
   rewards: 'rewards',
   sounds: 'sounds',
-  debug: 'debug'
+  debug: 'debug',
+  about: 'about'
 };
 
 function navItemClass(page, currentPage) {
@@ -61,6 +63,10 @@ function SectionPage(props) {
       return (
         <DebugSection appState={props.appState} />
       );
+    case pages.about:
+      return (
+        <AboutSection />
+      );
     default: 
       return (
         <div className="alert alert-danger">Unknown page</div>
@@ -89,7 +95,7 @@ function ControlPage(props) {
           <ul className="navbar-nav mr-auto">
             <NavItem page={pages.home} setPage={setPage} currentPage={page}>Home</NavItem>
             <NavItem page={pages.players} setPage={setPage} currentPage={page}>Players</NavItem>
-            <NavItem page={pages.battles} setPage={setPage} currentPage={page}>Battles</NavItem>
+            <NavItem page={pages.battles} setPage={setPage} currentPage={page}>Duels</NavItem>
             <NavItem page={pages.rewards} setPage={setPage} currentPage={page}>Rewards {
               missingRewards.length > 0 && (
                 <span className="badge badge-danger badge-pill" style={{marginLeft: '5px'}}>{missingRewards.length}</span>
@@ -97,6 +103,7 @@ function ControlPage(props) {
             }</NavItem>
             <NavItem page={pages.sounds} setPage={setPage} currentPage={page}>Sounds</NavItem>
             <NavItem page={pages.debug} setPage={setPage} currentPage={page}>Debug</NavItem>
+            <NavItem page={pages.about} setPage={setPage} currentPage={page}>About</NavItem>
           </ul>
         </div>
       </nav>
@@ -112,6 +119,7 @@ function ControlPage(props) {
         </div>
       )}
       <SectionPage appState={props.appState} appDispatch={props.appDispatch} currentPage={page} />
+      <footer className="main-footer">&copy; 2021 Jayther. All Rights Reserved.</footer>
     </div>
   );
 }

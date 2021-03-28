@@ -261,6 +261,7 @@ class RewardManager {
   }
 
   async onRedeem(event) {
+    logger(`RewardManager.onRedeem: "${event.userName}" redeemed "${event.rewardTitle}"`);
     const payload = redeemToObj(event);
     this.redeems.push(event);
     const rewardKey = this.files.rewardMap.data[event.rewardId];
