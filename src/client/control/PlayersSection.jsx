@@ -16,7 +16,7 @@ function SpecificBattleDropdown(props) {
     SocketBridge.socket.emit(appActions.requestBattle, props.userId, e.target.value);
   }
   return (
-    <select className="form-control mt-1" onChange={onChange} value="none">
+    <select className="form-control mt-1" style={{ width: '200px' }}onChange={onChange} value="none">
       <option value="none">Specific Battle</option>
       { props.players.filter(filterOneId(props.userId)).map(player => (
         <option key={player.userId} value={player.userId}>
@@ -48,7 +48,7 @@ export function PlayersSection(props) {
             <button className="btn btn-primary" onClick={onAddDebugPlayer}>Add Debug Player</button>
             <button className="btn btn-primary ml-1" onClick={toggleShowActions}>{showActions ? 'Hide' : 'Show'} Actions</button>
           </div>
-          <table className="players-section table table-dark table-striped mt-3">
+          <table className="players-section table table-dark mt-3">
             <thead>
               <tr>
                 <th>Username</th>
@@ -57,19 +57,21 @@ export function PlayersSection(props) {
                 <th>Type</th>
                 <th>Gender</th>
                 <th>Weapon</th>
-                {showActions && (<th>Actions</th>)}
               </tr>
             </thead>
             <tbody>
-              {props.players.length ? props.players.map(player => (
-                <tr key={player.userId}>
+              {props.players.length ? props.players.map((player, i) => [(
+                <tr key={player.userId} className={(i % 2) === 0 && 'table-row-stripe'}>
                   <td>{player.userDisplayName}</td>
                   <td>{player.wins}/{player.losses}/{player.draws}</td>
                   <td>{player.winStreak}</td>
                   <td>{player.characterType}</td>
                   <td>{player.characterGender}</td>
                   <td>{player.weapon ? 'Yes' : 'No'}</td>
-                  {showActions && (<td>
+                </tr>
+              ), showActions && (
+                <tr key={`${player.userId}-actions`} className={(i % 2) === 0 && 'table-row-stripe'}>
+                  <td colSpan="6">
                     <button className="btn btn-secondary mr-1 mt-1" onClick={() => SocketBridge.socket.emit(appActions.updatePlayer, player.userId, {
                       characterType: next(characterTypes, player.characterType)
                     })}>
@@ -91,21 +93,18 @@ export function PlayersSection(props) {
                     })}>
                       Toggle Weapon
                     </button>
-                    <br />
                     <button className="btn btn-secondary mr-1 mt-1" onClick={() => SocketBridge.socket.emit(appActions.requestBattle, player.userId)}>
                       Request Battle
                     </button>
-                    <br />
                     <SpecificBattleDropdown players={props.players} userId={player.userId} />
-                    <br />
                     <button className="btn btn-danger mr-1 mt-1" onClick={() => SocketBridge.socket.emit(appActions.removePlayer, player.userId)}>
                       Remove
                     </button>
-                  </td>)}
+                  </td>
                 </tr>
-              )) : (
+              )]) : (
                   <tr>
-                    <td colSpan={showActions ? 7 : 6}><em>None</em></td>
+                    <td colSpan="6"><em>None</em></td>
                   </tr>
                 )}
             </tbody>
