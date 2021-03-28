@@ -1,1 +1,38 @@
-@import "./global.scss";
+@import "~bootstrap";
+
+body {
+  background-color: #00171F;
+  color: #FFFFFF;
+}
+
+#main-nav {
+  box-shadow: 0 2px 2px black;
+  margin-bottom: 10px;
+  background-color: #007EA7;
+}
+
+.sound-name {
+  text-align: right;
+}
+
+.reward-map td {
+  vertical-align: middle;
+}
+
+article.card {
+  margin-bottom: 10px;
+}
+
+.missing-rewards-list .btn {
+  margin-right: 10px;
+}
+
+.bg-dark, .table-dark {
+  background-color: #003459 !important;
+}
+
+.list-group-item-dark {
+  background-color: #00243d;
+  color: white;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}

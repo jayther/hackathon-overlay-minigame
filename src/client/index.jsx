@@ -1,5 +1,9 @@
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
+import jquery from 'jquery';
+window.$ = window.jQuery = jquery;
+import 'bootstrap';
+import './css/control.scss';
 
 import React from 'react';
 import ReactDOM from 'react-dom';

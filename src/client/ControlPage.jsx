@@ -1,56 +1,117 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { withApp } from './utils/AppContext';
 import requiredRewards from '../shared/RequiredRewards';
+import { HomeSection } from './control/HomeSection';
 import { DebugSection } from './control/DebugSection';
 import { PlayersSection } from './control/PlayersSection';
 import { BattleSection } from './control/BattleSection';
-import { MissingRewardsSection } from './control/MissingRewardsSection';
-import { EditRewardMap } from './control/EditRewardMap';
 import { SettingsSection } from './control/SettingsSection';
 import { SoundSection } from './control/SoundSection';
 
+const pages = {
+  home: 'home',
+  players: 'players',
+  battles: 'battles',
+  rewards: 'rewards',
+  sounds: 'sounds',
+  debug: 'debug'
+};
+
+function navItemClass(page, currentPage) {
+  return page === currentPage ? 'nav-item active' : 'nav-item';
+}
+
+function NavItem(props) {
+  return (
+    <li className={navItemClass(props.page, props.currentPage)}>
+      <a className="nav-link" href="#" onClick={e => {
+        e.preventDefault();
+        props.setPage(props.page);
+        return false
+      }}>
+        {props.children}
+      </a>
+    </li>
+  );
+}
+
+function SectionPage(props) {
+  switch (props.currentPage) {
+    case pages.home:
+      return (
+        <HomeSection appState={props.appState} />
+      );
+    case pages.players:
+      return (
+        <PlayersSection players={props.appState.players} />
+      );
+    case pages.battles:
+      return (
+        <BattleSection appState={props.appState} showSettings={true} />
+      );
+    case pages.rewards:
+      return (
+        <SettingsSection appState={props.appState} />
+      );
+    case pages.sounds:
+      return (
+        <SoundSection appState={props.appState} appDispatch={props.appDispatch} />
+      );
+    case pages.debug:
+      return (
+        <DebugSection appState={props.appState} />
+      );
+    default: 
+      return (
+        <div className="alert alert-danger">Unknown page</div>
+      );
+  }
+}
+
 function ControlPage(props) {
+  const [page, setPage] = useState(pages.home);
+
   const mappedActions = Object.values(props.appState.rewardMap);
   const missingRewards = Object.keys(requiredRewards).filter(key => !mappedActions.includes(key));
-  const battle = props.appState.currentBattle ? {
-      player1: props.appState.players.find(p => p.userId === props.appState.currentBattle[0]) || {
-        userId: props.appState.currentBattle[0],
-        userDisplayName: props.appState.currentBattle[0],
-        userName: props.appState.currentBattle[0]
-      },
-      player2: props.appState.players.find(p => p.userId === props.appState.currentBattle[1]) || {
-        userId: props.appState.currentBattle[1],
-        userDisplayName: props.appState.currentBattle[1],
-        userName: props.appState.currentBattle[1]
-      }
-    } : null;
 
   return (
     <div>
-      <h1>Control</h1>
-      <h2>Players</h2>
-      <PlayersSection players={props.appState.players} />
-      <BattleSection
-        battle={battle}
-        battleQueue={props.appState.battleQueue}
-        battleResults={props.appState.battleResults}
-        battleSettings={props.appState.battleSettings}
-      />
-      <MissingRewardsSection rewards={props.appState.rewards} missingRewards={missingRewards} />
-      <SettingsSection appState={props.appState} />
-      <SoundSection appState={props.appState} appDispatch={props.appDispatch} />
-      <EditRewardMap rewards={props.appState.rewards} rewardMap={props.appState.rewardMap} />
-      <DebugSection appState={props.appState} />
-      <h2>Redemptions</h2>
-      <ul>
-        { props.appState.redeems.length ? props.appState.redeems.map(item => (
-          <li key={item.id}>
-            <strong>{item.rewardTitle}</strong>: {item.status}
-          </li>
-        )) : (
-          <li><em>None</em></li>
-        )}
-      </ul>
+      <nav id="main-nav" className="navbar navbar-expand-lg navbar-dark">
+        <span className="navbar-brand">Control Panel</span>
+        <button className="navbar-toggler" type="button"
+          data-toggle="collapse" data-target="#navbar-content"
+          aria-controls="navbar-content" aria-expanded="false"
+          aria-label="Toggle navigation">
+            <span className="navbar-toggler-icon"></span>
+        </button>
+
+        <div className="collapse navbar-collapse" id="navbar-content">
+          <ul className="navbar-nav mr-auto">
+            <NavItem page={pages.home} setPage={setPage} currentPage={page}>Home</NavItem>
+            <NavItem page={pages.players} setPage={setPage} currentPage={page}>Players</NavItem>
+            <NavItem page={pages.battles} setPage={setPage} currentPage={page}>Battles</NavItem>
+            <NavItem page={pages.rewards} setPage={setPage} currentPage={page}>Rewards {
+              missingRewards.length > 0 && (
+                <span className="badge badge-danger badge-pill" style={{marginLeft: '5px'}}>{missingRewards.length}</span>
+              )
+            }</NavItem>
+            <NavItem page={pages.sounds} setPage={setPage} currentPage={page}>Sounds</NavItem>
+            <NavItem page={pages.debug} setPage={setPage} currentPage={page}>Debug</NavItem>
+          </ul>
+        </div>
+      </nav>
+      { missingRewards.length > 0 && page !== pages.rewards && (
+        <div className="container-fluid">
+          <div className="alert alert-warning">
+            Missing reward mapping. Please set them in <a href="#" onClick={e => {
+              e.preventDefault();
+              setPage(pages.rewards);
+              return false;
+            }}>Rewards</a>.
+          </div>
+        </div>
+      )}
+      <SectionPage appState={props.appState} appDispatch={props.appDispatch} currentPage={page} />
     </div>
   );
 }

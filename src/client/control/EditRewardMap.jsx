@@ -21,17 +21,37 @@ export function EditRewardMap(props) {
   });
 
   return (
-    <div>
-      <h2>Reward Map <button onClick={toggleShow}>{show ? 'Hide' : 'Show'}</button></h2>
-      {show && (
-        <ul>
-          {actionRewards.map(([actionKey, reward]) => (
-            <li key={actionKey}>
-              <strong>{actionKey}</strong>: {reward.title} <button onClick={() => unsetReward(reward)}>Unset</button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <article className="card bg-dark">
+      <header className="card-header">
+        Reward Map
+        <button className="btn btn-primary ml-1" onClick={toggleShow}>
+          {show ? 'Hide' : 'Show'}
+        </button>
+      </header>
+      {show && (<div className="card-body">
+        <table className="reward-map table table-dark table-striped">
+          <tbody>
+            {actionRewards.length > 0 ? actionRewards.map(([actionKey, reward]) => (
+              <tr key={actionKey}>
+                <td>
+                  <strong>{actionKey}</strong>
+                </td>
+                <td>{reward.title}</td>
+                <td>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => unsetReward(reward)}
+                  >Unset</button>
+                </td>
+              </tr>
+            )) : (
+              <tr>
+                <td colSpan={3}><em>None</em></td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>)}
+    </article>
   );
 }

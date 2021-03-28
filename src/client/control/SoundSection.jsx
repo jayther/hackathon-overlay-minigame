@@ -1,14 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { has } from '../../shared/ObjectUtils';
 import appActions from '../../shared/AppActions';
 import { clamp01 } from '../../shared/math/JMath';
 import SocketBridge from '../utils/SocketBridge';
 
 export function SoundSection(props) {
-  const [show, setShow] = useState(false);
-  function toggleShow() {
-    setShow(!show);
-  }
   function onVolumeRangeChange(e) {
     const soundKey = e.target.dataset.soundkey;
     if (!has(props.appState.soundVolumes, soundKey)) {
@@ -50,30 +46,35 @@ export function SoundSection(props) {
     SocketBridge.socket.emit(appActions.updateVolumes, newObj);
   }
   return (
-    <div>
-      <h2>Sounds <button onClick={toggleShow}>{show ? 'Hide' : 'Show'}</button></h2>
-      { show && (
-        <table className="sound-volumes">
-          <tbody>
-            {Object.entries(props.appState.soundVolumes).map(([key, volume]) => (
-              <tr key={key}>
-                <td className="sound-name">{key}</td>
-                <td className="sound-slider">
-                  <input type="range" min="0" max="1" value={volume}
-                    step="0.1"
-                    data-soundkey={key}
-                    onChange={onVolumeRangeChange}
-                  />
-                  <input type="number" value={Math.floor(volume * 100)}
-                    data-soundkey={key}
-                    onChange={onVolumeTextChange}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
+    <section className="container-sm">
+      <article className="card bg-dark">
+        <header className="card-header">Sounds</header>
+        <div className="card-body sound-volumes">
+          {Object.entries(props.appState.soundVolumes).map(([key, volume]) => (
+            <div key={key} className="row">
+              <div className="sound-name col-sm-2">{key}</div>
+              <div className="sound-slider form-group col-sm-7">
+                <input type="range" className="form-control-range"
+                  min="0" max="1" value={volume}
+                  step="0.1"
+                  data-soundkey={key}
+                  onChange={onVolumeRangeChange}
+                />
+              </div>
+              <div className="form-group col-sm-2">
+                <input type="number" className="sound-input form-control"
+                  value={Math.floor(volume * 100)}
+                  data-soundkey={key}
+                  onChange={onVolumeTextChange}
+                />
+              </div>
+              <div className="col-sm-1">
+                %
+              </div>
+            </div>
+          ))}
+        </div>
+      </article>
+    </section>
   )
 }

@@ -1,13 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import SocketBridge from '../utils/SocketBridge';
 import appActions from '../../shared/AppActions';
 
 export function DebugSection(props) {
-  const [show, setShow] = useState(false);
-
-  function toggleShow() {
-    setShow(!show);
-  }
 
   function onAutoRefundChange(e) {
     SocketBridge.socket.emit(appActions.updateRewardSettings, {
@@ -25,23 +20,23 @@ export function DebugSection(props) {
   }
 
   return (
-    <div>
-      <h2>Debug options <button onClick={toggleShow}>{show ? 'Hide' : 'Show'}</button></h2>
-      {show && (
-        <ul>
-          <li><label>
-            <input type="checkbox"
+    <section className="container-sm">
+      <article className="card bg-dark">
+        <header className="card-header">Debug options</header>
+        <div className="card-body">
+          <div className="form-group form-check"><label className="form-check-label">
+            <input type="checkbox" className="form-check-input"
               checked={props.appState.rewardSettings.autoRefund}
               onChange={onAutoRefundChange} /> Auto refund
-          </label></li>
-          <li>
-            <button onClick={onAddDebugPlayer}>Add debug player</button>
-          </li>
-          <li>
-            <button onClick={onClearDebugPlayers}>Clear debug players</button>
-          </li>
-        </ul>
-      )}
-    </div>
+          </label></div>
+          <div className="form-group">
+            <button className="btn btn-primary" onClick={onAddDebugPlayer}>Add debug player</button>
+          </div>
+          <div className="form-group">
+            <button className="btn btn-secondary" onClick={onClearDebugPlayers}>Clear debug players</button>
+          </div>
+        </div>
+      </article>
+    </section>
   );
 }

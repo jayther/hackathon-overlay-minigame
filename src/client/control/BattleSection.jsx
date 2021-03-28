@@ -2,171 +2,216 @@ import React from 'react';
 import SocketBridge from '../utils/SocketBridge';
 import appActions from '../../shared/AppActions';
 
-export function BattleSection(props) {
+export function BattleSettingsSection(props) {
   return (
-    <div>
-      <h2>Battles</h2>
-      <p>
-        Current battle:
-        {props.battle ?
-          `${props.battle.player1.userDisplayName} vs ${props.battle.player2.userDisplayName}` :
-          'none'}
-      </p>
-      <p>
-        Last battle results:
-        {props.battleResults ? (
-          <span>
-            <strong>{props.battleResults.winner.userDisplayName}</strong> vs {props.battleResults.loser.userDisplayName}
-          </span>
-        ) : (
-            <em>None</em>
-          )}
-      </p>
-      <h3>Queue</h3>
-      <table>
-        <tbody>
-          {props.battleQueue.length ?
-            props.battleQueue.map(b => (
-              <tr key={b.id}>
-                <td>{b.userDisplayName}</td>
-                <td>{b.target ? `vs. ${b.target.userDisplayName}` : 'vs. random'}</td>
-                <td>
-                  <button onClick={() => SocketBridge.socket.emit(appActions.cancelBattle, b.id)}>
-                    Cancel
-                </button>
-                  <button onClick={() => SocketBridge.socket.emit(appActions.startBattle, b.id)}>
-                    Start
-                </button>
-                </td>
-              </tr>
-            )) : (
-              <tr>
-                <td colSpan={3}><em>None</em></td>
-              </tr>
-            )}
-        </tbody>
-      </table>
-      <div>
-        <button onClick={() => SocketBridge.socket.emit(appActions.pruneBattles)}>
-          Prune battles
-        </button> (Remove battles involving players not in game)
+    <article className="card bg-dark mt-1" style={{maxWidth: '600px'}}>
+      <header className="card-header">Battle Settings</header>
+      <div className="card-body">
+        <div className="form-group row">
+          <label className="col-sm-4 col-form-label">Delay between attacks</label>
+          <div className="col-sm-6"><input
+            type="number"
+            className="form-control"
+            min="0"
+            step="1"
+            pattern="[0-9]+"
+            onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+              ...props.appState.battleSettings,
+              delayBetweenAttacks: parseInt(e.target.value, 10)
+            })}
+            value={props.appState.battleSettings.delayBetweenAttacks}
+          /></div>
+          <div className="col-sm-2">ms</div>
+        </div>
+        <div className="form-group row">
+          <label className="col-sm-4 col-form-label">Auto prune after battle</label>
+          <div className="col-sm-8"><input
+            type="checkbox"
+            onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+              ...props.appState.battleSettings,
+              pruneAfterBattle: e.target.checked
+            })}
+            checked={props.appState.battleSettings.pruneAfterBattle}
+          /></div>
+        </div>
+        <div className="form-group row">
+          <label className="col-sm-4 col-form-label">Auto start battles</label>
+          <div className="col-sm-8"><input
+            type="checkbox"
+            onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+              ...props.appState.battleSettings,
+              autoBattle: e.target.checked
+            })}
+            checked={props.appState.battleSettings.autoBattle}
+          /></div>
+        </div>
+        <div className="form-group row">
+          <label className="col-sm-4 col-form-label">Auto start battle delay</label>
+          <div className="col-sm-6"><input
+            type="number"
+            className="form-control"
+            min="0"
+            step="1"
+            pattern="[0-9]+"
+            onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+              ...props.appState.battleSettings,
+              autoBattleDelay: parseInt(e.target.value, 10)
+            })}
+            value={props.appState.battleSettings.autoBattleDelay}
+          /></div>
+          <div className="col-sm-2">ms</div>
+        </div>
+        <div className="form-group row">
+          <label className="col-sm-4 col-form-label">Control battles from<br />Twitch Rewards Requests Queue</label>
+          <div className="col-sm-8"><input
+            type="checkbox"
+            onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+              ...props.appState.battleSettings,
+              controlFromTwitch: e.target.checked
+            })}
+            checked={props.appState.battleSettings.controlFromTwitch}
+          /></div>
+        </div>
+        <div className="form-group row">
+          <label className="col-sm-4 col-form-label">Chance attack: Normal</label>
+          <div className="col-sm-8"><input
+            type="number"
+            className="form-control"
+            min="0"
+            onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+              ...props.appState.battleSettings,
+              chanceNormalWeight: parseFloat(e.target.value, 10)
+            })}
+            value={props.appState.battleSettings.chanceNormalWeight}
+          /></div>
+        </div>
+        <div className="form-group row">
+          <label className="col-sm-4 col-form-label">Chance attack: Crit</label>
+          <div className="col-sm-8"><input
+            type="number"
+            className="form-control"
+            min="0"
+            onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+              ...props.appState.battleSettings,
+              chanceCritWeight: parseFloat(e.target.value, 10)
+            })}
+            value={props.appState.battleSettings.chanceCritWeight}
+          /></div>
+        </div>
+        <div className="form-group row">
+          <label className="col-sm-4 col-form-label">Chance attack: Miss</label>
+          <div className="col-sm-8"><input
+            type="number"
+            className="form-control"
+            min="0"
+            onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+              ...props.appState.battleSettings,
+              chanceMissWeight: parseFloat(e.target.value, 10)
+            })}
+            value={props.appState.battleSettings.chanceMissWeight}
+          /></div>
+        </div>
+        <div className="form-group row">
+          <label className="col-sm-4 col-form-label">Weapon damage boost</label>
+          <div className="col-sm-8"><input
+            type="number"
+            className="form-control"
+            min="0"
+            step="1"
+            pattern="[0-9]+"
+            onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
+              ...props.appState.battleSettings,
+              weaponBoost: parseInt(e.target.value, 10)
+            })}
+            value={props.appState.battleSettings.weaponBoost}
+          /></div>
+        </div>
       </div>
-      <h3>Battle Settings</h3>
-      <table>
-        <tbody>
-          <tr>
-            <td>Delay between attacks</td>
-            <td><input
-              type="number"
-              min="0"
-              step="1"
-              pattern="[0-9]+"
-              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
-                ...props.battleSettings,
-                delayBetweenAttacks: parseInt(e.target.value, 10)
-              })}
-              value={props.battleSettings.delayBetweenAttacks}
-            />ms</td>
-          </tr>
-          <tr>
-            <td>Auto prune after battle</td>
-            <td><input
-              type="checkbox"
-              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
-                ...props.battleSettings,
-                pruneAfterBattle: e.target.checked
-              })}
-              checked={props.battleSettings.pruneAfterBattle}
-            /></td>
-          </tr>
-          <tr>
-            <td>Auto start battles</td>
-            <td><input
-              type="checkbox"
-              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
-                ...props.battleSettings,
-                autoBattle: e.target.checked
-              })}
-              checked={props.battleSettings.autoBattle}
-            /></td>
-          </tr>
-          <tr>
-            <td>Auto start battle delay</td>
-            <td><input
-              type="number"
-              min="0"
-              step="1"
-              pattern="[0-9]+"
-              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
-                ...props.battleSettings,
-                autoBattleDelay: parseInt(e.target.value, 10)
-              })}
-              value={props.battleSettings.autoBattleDelay}
-            />ms</td>
-          </tr>
-          <tr>
-            <td>Control battles from<br />Twitch Rewards Requests Queue</td>
-            <td><input
-              type="checkbox"
-              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
-                ...props.battleSettings,
-                controlFromTwitch: e.target.checked
-              })}
-              checked={props.battleSettings.controlFromTwitch}
-            /></td>
-          </tr>
-          <tr>
-            <td>Chance attack: Normal</td>
-            <td><input
-              type="number"
-              min="0"
-              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
-                ...props.battleSettings,
-                chanceNormalWeight: parseFloat(e.target.value, 10)
-              })}
-              value={props.battleSettings.chanceNormalWeight}
-            /></td>
-          </tr>
-          <tr>
-            <td>Chance attack: Crit</td>
-            <td><input
-              type="number"
-              min="0"
-              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
-                ...props.battleSettings,
-                chanceCritWeight: parseFloat(e.target.value, 10)
-              })}
-              value={props.battleSettings.chanceCritWeight}
-            /></td>
-          </tr>
-          <tr>
-            <td>Chance attack: Miss</td>
-            <td><input
-              type="number"
-              min="0"
-              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
-                ...props.battleSettings,
-                chanceMissWeight: parseFloat(e.target.value, 10)
-              })}
-              value={props.battleSettings.chanceMissWeight}
-            /></td>
-          </tr>
-          <tr>
-            <td>Weapon damage boost</td>
-            <td><input
-              type="number"
-              min="0"
-              step="1"
-              pattern="[0-9]+"
-              onChange={e => SocketBridge.socket.emit(appActions.updateBattleSettings, {
-                ...props.battleSettings,
-                weaponBoost: parseInt(e.target.value, 10)
-              })}
-              value={props.battleSettings.weaponBoost}
-            /></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    </article>
+  )
+}
+
+export function BattleSection(props) {
+  const battle = props.appState.currentBattle ? {
+    player1: props.appState.players.find(p => p.userId === props.appState.currentBattle[0]) || {
+      userId: props.appState.currentBattle[0],
+      userDisplayName: props.appState.currentBattle[0],
+      userName: props.appState.currentBattle[0]
+    },
+    player2: props.appState.players.find(p => p.userId === props.appState.currentBattle[1]) || {
+      userId: props.appState.currentBattle[1],
+      userDisplayName: props.appState.currentBattle[1],
+      userName: props.appState.currentBattle[1]
+    }
+  } : null;
+  return (
+    <section className="container-sm">
+      <article className="card bg-dark">
+        <header className="card-header">Battles</header>
+        <div className="card-body">
+          <p>
+            Current battle:
+            {battle ?
+              `${battle.player1.userDisplayName} vs ${battle.player2.userDisplayName}` :
+              'none'}
+          </p>
+          <p>
+            Last battle results:
+            {props.appState.battleResults ? (
+              <span>
+                <strong>{props.appState.battleResults.winner.userDisplayName}</strong> vs {props.appState.battleResults.loser.userDisplayName}
+              </span>
+            ) : (
+                <em>None</em>
+              )}
+          </p>
+          <h3>Queue</h3>
+          <table className="table table-striped table-dark">
+            <tbody>
+              {props.appState.battleQueue.length ?
+                props.appState.battleQueue.map(b => (
+                  <tr key={b.id}>
+                    <td>{b.userDisplayName}</td>
+                    <td>vs</td>
+                    <td>{b.target ? b.target.userDisplayName : 'random'}</td>
+                    <td>
+                      <div  className="btn-group" role="group">
+                        <button className="btn btn-secondary"
+                          onClick={() => SocketBridge.socket.emit(appActions.cancelBattle, b.id)}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => SocketBridge.socket.emit(appActions.startBattle, b.id)}
+                        >
+                          Start
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan={3}><em>None</em></td>
+                  </tr>
+                )}
+            </tbody>
+          </table>
+          <div>
+            <button 
+              className="btn btn-secondary"
+              onClick={
+                () => SocketBridge.socket.emit(appActions.pruneBattles)
+              }
+            >
+              Prune battles
+            </button> (Remove battles involving players not in game)
+          </div>
+        </div>
+      </article>
+      {props.showSettings && (
+        <BattleSettingsSection appState={props.appState} />
+      )}
+    </section>
   );
 }
