@@ -49,7 +49,7 @@ export function AboutSection(props) {
               HP Bar Graphics:
             </div>
             <div className="col-sm-9">
-              <a href="hhttps://kenney.nl/" rel="noreferrer" target="_blank">
+              <a href="https://kenney.nl/" rel="noreferrer" target="_blank">
                 <em>Kenney.nl</em>
               </a>
             </div>
@@ -61,7 +61,7 @@ export function AboutSection(props) {
             <div className="col-sm-9">
               <a href="https://joelsteudler.itch.io/8-bit-action-music-sfx" rel="noreferrer" target="_blank">
                 <em>8-bit Action Music &amp; SFX</em>
-              </a> Joel Steudler
+              </a> by Joel Steudler
             </div>
           </div>
           <div className="row">
