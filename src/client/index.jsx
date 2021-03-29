@@ -8,6 +8,7 @@ import './css/control.scss';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { AppProvider, pageStates, withApp } from './utils/AppContext.jsx';
+import CenterCon from './CenterCon';
 import SetupApp from './SetupApp';
 import SetupUser from './SetupUser';
 import ControlPage from './ControlPage';
@@ -18,19 +19,25 @@ import appActions from '../shared/AppActions';
 
 const IdlePage = () => {
   return (
-    <p>Starting...</p>
+    <CenterCon>
+      <p className="alert alert-primary">Starting...</p>
+    </CenterCon>
   );
 };
 
 const ErrorPage = (props) => {
   return (
-    <p>Error: {props.text}</p>
+    <CenterCon>
+      <p className="alert alert-danger">Error: {props.text}</p>
+    </CenterCon>
   );
 };
 
 const LoadingPage = (props) => {
   return (
-    <p>Loading... ({props.text})</p>
+    <CenterCon>
+      <p className="alert alert-primary">Loading... ({props.text})</p>
+    </CenterCon>
   );
 };
 

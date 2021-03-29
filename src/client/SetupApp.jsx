@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { withApp, appActions } from './utils/AppContext';
 import SocketBridge from './utils/SocketBridge';
 import Deferred from './utils/Deferred';
-
+import CenterCon from './CenterCon';
 
 function waitForAppReadyData(props) {
   console.log('Waiting for app ready...');
@@ -38,31 +38,23 @@ function SetupApp(props) {
   const [ clientSecret, setClientSecret ] = useState('');
   const [ sent, setSent ] = useState(false);
   const [ error, setError ] = useState('');
-  return (
-    <div>
-      <h1>Setup App</h1>
-      <table>
-        <tbody>
-          <tr>
-            <td>Client Id</td>
-            <td><input type="text" value={clientId} onChange={e => setClientId(e.target.value)} /></td>
-          </tr>
-          <tr>
-            <td>Client Secret</td>
-            <td><input type="password" value={clientSecret} onChange={e => setClientSecret(e.target.value)}/></td>
-          </tr>
-          <tr>
-            <td></td>
-            <td><button disabled={sent} onClick={() => sendDetails(props, setSent, setError, clientId, clientSecret)}>Submit</button></td>
-          </tr>
-          <tr>
-            <td></td>
-            <td>{error || null}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  );
+  return (<CenterCon>
+    <article className="card card-block bg-dark">
+      <header className="card-header">Setup App</header>
+      <div className="card-body">
+        <div className="form-group">
+          <label>Client Id</label>
+          <input type="text" className="form-control" value={clientId} onChange={e => setClientId(e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label>Client Secret</label>
+          <input type="password" className="form-control" value={clientSecret} onChange={e => setClientSecret(e.target.value)}/>
+        </div>
+        <button className="btn btn-primary" disabled={sent} onClick={() => sendDetails(props, setSent, setError, clientId, clientSecret)}>Submit</button>
+        {error && <div className="alert alert-danger">{error}</div>}
+      </div>
+    </article>
+  </CenterCon>);
 }
 
 export default withApp(SetupApp);
