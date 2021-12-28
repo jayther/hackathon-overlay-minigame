@@ -180,6 +180,15 @@ async function addSubs() {
   logger('Subscribed to all needed events');
 
   await listSubs();
+
+  logger('Waiting for five seconds to see update on sub status...');
+  for (let i = 5; i > 0; i--) {
+    logger(`${i}...`);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+
+  await listSubs();
+  logger('add-subs done');
 }
 
 async function manualUnsub() {
