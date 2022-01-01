@@ -4,6 +4,10 @@ Duelers - Overlay Minigame - Twitch Channel Points Hackathon
 Duelers: An overlay minigame with Twitch Channel Points Integration where
 viewers can duel others as fighters on stream.
 
+Note: If you're looking for the unchanged hackathon submission,
+[go here](https://github.com/jayther/hackathon-overlay-minigame/releases/tag/v0.1.0)
+(https://github.com/jayther/hackathon-overlay-minigame/releases/tag/v0.1.0)
+
 # Features
 
 * Game in a widget (overlay in a browser source)
@@ -36,6 +40,8 @@ viewers can duel others as fighters on stream.
 * Socket.io for communication between server, control panel, and widget
 * React for user interface (control panel, widget)
 * Twitch JS library to interface with Twitch API
+* ngrok and twitch-eventsub-ngrok to facilitate secure requests from Twitch to
+  the local server
 * Howler library for sound management
 * Sass for building CSS files
 * Bootstrap 4 for Control Panel styling
@@ -43,6 +49,16 @@ viewers can duel others as fighters on stream.
 # Setup
 
 For dev or locally running. Currently only setup for local.
+
+## ngrok
+
+1. Go to [ngrok's download page](https://ngrok.com/download) (https://ngrok.com/download) and download
+2. Install `ngrok`
+3. [Create an account at ngrok](https://dashboard.ngrok.com/signup)
+   (https://dashboard.ngrok.com/signup) (It's free!)
+4. Follow the instructions in their
+   [authtoken page](https://dashboard.ngrok.com/get-started/your-authtoken)
+   (https://dashboard.ngrok.com/get-started/your-authtoken)
 
 ## Twitch API Keys
 
@@ -264,6 +280,34 @@ Used to adjust positions of sprites of characters. Not needed for normal
 functionality, but just needed to explain what `npm run server-debug` does.
 
 Start with `npm run server-debug` then visit `http://localhost:8080`.
+
+# Troubleshooting
+
+## My local server is not receiving redeems!
+
+Here are some things to try:
+
+* Do you have ngrok installed and ran the `authtoken` command?
+  * If not, [refer to these steps](#ngrok). (Something recently changed in the
+    service that may require ngrok installation and an account recently)
+* Try redeeming a channel points redemption that's not created by this project.
+  Does the local server receive them in the console?
+  * If they do, delete `.rewardmap.json`, delete the project-created
+    redemptions in Twitch Dashboard > Viewer Rewards > Channel Points >
+    Manage Rewards and Challenges, and recreate the rewards via the Rewards tab
+    in the Control Panel.
+  * If not, delete `.usertokens.json` and `.appsecrets.json` and go through the
+  ["Your Computer" setup](#your-computer) again.
+
+## The reward mappings in the Reward Tab are showing "Unknown"
+
+This is a known bug with setting up the project for the first time, during
+the authorizing stages in the Control Panel. To fix, just refresh the
+Control Panel web page.
+
+## Any other issues?
+
+[Create an issue here](https://github.com/jayther/hackathon-overlay-minigame/issues)!
 
 # Credits
 
