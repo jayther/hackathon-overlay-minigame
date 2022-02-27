@@ -166,7 +166,7 @@ export function BattleSection(props) {
             )}
           </p>
           <h4>Queue</h4>
-          {props.appState.battleQueue.length && (
+          {!!props.appState.battleQueue.length && (
             <div className="btn-group mb-2" role="group">
               <button className="btn btn-secondary me-1"
                 onClick={() => SocketBridge.socket.emit(appActions.cancelNextBattle)}
