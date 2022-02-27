@@ -166,6 +166,16 @@ export function BattleSection(props) {
             )}
           </p>
           <h4>Queue</h4>
+          {props.appState.battleQueue.length && (
+            <div className="btn-group mb-2" role="group">
+              <button className="btn btn-secondary me-1"
+                onClick={() => SocketBridge.socket.emit(appActions.cancelNextBattle)}
+              >Cancel Next Battle</button>
+              <button className="btn btn-primary me-1"
+                onClick={() => SocketBridge.socket.emit(appActions.startNextBattle)}
+              >Start Next Battle</button>
+            </div>
+          )}
           <table className="table table-striped table-dark">
             <tbody>
               {props.appState.battleQueue.length ?
@@ -175,7 +185,7 @@ export function BattleSection(props) {
                     <td>vs</td>
                     <td>{b.target ? b.target.userDisplayName : 'random'}</td>
                     <td>
-                      <div  className="btn-group" role="group">
+                      <div className="btn-group" role="group">
                         <button className="btn btn-secondary"
                           onClick={() => SocketBridge.socket.emit(appActions.cancelBattle, b.id)}
                         >

@@ -139,7 +139,9 @@ class BattleManager {
 
   onControlAdded(socket) {
     socket.on(appActions.startBattle, bindAndLog(this.startBattle, this));
+    socket.on(appActions.startNextBattle, bindAndLog(this.startNextBattle, this));
     socket.on(appActions.cancelBattle, bindAndLog(this.cancelBattle, this));
+    socket.on(appActions.cancelNextBattle, bindAndLog(this.cancelNextBattle, this));
     socket.on(appActions.requestBattle, bindAndLog(this.onSocketRequestBattle, this));
     socket.on(appActions.updateBattleSettings, bindAndLog(this.onSocketUpdateBattleSettings, this));
     socket.on(appActions.pruneBattles, bindAndLog(this.onSocketPruneBattles, this));
@@ -395,6 +397,16 @@ class BattleManager {
     logger(`startBattle: "${player.userDisplayName}" starting a duel with "${otherPlayer.userDisplayName}"`);
   }
 
+  async startNextBattle() {
+    if (this.battleQueue.length === 0) {
+      throw new ExpectedError(`startNextBattle: No battles in queue`);
+    }
+
+    logger(`startNextBattle: attempting to start next battle...`);
+    
+    return this.startBattle(this.battleQueue[0].id);
+  }
+
   async cancelBattle(eventId) {
     const eventIndex = this.battleQueue.findIndex(e => e.id === eventId);
     if (eventIndex === -1) {
@@ -409,6 +421,16 @@ class BattleManager {
     this.socketManager.controlEmit(appActions.updateBattleQueue, this.battleQueue);
     logger(`cancelBattle: Cancelled a duel request from "${event.userDisplayName}"`);
     this.maybeAutoBattleStart();
+  }
+
+  async cancelNextBattle() {
+    if (this.battleQueue.length === 0) {
+      throw new ExpectedError(`cancelNextBattle: No battles in queue`);
+    }
+
+    logger(`cancelNextBattle: attempting to cancel next battle...`);
+    
+    return this.cancelBattle(this.battleQueue[0].id);
   }
 
   async finishBattle(winnerUserId, loserUserId) {
